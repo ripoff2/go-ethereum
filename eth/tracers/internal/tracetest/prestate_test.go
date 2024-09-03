@@ -24,13 +24,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/core"
-	"github.com/ripoff2/go-ethereum/core/rawdb"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/core/vm"
-	"github.com/ripoff2/go-ethereum/eth/tracers"
-	"github.com/ripoff2/go-ethereum/tests"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/ethereum/go-ethereum/tests"
 )
 
 // prestateTrace is the result of a prestateTrace run.
@@ -74,76 +74,68 @@ func testPrestateDiffTracer(tracerName string, dirPath string, t *testing.T) {
 			continue
 		}
 		file := file // capture range variable
-		t.Run(
-			camel(strings.TrimSuffix(file.Name(), ".json")), func(t *testing.T) {
-				t.Parallel()
+		t.Run(camel(strings.TrimSuffix(file.Name(), ".json")), func(t *testing.T) {
+			t.Parallel()
 
-				var (
-					test = new(testcase)
-					tx   = new(types.Transaction)
-				)
-				// Call tracer test found, read if from disk
-				if blob, err := os.ReadFile(filepath.Join("testdata", dirPath, file.Name())); err != nil {
-					t.Fatalf("failed to read testcase: %v", err)
-				} else if err := json.Unmarshal(blob, test); err != nil {
-					t.Fatalf("failed to parse testcase: %v", err)
-				}
-				if err := tx.UnmarshalBinary(common.FromHex(test.Input)); err != nil {
-					t.Fatalf("failed to parse testcase input: %v", err)
-				}
-				// Configure a blockchain with the given prestate
-				var (
-					signer = types.MakeSigner(
-						test.Genesis.Config, new(big.Int).SetUint64(uint64(test.Context.Number)),
-						uint64(test.Context.Time),
-					)
-					context = test.Context.toBlockContext(test.Genesis)
-					state   = tests.MakePreState(rawdb.NewMemoryDatabase(), test.Genesis.Alloc, false, rawdb.HashScheme)
-				)
-				defer state.Close()
+			var (
+				test = new(testcase)
+				tx   = new(types.Transaction)
+			)
+			// Call tracer test found, read if from disk
+			if blob, err := os.ReadFile(filepath.Join("testdata", dirPath, file.Name())); err != nil {
+				t.Fatalf("failed to read testcase: %v", err)
+			} else if err := json.Unmarshal(blob, test); err != nil {
+				t.Fatalf("failed to parse testcase: %v", err)
+			}
+			if err := tx.UnmarshalBinary(common.FromHex(test.Input)); err != nil {
+				t.Fatalf("failed to parse testcase input: %v", err)
+			}
+			// Configure a blockchain with the given prestate
+			var (
+				signer  = types.MakeSigner(test.Genesis.Config, new(big.Int).SetUint64(uint64(test.Context.Number)), uint64(test.Context.Time))
+				context = test.Context.toBlockContext(test.Genesis)
+				state   = tests.MakePreState(rawdb.NewMemoryDatabase(), test.Genesis.Alloc, false, rawdb.HashScheme)
+			)
+			defer state.Close()
 
-				tracer, err := tracers.DefaultDirectory.New(tracerName, new(tracers.Context), test.TracerConfig)
-				if err != nil {
-					t.Fatalf("failed to create call tracer: %v", err)
-				}
+			tracer, err := tracers.DefaultDirectory.New(tracerName, new(tracers.Context), test.TracerConfig)
+			if err != nil {
+				t.Fatalf("failed to create call tracer: %v", err)
+			}
 
-				state.StateDB.SetLogger(tracer.Hooks)
-				msg, err := core.TransactionToMessage(tx, signer, context.BaseFee)
-				if err != nil {
-					t.Fatalf("failed to prepare transaction for tracing: %v", err)
-				}
-				evm := vm.NewEVM(
-					context, core.NewEVMTxContext(msg), state.StateDB, test.Genesis.Config,
-					vm.Config{Tracer: tracer.Hooks},
-				)
-				tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
-				vmRet, err := core.ApplyMessage(evm, msg, new(core.GasPool).AddGas(tx.Gas()))
-				if err != nil {
-					t.Fatalf("failed to execute transaction: %v", err)
-				}
-				tracer.OnTxEnd(&types.Receipt{GasUsed: vmRet.UsedGas}, nil)
-				// Retrieve the trace result and compare against the expected
-				res, err := tracer.GetResult()
-				if err != nil {
-					t.Fatalf("failed to retrieve trace result: %v", err)
-				}
-				// The legacy javascript calltracer marshals json in js, which
-				// is not deterministic (as opposed to the golang json encoder).
-				if strings.HasSuffix(dirPath, "_legacy") {
-					// This is a tweak to make it deterministic. Can be removed when
-					// we remove the legacy tracer.
-					var x prestateTrace
-					json.Unmarshal(res, &x)
-					res, _ = json.Marshal(x)
-				}
-				want, err := json.Marshal(test.Result)
-				if err != nil {
-					t.Fatalf("failed to marshal test: %v", err)
-				}
-				if string(want) != string(res) {
-					t.Fatalf("trace mismatch\n have: %v\n want: %v\n", string(res), string(want))
-				}
-			},
-		)
+			state.StateDB.SetLogger(tracer.Hooks)
+			msg, err := core.TransactionToMessage(tx, signer, context.BaseFee)
+			if err != nil {
+				t.Fatalf("failed to prepare transaction for tracing: %v", err)
+			}
+			evm := vm.NewEVM(context, core.NewEVMTxContext(msg), state.StateDB, test.Genesis.Config, vm.Config{Tracer: tracer.Hooks})
+			tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
+			vmRet, err := core.ApplyMessage(evm, msg, new(core.GasPool).AddGas(tx.Gas()))
+			if err != nil {
+				t.Fatalf("failed to execute transaction: %v", err)
+			}
+			tracer.OnTxEnd(&types.Receipt{GasUsed: vmRet.UsedGas}, nil)
+			// Retrieve the trace result and compare against the expected
+			res, err := tracer.GetResult()
+			if err != nil {
+				t.Fatalf("failed to retrieve trace result: %v", err)
+			}
+			// The legacy javascript calltracer marshals json in js, which
+			// is not deterministic (as opposed to the golang json encoder).
+			if strings.HasSuffix(dirPath, "_legacy") {
+				// This is a tweak to make it deterministic. Can be removed when
+				// we remove the legacy tracer.
+				var x prestateTrace
+				json.Unmarshal(res, &x)
+				res, _ = json.Marshal(x)
+			}
+			want, err := json.Marshal(test.Result)
+			if err != nil {
+				t.Fatalf("failed to marshal test: %v", err)
+			}
+			if string(want) != string(res) {
+				t.Fatalf("trace mismatch\n have: %v\n want: %v\n", string(res), string(want))
+			}
+		})
 	}
 }

@@ -24,14 +24,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/common/hexutil"
-	"github.com/ripoff2/go-ethereum/eth"
-	"github.com/ripoff2/go-ethereum/eth/catalyst"
-	"github.com/ripoff2/go-ethereum/eth/ethconfig"
-	"github.com/ripoff2/go-ethereum/internal/utesting"
-	"github.com/ripoff2/go-ethereum/node"
-	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/eth"
+	"github.com/ethereum/go-ethereum/eth/catalyst"
+	"github.com/ethereum/go-ethereum/eth/ethconfig"
+	"github.com/ethereum/go-ethereum/internal/utesting"
+	"github.com/ethereum/go-ethereum/node"
+	"github.com/ethereum/go-ethereum/p2p"
 )
 
 func makeJWTSecret(t *testing.T) (string, [32]byte, error) {
@@ -62,17 +62,15 @@ func TestEthSuite(t *testing.T) {
 		t.Fatalf("could not create new test suite: %v", err)
 	}
 	for _, test := range suite.EthTests() {
-		t.Run(
-			test.Name, func(t *testing.T) {
-				if test.Slow && testing.Short() {
-					t.Skipf("%s: skipping in -short mode", test.Name)
-				}
-				result := utesting.RunTests([]utesting.Test{{Name: test.Name, Fn: test.Fn}}, os.Stdout)
-				if result[0].Failed {
-					t.Fatal()
-				}
-			},
-		)
+		t.Run(test.Name, func(t *testing.T) {
+			if test.Slow && testing.Short() {
+				t.Skipf("%s: skipping in -short mode", test.Name)
+			}
+			result := utesting.RunTests([]utesting.Test{{Name: test.Name, Fn: test.Fn}}, os.Stdout)
+			if result[0].Failed {
+				t.Fatal()
+			}
+		})
 	}
 }
 
@@ -92,32 +90,28 @@ func TestSnapSuite(t *testing.T) {
 		t.Fatalf("could not create new test suite: %v", err)
 	}
 	for _, test := range suite.SnapTests() {
-		t.Run(
-			test.Name, func(t *testing.T) {
-				result := utesting.RunTests([]utesting.Test{{Name: test.Name, Fn: test.Fn}}, os.Stdout)
-				if result[0].Failed {
-					t.Fatal()
-				}
-			},
-		)
+		t.Run(test.Name, func(t *testing.T) {
+			result := utesting.RunTests([]utesting.Test{{Name: test.Name, Fn: test.Fn}}, os.Stdout)
+			if result[0].Failed {
+				t.Fatal()
+			}
+		})
 	}
 }
 
 // runGeth creates and starts a geth node
 func runGeth(dir string, jwtPath string) (*node.Node, error) {
-	stack, err := node.New(
-		&node.Config{
-			AuthAddr: "127.0.0.1",
-			AuthPort: 0,
-			P2P: p2p.Config{
-				ListenAddr:  "127.0.0.1:0",
-				NoDiscovery: true,
-				MaxPeers:    10, // in case a test requires multiple connections, can be changed in the future
-				NoDial:      true,
-			},
-			JWTSecret: jwtPath,
+	stack, err := node.New(&node.Config{
+		AuthAddr: "127.0.0.1",
+		AuthPort: 0,
+		P2P: p2p.Config{
+			ListenAddr:  "127.0.0.1:0",
+			NoDiscovery: true,
+			MaxPeers:    10, // in case a test requires multiple connections, can be changed in the future
+			NoDial:      true,
 		},
-	)
+		JWTSecret: jwtPath,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -139,17 +133,15 @@ func setupGeth(stack *node.Node, dir string) error {
 	if err != nil {
 		return err
 	}
-	backend, err := eth.New(
-		stack, &ethconfig.Config{
-			Genesis:        &chain.genesis,
-			NetworkId:      chain.genesis.Config.ChainID.Uint64(), // 19763
-			DatabaseCache:  10,
-			TrieCleanCache: 10,
-			TrieDirtyCache: 16,
-			TrieTimeout:    60 * time.Minute,
-			SnapshotCache:  10,
-		},
-	)
+	backend, err := eth.New(stack, &ethconfig.Config{
+		Genesis:        &chain.genesis,
+		NetworkId:      chain.genesis.Config.ChainID.Uint64(), // 19763
+		DatabaseCache:  10,
+		TrieCleanCache: 10,
+		TrieDirtyCache: 16,
+		TrieTimeout:    60 * time.Minute,
+		SnapshotCache:  10,
+	})
 	if err != nil {
 		return err
 	}

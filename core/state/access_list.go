@@ -22,7 +22,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type accessList struct {

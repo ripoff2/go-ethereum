@@ -24,20 +24,20 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/consensus"
+	"github.com/ethereum/go-ethereum/consensus/beacon"
+	"github.com/ethereum/go-ethereum/consensus/ethash"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/kzg4844"
+	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/holiman/uint256"
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/consensus"
-	"github.com/ripoff2/go-ethereum/consensus/beacon"
-	"github.com/ripoff2/go-ethereum/consensus/ethash"
-	"github.com/ripoff2/go-ethereum/core"
-	"github.com/ripoff2/go-ethereum/core/state"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/core/vm"
-	"github.com/ripoff2/go-ethereum/crypto"
-	"github.com/ripoff2/go-ethereum/crypto/kzg4844"
-	"github.com/ripoff2/go-ethereum/event"
-	"github.com/ripoff2/go-ethereum/params"
-	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 const testHead = 32
@@ -159,62 +159,58 @@ func newTestBackend(t *testing.T, londonBlock *big.Int, cancunBlock *big.Int, pe
 	}
 
 	// Generate testing blocks
-	db, blocks, _ := core.GenerateChainWithGenesis(
-		gspec, engine, testHead+1, func(i int, b *core.BlockGen) {
-			b.SetCoinbase(common.Address{1})
+	db, blocks, _ := core.GenerateChainWithGenesis(gspec, engine, testHead+1, func(i int, b *core.BlockGen) {
+		b.SetCoinbase(common.Address{1})
 
-			var txdata types.TxData
-			if londonBlock != nil && b.Number().Cmp(londonBlock) >= 0 {
-				txdata = &types.DynamicFeeTx{
-					ChainID:   gspec.Config.ChainID,
-					Nonce:     b.TxNonce(addr),
-					To:        &common.Address{},
-					Gas:       30000,
-					GasFeeCap: big.NewInt(100 * params.GWei),
-					GasTipCap: big.NewInt(int64(i+1) * params.GWei),
-					Data:      []byte{},
-				}
-			} else {
-				txdata = &types.LegacyTx{
-					Nonce:    b.TxNonce(addr),
-					To:       &common.Address{},
-					Gas:      21000,
-					GasPrice: big.NewInt(int64(i+1) * params.GWei),
-					Value:    big.NewInt(100),
-					Data:     []byte{},
-				}
+		var txdata types.TxData
+		if londonBlock != nil && b.Number().Cmp(londonBlock) >= 0 {
+			txdata = &types.DynamicFeeTx{
+				ChainID:   gspec.Config.ChainID,
+				Nonce:     b.TxNonce(addr),
+				To:        &common.Address{},
+				Gas:       30000,
+				GasFeeCap: big.NewInt(100 * params.GWei),
+				GasTipCap: big.NewInt(int64(i+1) * params.GWei),
+				Data:      []byte{},
 			}
-			b.AddTx(types.MustSignNewTx(key, signer, txdata))
-
-			if cancunBlock != nil && b.Number().Cmp(cancunBlock) >= 0 {
-				b.SetPoS()
-
-				// put more blobs in each new block
-				for j := 0; j < i && j < 6; j++ {
-					blobTx := &types.BlobTx{
-						ChainID:    uint256.MustFromBig(gspec.Config.ChainID),
-						Nonce:      b.TxNonce(addr),
-						To:         common.Address{},
-						Gas:        30000,
-						GasFeeCap:  uint256.NewInt(100 * params.GWei),
-						GasTipCap:  uint256.NewInt(uint64(i+1) * params.GWei),
-						Data:       []byte{},
-						BlobFeeCap: uint256.NewInt(1),
-						BlobHashes: []common.Hash{emptyBlobVHash},
-						Value:      uint256.NewInt(100),
-						Sidecar:    nil,
-					}
-					b.AddTx(types.MustSignNewTx(key, signer, blobTx))
-				}
+		} else {
+			txdata = &types.LegacyTx{
+				Nonce:    b.TxNonce(addr),
+				To:       &common.Address{},
+				Gas:      21000,
+				GasPrice: big.NewInt(int64(i+1) * params.GWei),
+				Value:    big.NewInt(100),
+				Data:     []byte{},
 			}
-			td += b.Difficulty().Uint64()
-		},
-	)
+		}
+		b.AddTx(types.MustSignNewTx(key, signer, txdata))
+
+		if cancunBlock != nil && b.Number().Cmp(cancunBlock) >= 0 {
+			b.SetPoS()
+
+			// put more blobs in each new block
+			for j := 0; j < i && j < 6; j++ {
+				blobTx := &types.BlobTx{
+					ChainID:    uint256.MustFromBig(gspec.Config.ChainID),
+					Nonce:      b.TxNonce(addr),
+					To:         common.Address{},
+					Gas:        30000,
+					GasFeeCap:  uint256.NewInt(100 * params.GWei),
+					GasTipCap:  uint256.NewInt(uint64(i+1) * params.GWei),
+					Data:       []byte{},
+					BlobFeeCap: uint256.NewInt(1),
+					BlobHashes: []common.Hash{emptyBlobVHash},
+					Value:      uint256.NewInt(100),
+					Sidecar:    nil,
+				}
+				b.AddTx(types.MustSignNewTx(key, signer, blobTx))
+			}
+		}
+		td += b.Difficulty().Uint64()
+	})
 	// Construct testing chain
 	gspec.Config.TerminalTotalDifficulty = new(big.Int).SetUint64(td)
-	chain, err := core.NewBlockChain(
-		db, &core.CacheConfig{TrieCleanNoPrefetch: true}, gspec, nil, engine, vm.Config{}, nil, nil,
-	)
+	chain, err := core.NewBlockChain(db, &core.CacheConfig{TrieCleanNoPrefetch: true}, gspec, nil, engine, vm.Config{}, nil, nil)
 	if err != nil {
 		t.Fatalf("Failed to create local chain, %v", err)
 	}

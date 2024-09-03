@@ -25,8 +25,8 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/ripoff2/go-ethereum/p2p/enr"
-	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/p2p/enr"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -212,27 +212,22 @@ func TestNodeEndpoints(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(
-			test.name, func(t *testing.T) {
-				if test.wantIP != test.node.IPAddr() {
-					t.Errorf("node has wrong IP %v, want %v", test.node.IPAddr(), test.wantIP)
-				}
-				if test.wantUDP != test.node.UDP() {
-					t.Errorf("node has wrong UDP port %d, want %d", test.node.UDP(), test.wantUDP)
-				}
-				if test.wantTCP != test.node.TCP() {
-					t.Errorf("node has wrong TCP port %d, want %d", test.node.TCP(), test.wantTCP)
-				}
-			},
-		)
+		t.Run(test.name, func(t *testing.T) {
+			if test.wantIP != test.node.IPAddr() {
+				t.Errorf("node has wrong IP %v, want %v", test.node.IPAddr(), test.wantIP)
+			}
+			if test.wantUDP != test.node.UDP() {
+				t.Errorf("node has wrong UDP port %d, want %d", test.node.UDP(), test.wantUDP)
+			}
+			if test.wantTCP != test.node.TCP() {
+				t.Errorf("node has wrong TCP port %d, want %d", test.node.TCP(), test.wantTCP)
+			}
+		})
 	}
 }
 
 func TestHexID(t *testing.T) {
-	ref := ID{
-		0, 0, 0, 0, 0, 0, 0, 128, 106, 217, 182, 31, 165, 174, 1, 67, 7, 235, 220, 150, 66, 83, 173, 205, 159, 44, 10,
-		57, 42, 161, 26, 188,
-	}
+	ref := ID{0, 0, 0, 0, 0, 0, 0, 128, 106, 217, 182, 31, 165, 174, 1, 67, 7, 235, 220, 150, 66, 83, 173, 205, 159, 44, 10, 57, 42, 161, 26, 188}
 	id1 := HexID("0x00000000000000806ad9b61fa5ae014307ebdc964253adcd9f2c0a392aa11abc")
 	id2 := HexID("00000000000000806ad9b61fa5ae014307ebdc964253adcd9f2c0a392aa11abc")
 

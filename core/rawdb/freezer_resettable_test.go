@@ -21,7 +21,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/ethdb"
 )
 
 func TestResetFreezer(t *testing.T) {
@@ -36,14 +36,12 @@ func TestResetFreezer(t *testing.T) {
 	f, _ := newResettableFreezer(t.TempDir(), "", false, 2048, freezerTestTableDef)
 	defer f.Close()
 
-	f.ModifyAncients(
-		func(op ethdb.AncientWriteOp) error {
-			for _, item := range items {
-				op.AppendRaw("test", item.id, item.blob)
-			}
-			return nil
-		},
-	)
+	f.ModifyAncients(func(op ethdb.AncientWriteOp) error {
+		for _, item := range items {
+			op.AppendRaw("test", item.id, item.blob)
+		}
+		return nil
+	})
 	for _, item := range items {
 		blob, _ := f.Ancient("test", item.id)
 		if !bytes.Equal(blob, item.blob) {
@@ -65,14 +63,12 @@ func TestResetFreezer(t *testing.T) {
 	}
 
 	// Fill the freezer
-	f.ModifyAncients(
-		func(op ethdb.AncientWriteOp) error {
-			for _, item := range items {
-				op.AppendRaw("test", item.id, item.blob)
-			}
-			return nil
-		},
-	)
+	f.ModifyAncients(func(op ethdb.AncientWriteOp) error {
+		for _, item := range items {
+			op.AppendRaw("test", item.id, item.blob)
+		}
+		return nil
+	})
 	for _, item := range items {
 		blob, _ := f.Ancient("test", item.id)
 		if !bytes.Equal(blob, item.blob) {
@@ -92,14 +88,12 @@ func TestFreezerCleanup(t *testing.T) {
 	}
 	datadir := t.TempDir()
 	f, _ := newResettableFreezer(datadir, "", false, 2048, freezerTestTableDef)
-	f.ModifyAncients(
-		func(op ethdb.AncientWriteOp) error {
-			for _, item := range items {
-				op.AppendRaw("test", item.id, item.blob)
-			}
-			return nil
-		},
-	)
+	f.ModifyAncients(func(op ethdb.AncientWriteOp) error {
+		for _, item := range items {
+			op.AppendRaw("test", item.id, item.blob)
+		}
+		return nil
+	})
 	f.Close()
 	os.Rename(datadir, tmpName(datadir))
 

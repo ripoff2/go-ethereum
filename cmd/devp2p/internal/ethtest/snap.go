@@ -24,14 +24,14 @@ import (
 	"math/rand"
 	"reflect"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/core/state"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/crypto"
-	"github.com/ripoff2/go-ethereum/eth/protocols/snap"
-	"github.com/ripoff2/go-ethereum/internal/utesting"
-	"github.com/ripoff2/go-ethereum/trie"
-	"github.com/ripoff2/go-ethereum/trie/trienode"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/protocols/snap"
+	"github.com/ethereum/go-ethereum/internal/utesting"
+	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ethereum/go-ethereum/trie/trienode"
 )
 
 func (c *Conn) snapRequest(code uint64, msg any) (any, error) {
@@ -373,8 +373,7 @@ func (s *Suite) TestSnapGetStorageRanges(t *utesting.T) {
 			}
 		*/
 
-		{
-			// [:] -> [slot1, slot2, slot3]
+		{ // [:] -> [slot1, slot2, slot3]
 			desc: `This request has a range of 00..ff.
 The server should return all storage slots of the test account.`,
 			root:     blockroot,
@@ -385,8 +384,7 @@ The server should return all storage slots of the test account.`,
 			expSlots: [][]*snap.StorageData{acctSlots},
 		},
 
-		{
-			// [slot1:] -> [slot1, slot2, slot3]
+		{ // [slot1:] -> [slot1, slot2, slot3]
 			desc: `This test requests slots starting at the first available key.
 The server should return all storage slots of the test account.`,
 			root:     blockroot,
@@ -397,8 +395,7 @@ The server should return all storage slots of the test account.`,
 			expSlots: [][]*snap.StorageData{acctSlots},
 		},
 
-		{
-			// [slot1+:] -> [slot2, slot3]
+		{ // [slot1+:] -> [slot2, slot3]
 			desc: `This test requests slots starting at a key one past the first available key.
 The server should return the remaining two slots of the test account.`,
 			root:     blockroot,
@@ -409,8 +406,7 @@ The server should return the remaining two slots of the test account.`,
 			expSlots: [][]*snap.StorageData{acctSlots[1:]},
 		},
 
-		{
-			// [slot1:slot2] -> [slot1, slot2]
+		{ // [slot1:slot2] -> [slot1, slot2]
 			desc:     `This test requests a range which is exactly the first and second available key.`,
 			root:     blockroot,
 			accounts: []common.Hash{acctHash},
@@ -420,8 +416,7 @@ The server should return the remaining two slots of the test account.`,
 			expSlots: [][]*snap.StorageData{acctSlots[:2]},
 		},
 
-		{
-			// [slot1+:slot2+] -> [slot2, slot3]
+		{ // [slot1+:slot2+] -> [slot2, slot3]
 			desc: `This test requests a range where limitHash is after the second, but before the third slot
 of the test account. The server should return slots [2,3] (i.e. the 'next available' needs to be returned).`,
 			root:     blockroot,
@@ -644,17 +639,12 @@ The server should reject the request.`,
 			expHashes: []common.Hash{s.chain.RootAt(int(s.chain.Head().NumberU64() - 1))},
 		},
 
-		{
-			// nonsensically long path
+		{ // nonsensically long path
 			desc: `In this test, we request a very long trie node path. The server should respond with an empty node (keccak256("")).`,
 			root: s.chain.Head().Root(),
 			paths: []snap.TrieNodePathSet{
-				{
-					[]byte{
-						0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 7, 8,
-						0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 7, 8,
-					},
-				},
+				{[]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 7, 8,
+					0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 1, 2, 3, 4, 5, 6, 7, 8}},
 			},
 			nBytes:    5000,
 			expHashes: []common.Hash{types.EmptyCodeHash},
@@ -677,8 +667,7 @@ The server should reject the request.`,
 				empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty,
 				empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty,
 				empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty, empty,
-				empty, empty, empty,
-			},
+				empty, empty, empty},
 		},
 
 		{
@@ -789,10 +778,7 @@ func (s *Suite) snapGetAccountRange(t *utesting.T, tc *accRangeTest) error {
 	// Check that the encoding order is correct
 	for i := 1; i < len(res.Accounts); i++ {
 		if bytes.Compare(res.Accounts[i-1].Hash[:], res.Accounts[i].Hash[:]) >= 0 {
-			return fmt.Errorf(
-				"accounts not monotonically increasing: #%d [%x] vs #%d [%x]", i-1, res.Accounts[i-1].Hash[:], i,
-				res.Accounts[i].Hash[:],
-			)
+			return fmt.Errorf("accounts not monotonically increasing: #%d [%x] vs #%d [%x]", i-1, res.Accounts[i-1].Hash[:], i, res.Accounts[i].Hash[:])
 		}
 	}
 	var (
@@ -862,10 +848,7 @@ func (s *Suite) snapGetStorageRanges(t *utesting.T, tc *stRangesTest) error {
 	for i, slots := range res.Slots {
 		for j := 1; j < len(slots); j++ {
 			if bytes.Compare(slots[j-1].Hash[:], slots[j].Hash[:]) >= 0 {
-				return fmt.Errorf(
-					"storage slots not monotonically increasing for account #%d: #%d [%x] vs #%d [%x]", i, j-1,
-					slots[j-1].Hash[:], j, slots[j].Hash[:],
-				)
+				return fmt.Errorf("storage slots not monotonically increasing for account #%d: #%d [%x] vs #%d [%x]", i, j-1, slots[j-1].Hash[:], j, slots[j].Hash[:])
 			}
 		}
 	}

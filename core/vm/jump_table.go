@@ -19,7 +19,7 @@ package vm
 import (
 	"fmt"
 
-	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 type (

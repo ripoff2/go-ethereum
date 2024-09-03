@@ -21,16 +21,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/core"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/log"
-	"github.com/ripoff2/go-ethereum/metrics"
-	"github.com/ripoff2/go-ethereum/p2p"
-	"github.com/ripoff2/go-ethereum/p2p/enode"
-	"github.com/ripoff2/go-ethereum/p2p/enr"
-	"github.com/ripoff2/go-ethereum/trie"
-	"github.com/ripoff2/go-ethereum/trie/trienode"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ethereum/go-ethereum/p2p/enr"
+	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ethereum/go-ethereum/trie/trienode"
 )
 
 const (
@@ -92,11 +92,9 @@ func MakeProtocols(backend Backend) []p2p.Protocol {
 			Version: version,
 			Length:  protocolLengths[version],
 			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
-				return backend.RunPeer(
-					NewPeer(version, p, rw), func(peer *Peer) error {
-						return Handle(backend, peer)
-					},
-				)
+				return backend.RunPeer(NewPeer(version, p, rw), func(peer *Peer) error {
+					return Handle(backend, peer)
+				})
 			},
 			NodeInfo: func() interface{} {
 				return nodeInfo(backend.Chain())
@@ -159,13 +157,11 @@ func HandleMessage(backend Backend, peer *Peer) error {
 		accounts, proofs := ServiceGetAccountRangeQuery(backend.Chain(), &req)
 
 		// Send back anything accumulated (or empty in case of errors)
-		return p2p.Send(
-			peer.rw, AccountRangeMsg, &AccountRangePacket{
-				ID:       req.ID,
-				Accounts: accounts,
-				Proof:    proofs,
-			},
-		)
+		return p2p.Send(peer.rw, AccountRangeMsg, &AccountRangePacket{
+			ID:       req.ID,
+			Accounts: accounts,
+			Proof:    proofs,
+		})
 
 	case msg.Code == AccountRangeMsg:
 		// A range of accounts arrived to one of our previous requests
@@ -176,10 +172,7 @@ func HandleMessage(backend Backend, peer *Peer) error {
 		// Ensure the range is monotonically increasing
 		for i := 1; i < len(res.Accounts); i++ {
 			if bytes.Compare(res.Accounts[i-1].Hash[:], res.Accounts[i].Hash[:]) >= 0 {
-				return fmt.Errorf(
-					"accounts not monotonically increasing: #%d [%x] vs #%d [%x]", i-1, res.Accounts[i-1].Hash[:], i,
-					res.Accounts[i].Hash[:],
-				)
+				return fmt.Errorf("accounts not monotonically increasing: #%d [%x] vs #%d [%x]", i-1, res.Accounts[i-1].Hash[:], i, res.Accounts[i].Hash[:])
 			}
 		}
 		requestTracker.Fulfil(peer.id, peer.version, AccountRangeMsg, res.ID)
@@ -196,13 +189,11 @@ func HandleMessage(backend Backend, peer *Peer) error {
 		slots, proofs := ServiceGetStorageRangesQuery(backend.Chain(), &req)
 
 		// Send back anything accumulated (or empty in case of errors)
-		return p2p.Send(
-			peer.rw, StorageRangesMsg, &StorageRangesPacket{
-				ID:    req.ID,
-				Slots: slots,
-				Proof: proofs,
-			},
-		)
+		return p2p.Send(peer.rw, StorageRangesMsg, &StorageRangesPacket{
+			ID:    req.ID,
+			Slots: slots,
+			Proof: proofs,
+		})
 
 	case msg.Code == StorageRangesMsg:
 		// A range of storage slots arrived to one of our previous requests
@@ -214,10 +205,7 @@ func HandleMessage(backend Backend, peer *Peer) error {
 		for i, slots := range res.Slots {
 			for j := 1; j < len(slots); j++ {
 				if bytes.Compare(slots[j-1].Hash[:], slots[j].Hash[:]) >= 0 {
-					return fmt.Errorf(
-						"storage slots not monotonically increasing for account #%d: #%d [%x] vs #%d [%x]", i, j-1,
-						slots[j-1].Hash[:], j, slots[j].Hash[:],
-					)
+					return fmt.Errorf("storage slots not monotonically increasing for account #%d: #%d [%x] vs #%d [%x]", i, j-1, slots[j-1].Hash[:], j, slots[j].Hash[:])
 				}
 			}
 		}
@@ -235,12 +223,10 @@ func HandleMessage(backend Backend, peer *Peer) error {
 		codes := ServiceGetByteCodesQuery(backend.Chain(), &req)
 
 		// Send back anything accumulated (or empty in case of errors)
-		return p2p.Send(
-			peer.rw, ByteCodesMsg, &ByteCodesPacket{
-				ID:    req.ID,
-				Codes: codes,
-			},
-		)
+		return p2p.Send(peer.rw, ByteCodesMsg, &ByteCodesPacket{
+			ID:    req.ID,
+			Codes: codes,
+		})
 
 	case msg.Code == ByteCodesMsg:
 		// A batch of byte codes arrived to one of our previous requests
@@ -264,12 +250,10 @@ func HandleMessage(backend Backend, peer *Peer) error {
 			return err
 		}
 		// Send back anything accumulated (or empty in case of errors)
-		return p2p.Send(
-			peer.rw, TrieNodesMsg, &TrieNodesPacket{
-				ID:    req.ID,
-				Nodes: nodes,
-			},
-		)
+		return p2p.Send(peer.rw, TrieNodesMsg, &TrieNodesPacket{
+			ID:    req.ID,
+			Nodes: nodes,
+		})
 
 	case msg.Code == TrieNodesMsg:
 		// A batch of trie nodes arrived to one of our previous requests
@@ -315,12 +299,10 @@ func ServiceGetAccountRangeQuery(chain *core.BlockChain, req *GetAccountRangePac
 
 		// Assemble the reply item
 		size += uint64(common.HashLength + len(account))
-		accounts = append(
-			accounts, &AccountData{
-				Hash: hash,
-				Body: account,
-			},
-		)
+		accounts = append(accounts, &AccountData{
+			Hash: hash,
+			Body: account,
+		})
 		// If we've exceeded the request threshold, abort
 		if bytes.Compare(hash[:], req.Limit[:]) >= 0 {
 			break
@@ -401,12 +383,10 @@ func ServiceGetStorageRangesQuery(chain *core.BlockChain, req *GetStorageRangesP
 
 			// Assemble the reply item
 			size += uint64(common.HashLength + len(slot))
-			storage = append(
-				storage, &StorageData{
-					Hash: hash,
-					Body: slot,
-				},
-			)
+			storage = append(storage, &StorageData{
+				Hash: hash,
+				Body: slot,
+			})
 			// If we've exceeded the request threshold, abort
 			if bytes.Compare(hash[:], limit[:]) >= 0 {
 				break

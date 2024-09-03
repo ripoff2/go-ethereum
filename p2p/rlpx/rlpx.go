@@ -33,10 +33,10 @@ import (
 	"net"
 	"time"
 
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/ecies"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/golang/snappy"
-	"github.com/ripoff2/go-ethereum/crypto"
-	"github.com/ripoff2/go-ethereum/crypto/ecies"
-	"github.com/ripoff2/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -510,9 +510,7 @@ func (h *handshakeState) staticSharedSecret(prv *ecdsa.PrivateKey) ([]byte, erro
 // it should be called on the dialing side of the connection.
 //
 // prv is the local client's private key.
-func (h *handshakeState) runInitiator(conn io.ReadWriter, prv *ecdsa.PrivateKey, remote *ecdsa.PublicKey) (
-	s Secrets, err error,
-) {
+func (h *handshakeState) runInitiator(conn io.ReadWriter, prv *ecdsa.PrivateKey, remote *ecdsa.PublicKey) (s Secrets, err error) {
 	h.initiator = true
 	h.remote = ecies.ImportECDSAPublic(remote)
 

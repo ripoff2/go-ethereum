@@ -19,10 +19,10 @@ package tracing
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/params"
 )
 
 // OpContext provides the context at which the opcode is being
@@ -85,9 +85,7 @@ type (
 	// Take note that EnterHook, when in the context of a live tracer, can be invoked
 	// outside of the `OnTxStart` and `OnTxEnd` hooks when dealing with system calls,
 	// see [OnSystemCallStartHook] and [OnSystemCallEndHook] for more information.
-	EnterHook = func(
-		depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int,
-	)
+	EnterHook = func(depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int)
 
 	// ExitHook is invoked when the processing of a message ends.
 	// `revert` is true when there was an error during the execution.
@@ -162,9 +160,7 @@ type (
 	NonceChangeHook = func(addr common.Address, prev, new uint64)
 
 	// CodeChangeHook is called when the code of an account changes.
-	CodeChangeHook = func(
-		addr common.Address, prevCodeHash common.Hash, prevCode []byte, codeHash common.Hash, code []byte,
-	)
+	CodeChangeHook = func(addr common.Address, prevCodeHash common.Hash, prevCode []byte, codeHash common.Hash, code []byte)
 
 	// StorageChangeHook is called when the storage of an account changes.
 	StorageChangeHook = func(addr common.Address, slot common.Hash, prev, new common.Hash)

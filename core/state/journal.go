@@ -22,9 +22,9 @@ import (
 	"slices"
 	"sort"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/core/types"
 )
 
 type revision struct {
@@ -84,11 +84,9 @@ func (j *journal) snapshot() int {
 // revertToSnapshot reverts all state changes made since the given revision.
 func (j *journal) revertToSnapshot(revid int, s *StateDB) {
 	// Find the snapshot in the stack of valid snapshots.
-	idx := sort.Search(
-		len(j.validRevisions), func(i int) bool {
-			return j.validRevisions[i].id >= revid
-		},
-	)
+	idx := sort.Search(len(j.validRevisions), func(i int) bool {
+		return j.validRevisions[i].id >= revid
+	})
 	if idx == len(j.validRevisions) || j.validRevisions[idx].id != revid {
 		panic(fmt.Errorf("revision id %v cannot be reverted", revid))
 	}
@@ -167,24 +165,20 @@ func (j *journal) destruct(addr common.Address) {
 }
 
 func (j *journal) storageChange(addr common.Address, key, prev, origin common.Hash) {
-	j.append(
-		storageChange{
-			account:   &addr,
-			key:       key,
-			prevvalue: prev,
-			origvalue: origin,
-		},
-	)
+	j.append(storageChange{
+		account:   &addr,
+		key:       key,
+		prevvalue: prev,
+		origvalue: origin,
+	})
 }
 
 func (j *journal) transientStateChange(addr common.Address, key, prev common.Hash) {
-	j.append(
-		transientStorageChange{
-			account:  &addr,
-			key:      key,
-			prevalue: prev,
-		},
-	)
+	j.append(transientStorageChange{
+		account:  &addr,
+		key:      key,
+		prevalue: prev,
+	})
 }
 
 func (j *journal) refundChange(previous uint64) {
@@ -192,12 +186,10 @@ func (j *journal) refundChange(previous uint64) {
 }
 
 func (j *journal) balanceChange(addr common.Address, previous *uint256.Int) {
-	j.append(
-		balanceChange{
-			account: &addr,
-			prev:    previous.Clone(),
-		},
-	)
+	j.append(balanceChange{
+		account: &addr,
+		prev:    previous.Clone(),
+	})
 }
 
 func (j *journal) setCode(address common.Address) {
@@ -205,20 +197,16 @@ func (j *journal) setCode(address common.Address) {
 }
 
 func (j *journal) nonceChange(address common.Address, prev uint64) {
-	j.append(
-		nonceChange{
-			account: &address,
-			prev:    prev,
-		},
-	)
+	j.append(nonceChange{
+		account: &address,
+		prev:    prev,
+	})
 }
 
 func (j *journal) touchChange(address common.Address) {
-	j.append(
-		touchChange{
-			account: &address,
-		},
-	)
+	j.append(touchChange{
+		account: &address,
+	})
 	if address == ripemd {
 		// Explicitly put it in the dirty-cache, which is otherwise generated from
 		// flattened journals.
@@ -231,12 +219,10 @@ func (j *journal) accessListAddAccount(addr common.Address) {
 }
 
 func (j *journal) accessListAddSlot(addr common.Address, slot common.Hash) {
-	j.append(
-		accessListAddSlotChange{
-			address: &addr,
-			slot:    &slot,
-		},
-	)
+	j.append(accessListAddSlotChange{
+		address: &addr,
+		slot:    &slot,
+	})
 }
 
 type (

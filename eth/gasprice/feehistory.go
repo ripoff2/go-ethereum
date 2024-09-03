@@ -26,13 +26,13 @@ import (
 	"slices"
 	"sync/atomic"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/consensus/misc/eip1559"
-	"github.com/ripoff2/go-ethereum/consensus/misc/eip4844"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/log"
-	"github.com/ripoff2/go-ethereum/params"
-	"github.com/ripoff2/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/consensus/misc/eip1559"
+	"github.com/ethereum/go-ethereum/consensus/misc/eip4844"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 var (
@@ -98,11 +98,7 @@ func (oracle *Oracle) processBlock(bf *blockFees, percentiles []float64) {
 	// Fill in blob base fee and next blob base fee.
 	if excessBlobGas := bf.header.ExcessBlobGas; excessBlobGas != nil {
 		bf.results.blobBaseFee = eip4844.CalcBlobFee(*excessBlobGas)
-		bf.results.nextBlobBaseFee = eip4844.CalcBlobFee(
-			eip4844.CalcExcessBlobGas(
-				*excessBlobGas, *bf.header.BlobGasUsed,
-			),
-		)
+		bf.results.nextBlobBaseFee = eip4844.CalcBlobFee(eip4844.CalcExcessBlobGas(*excessBlobGas, *bf.header.BlobGasUsed))
 	} else {
 		bf.results.blobBaseFee = new(big.Int)
 		bf.results.nextBlobBaseFee = new(big.Int)
@@ -136,11 +132,9 @@ func (oracle *Oracle) processBlock(bf *blockFees, percentiles []float64) {
 		reward, _ := tx.EffectiveGasTip(bf.block.BaseFee())
 		sorter[i] = txGasAndReward{gasUsed: bf.receipts[i].GasUsed, reward: reward}
 	}
-	slices.SortStableFunc(
-		sorter, func(a, b txGasAndReward) int {
-			return a.reward.Cmp(b.reward)
-		},
-	)
+	slices.SortStableFunc(sorter, func(a, b txGasAndReward) int {
+		return a.reward.Cmp(b.reward)
+	})
 
 	var txIndex int
 	sumGasUsed := sorter[0].gasUsed
@@ -160,9 +154,7 @@ func (oracle *Oracle) processBlock(bf *blockFees, percentiles []float64) {
 // also returned if requested and available.
 // Note: an error is only returned if retrieving the head header has failed. If there are no
 // retrievable blocks in the specified range then zero block count is returned with no error.
-func (oracle *Oracle) resolveBlockRange(ctx context.Context, reqEnd rpc.BlockNumber, blocks uint64) (
-	*types.Block, []*types.Receipt, uint64, uint64, error,
-) {
+func (oracle *Oracle) resolveBlockRange(ctx context.Context, reqEnd rpc.BlockNumber, blocks uint64) (*types.Block, []*types.Receipt, uint64, uint64, error) {
 	var (
 		headBlock       *types.Header
 		pendingBlock    *types.Block
@@ -242,9 +234,7 @@ func (oracle *Oracle) resolveBlockRange(ctx context.Context, reqEnd rpc.BlockNum
 //
 // Note: baseFee and blobBaseFee both include the next block after the newest of the returned range,
 // because this value can be derived from the newest block.
-func (oracle *Oracle) FeeHistory(
-	ctx context.Context, blocks uint64, unresolvedLastBlock rpc.BlockNumber, rewardPercentiles []float64,
-) (*big.Int, [][]*big.Int, []*big.Int, []float64, []*big.Int, []float64, error) {
+func (oracle *Oracle) FeeHistory(ctx context.Context, blocks uint64, unresolvedLastBlock rpc.BlockNumber, rewardPercentiles []float64) (*big.Int, [][]*big.Int, []*big.Int, []float64, []*big.Int, []float64, error) {
 	if blocks < 1 {
 		return common.Big0, nil, nil, nil, nil, nil, nil // returning with no data and no error means there are no retrievable blocks
 	}
@@ -253,9 +243,7 @@ func (oracle *Oracle) FeeHistory(
 		maxFeeHistory = oracle.maxBlockHistory
 	}
 	if len(rewardPercentiles) > maxQueryLimit {
-		return common.Big0, nil, nil, nil, nil, nil, fmt.Errorf(
-			"%w: over the query limit %d", errInvalidPercentile, maxQueryLimit,
-		)
+		return common.Big0, nil, nil, nil, nil, nil, fmt.Errorf("%w: over the query limit %d", errInvalidPercentile, maxQueryLimit)
 	}
 	if blocks > maxFeeHistory {
 		log.Warn("Sanitizing fee history length", "requested", blocks, "truncated", maxFeeHistory)
@@ -266,9 +254,7 @@ func (oracle *Oracle) FeeHistory(
 			return common.Big0, nil, nil, nil, nil, nil, fmt.Errorf("%w: %f", errInvalidPercentile, p)
 		}
 		if i > 0 && p <= rewardPercentiles[i-1] {
-			return common.Big0, nil, nil, nil, nil, nil, fmt.Errorf(
-				"%w: #%d:%f >= #%d:%f", errInvalidPercentile, i-1, rewardPercentiles[i-1], i, p,
-			)
+			return common.Big0, nil, nil, nil, nil, nil, fmt.Errorf("%w: #%d:%f >= #%d:%f", errInvalidPercentile, i-1, rewardPercentiles[i-1], i, p)
 		}
 	}
 	var (

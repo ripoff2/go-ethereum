@@ -25,11 +25,11 @@ import (
 	"time"
 
 	"github.com/VictoriaMetrics/fastcache"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/holiman/uint256"
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/core/rawdb"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 // randomHash generates a random blob of data and returns it as a hash.
@@ -65,9 +65,7 @@ func randomAccountSet(hashes ...string) map[common.Hash][]byte {
 
 // randomStorageSet generates a set of random slots with the given strings as
 // the slot addresses.
-func randomStorageSet(
-	accounts []string, hashes [][]string, nilStorage [][]string,
-) map[common.Hash]map[common.Hash][]byte {
+func randomStorageSet(accounts []string, hashes [][]string, nilStorage [][]string) map[common.Hash]map[common.Hash][]byte {
 	storages := make(map[common.Hash]map[common.Hash][]byte)
 	for index, account := range accounts {
 		storages[common.HexToHash(account)] = make(map[common.Hash][]byte)
@@ -187,7 +185,7 @@ func TestDiskLayerExternalInvalidationPartialFlatten(t *testing.T) {
 // layer to check the usual mode of operation where the accumulator is retained.
 func TestDiffLayerExternalInvalidationPartialFlatten(t *testing.T) {
 	// Un-commenting this triggers the bloom set to be deterministic. The values below
-	// were used to trigger the flaw described in https://github.com/ripoff2/go-ethereum/issues/27254.
+	// were used to trigger the flaw described in https://github.com/ethereum/go-ethereum/issues/27254.
 	// bloomDestructHasherOffset, bloomAccountHasherOffset, bloomStorageHasherOffset = 14, 24, 5
 
 	// Create an empty base layer and a snapshot tree out of it
@@ -385,10 +383,7 @@ func TestSnaphots(t *testing.T) {
 	for i, c := range cases {
 		layers := snaps.Snapshots(c.headRoot, c.limit, c.nodisk)
 		if len(layers) != c.expected {
-			t.Errorf(
-				"non-overflow test %d: returned snapshot layers are mismatched, want %v, got %v", i, c.expected,
-				len(layers),
-			)
+			t.Errorf("non-overflow test %d: returned snapshot layers are mismatched, want %v, got %v", i, c.expected, len(layers))
 		}
 		if len(layers) == 0 {
 			continue
@@ -423,9 +418,7 @@ func TestSnaphots(t *testing.T) {
 	for i, c := range cases {
 		layers := snaps.Snapshots(c.headRoot, c.limit, c.nodisk)
 		if len(layers) != c.expected {
-			t.Errorf(
-				"overflow test %d: returned snapshot layers are mismatched, want %v, got %v", i, c.expected, len(layers),
-			)
+			t.Errorf("overflow test %d: returned snapshot layers are mismatched, want %v, got %v", i, c.expected, len(layers))
 		}
 		if len(layers) == 0 {
 			continue

@@ -25,14 +25,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/console/prompt"
-	"github.com/ripoff2/go-ethereum/core"
-	"github.com/ripoff2/go-ethereum/eth"
-	"github.com/ripoff2/go-ethereum/eth/ethconfig"
-	"github.com/ripoff2/go-ethereum/internal/jsre"
-	"github.com/ripoff2/go-ethereum/miner"
-	"github.com/ripoff2/go-ethereum/node"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/console/prompt"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/eth"
+	"github.com/ethereum/go-ethereum/eth/ethconfig"
+	"github.com/ethereum/go-ethereum/internal/jsre"
+	"github.com/ethereum/go-ethereum/miner"
+	"github.com/ethereum/go-ethereum/node"
 )
 
 const (

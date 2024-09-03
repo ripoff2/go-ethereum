@@ -25,8 +25,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -220,134 +220,127 @@ func TestEventTupleUnpack(t *testing.T) {
 		jsonLog  []byte
 		error    string
 		name     string
-	}{
-		{
-			transferData1,
-			&EventTransfer{},
-			&EventTransfer{Value: bigintExpected},
-			jsonEventTransfer,
-			"",
-			"Can unpack ERC20 Transfer event into structure",
-		}, {
-			transferData1,
-			&[]interface{}{&bigint},
-			&[]interface{}{&bigintExpected},
-			jsonEventTransfer,
-			"",
-			"Can unpack ERC20 Transfer event into slice",
-		}, {
-			transferData1,
-			&EventTransferWithTag{},
-			&EventTransferWithTag{Value1: bigintExpected},
-			jsonEventTransfer,
-			"",
-			"Can unpack ERC20 Transfer event into structure with abi: tag",
-		}, {
-			transferData1,
-			&BadEventTransferWithDuplicatedTag{},
-			&BadEventTransferWithDuplicatedTag{},
-			jsonEventTransfer,
-			"struct: abi tag in 'Value2' already mapped",
-			"Can not unpack ERC20 Transfer event with duplicated abi tag",
-		}, {
-			transferData1,
-			&BadEventTransferWithSameFieldAndTag{},
-			&BadEventTransferWithSameFieldAndTag{},
-			jsonEventTransfer,
-			"abi: multiple variables maps to the same abi field 'value'",
-			"Can not unpack ERC20 Transfer event with a field and a tag mapping to the same abi variable",
-		}, {
-			transferData1,
-			&BadEventTransferWithEmptyTag{},
-			&BadEventTransferWithEmptyTag{},
-			jsonEventTransfer,
-			"struct: abi tag in 'Value' is empty",
-			"Can not unpack ERC20 Transfer event with an empty tag",
-		}, {
-			pledgeData1,
-			&EventPledge{},
-			&EventPledge{
-				addr,
-				bigintExpected2,
-				[3]byte{'u', 's', 'd'},
-			},
-			jsonEventPledge,
-			"",
-			"Can unpack Pledge event into structure",
-		}, {
-			pledgeData1,
-			&[]interface{}{&common.Address{}, &bigint, &[3]byte{}},
-			&[]interface{}{
-				&addr,
-				&bigintExpected2,
-				&[3]byte{'u', 's', 'd'},
-			},
-			jsonEventPledge,
-			"",
-			"Can unpack Pledge event into slice",
-		}, {
-			pledgeData1,
-			&[3]interface{}{&common.Address{}, &bigint, &[3]byte{}},
-			&[3]interface{}{
-				&addr,
-				&bigintExpected2,
-				&[3]byte{'u', 's', 'd'},
-			},
-			jsonEventPledge,
-			"",
-			"Can unpack Pledge event into an array",
-		}, {
-			pledgeData1,
-			&[]interface{}{new(int), 0, 0},
-			&[]interface{}{},
-			jsonEventPledge,
-			"abi: cannot unmarshal common.Address in to int",
-			"Can not unpack Pledge event into slice with wrong types",
-		}, {
-			pledgeData1,
-			&BadEventPledge{},
-			&BadEventPledge{},
-			jsonEventPledge,
-			"abi: cannot unmarshal common.Address in to string",
-			"Can not unpack Pledge event into struct with wrong filed types",
-		}, {
-			pledgeData1,
-			&[]interface{}{common.Address{}, new(big.Int)},
-			&[]interface{}{},
-			jsonEventPledge,
-			"abi: insufficient number of arguments for unpack, want 3, got 2",
-			"Can not unpack Pledge event into too short slice",
-		}, {
-			pledgeData1,
-			new(map[string]interface{}),
-			&[]interface{}{},
-			jsonEventPledge,
-			"abi:[2] cannot unmarshal tuple in to map[string]interface {}",
-			"Can not unpack Pledge event into map",
-		}, {
-			mixedCaseData1,
-			&EventMixedCase{},
-			&EventMixedCase{Value1: bigintExpected, Value2: bigintExpected2, Value3: bigintExpected3},
-			jsonEventMixedCase,
-			"",
-			"Can unpack abi variables with mixed case",
-		},
-	}
+	}{{
+		transferData1,
+		&EventTransfer{},
+		&EventTransfer{Value: bigintExpected},
+		jsonEventTransfer,
+		"",
+		"Can unpack ERC20 Transfer event into structure",
+	}, {
+		transferData1,
+		&[]interface{}{&bigint},
+		&[]interface{}{&bigintExpected},
+		jsonEventTransfer,
+		"",
+		"Can unpack ERC20 Transfer event into slice",
+	}, {
+		transferData1,
+		&EventTransferWithTag{},
+		&EventTransferWithTag{Value1: bigintExpected},
+		jsonEventTransfer,
+		"",
+		"Can unpack ERC20 Transfer event into structure with abi: tag",
+	}, {
+		transferData1,
+		&BadEventTransferWithDuplicatedTag{},
+		&BadEventTransferWithDuplicatedTag{},
+		jsonEventTransfer,
+		"struct: abi tag in 'Value2' already mapped",
+		"Can not unpack ERC20 Transfer event with duplicated abi tag",
+	}, {
+		transferData1,
+		&BadEventTransferWithSameFieldAndTag{},
+		&BadEventTransferWithSameFieldAndTag{},
+		jsonEventTransfer,
+		"abi: multiple variables maps to the same abi field 'value'",
+		"Can not unpack ERC20 Transfer event with a field and a tag mapping to the same abi variable",
+	}, {
+		transferData1,
+		&BadEventTransferWithEmptyTag{},
+		&BadEventTransferWithEmptyTag{},
+		jsonEventTransfer,
+		"struct: abi tag in 'Value' is empty",
+		"Can not unpack ERC20 Transfer event with an empty tag",
+	}, {
+		pledgeData1,
+		&EventPledge{},
+		&EventPledge{
+			addr,
+			bigintExpected2,
+			[3]byte{'u', 's', 'd'}},
+		jsonEventPledge,
+		"",
+		"Can unpack Pledge event into structure",
+	}, {
+		pledgeData1,
+		&[]interface{}{&common.Address{}, &bigint, &[3]byte{}},
+		&[]interface{}{
+			&addr,
+			&bigintExpected2,
+			&[3]byte{'u', 's', 'd'}},
+		jsonEventPledge,
+		"",
+		"Can unpack Pledge event into slice",
+	}, {
+		pledgeData1,
+		&[3]interface{}{&common.Address{}, &bigint, &[3]byte{}},
+		&[3]interface{}{
+			&addr,
+			&bigintExpected2,
+			&[3]byte{'u', 's', 'd'}},
+		jsonEventPledge,
+		"",
+		"Can unpack Pledge event into an array",
+	}, {
+		pledgeData1,
+		&[]interface{}{new(int), 0, 0},
+		&[]interface{}{},
+		jsonEventPledge,
+		"abi: cannot unmarshal common.Address in to int",
+		"Can not unpack Pledge event into slice with wrong types",
+	}, {
+		pledgeData1,
+		&BadEventPledge{},
+		&BadEventPledge{},
+		jsonEventPledge,
+		"abi: cannot unmarshal common.Address in to string",
+		"Can not unpack Pledge event into struct with wrong filed types",
+	}, {
+		pledgeData1,
+		&[]interface{}{common.Address{}, new(big.Int)},
+		&[]interface{}{},
+		jsonEventPledge,
+		"abi: insufficient number of arguments for unpack, want 3, got 2",
+		"Can not unpack Pledge event into too short slice",
+	}, {
+		pledgeData1,
+		new(map[string]interface{}),
+		&[]interface{}{},
+		jsonEventPledge,
+		"abi:[2] cannot unmarshal tuple in to map[string]interface {}",
+		"Can not unpack Pledge event into map",
+	}, {
+		mixedCaseData1,
+		&EventMixedCase{},
+		&EventMixedCase{Value1: bigintExpected, Value2: bigintExpected2, Value3: bigintExpected3},
+		jsonEventMixedCase,
+		"",
+		"Can unpack abi variables with mixed case",
+	}}
 
 	for _, tc := range testCases {
 		assert := assert.New(t)
 		tc := tc
-		t.Run(
-			tc.name, func(t *testing.T) {
-				err := unpackTestEventData(tc.dest, tc.data, tc.jsonLog, assert)
-				if tc.error == "" {
-					assert.Nil(err, "Should be able to unpack event data.")
-					assert.Equal(tc.expected, tc.dest, tc.name)
-				} else {
-					assert.EqualError(err, tc.error, tc.name)
-				}
-			},
-		)
+		t.Run(tc.name, func(t *testing.T) {
+			err := unpackTestEventData(tc.dest, tc.data, tc.jsonLog, assert)
+			if tc.error == "" {
+				assert.Nil(err, "Should be able to unpack event data.")
+				assert.Equal(tc.expected, tc.dest, tc.name)
+			} else {
+				assert.EqualError(err, tc.error, tc.name)
+			}
+		})
 	}
 }
 

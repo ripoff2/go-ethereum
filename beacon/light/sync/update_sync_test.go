@@ -19,8 +19,8 @@ package sync
 import (
 	"testing"
 
-	"github.com/ripoff2/go-ethereum/beacon/light/request"
-	"github.com/ripoff2/go-ethereum/beacon/types"
+	"github.com/ethereum/go-ethereum/beacon/light/request"
+	"github.com/ethereum/go-ethereum/beacon/types"
 )
 
 func TestCheckpointInit(t *testing.T) {
@@ -73,15 +73,13 @@ func TestUpdateSyncParallel(t *testing.T) {
 	ts.ServerEvent(EvNewOptimisticUpdate, testServer2, types.OptimisticUpdate{SignatureSlot: 0x2000*100 + 0x1000})
 
 	// expect 6 requests to be sent
-	ts.Run(
-		1,
+	ts.Run(1,
 		testServer1, ReqUpdates{FirstPeriod: 0, Count: 8},
 		testServer1, ReqUpdates{FirstPeriod: 8, Count: 8},
 		testServer1, ReqUpdates{FirstPeriod: 16, Count: 8},
 		testServer2, ReqUpdates{FirstPeriod: 24, Count: 8},
 		testServer2, ReqUpdates{FirstPeriod: 32, Count: 8},
-		testServer2, ReqUpdates{FirstPeriod: 40, Count: 8},
-	)
+		testServer2, ReqUpdates{FirstPeriod: 40, Count: 8})
 
 	// valid response to request 1; expect 8 periods synced and a new request started
 	ts.RequestEvent(request.EvResponse, ts.Request(1, 1), testRespUpdate(ts.Request(1, 1)))
@@ -94,11 +92,9 @@ func TestUpdateSyncParallel(t *testing.T) {
 	ts.RequestEvent(request.EvResponse, ts.Request(1, 5), testRespUpdate(ts.Request(1, 5)))
 	ts.AddAllowance(testServer2, 2)
 	// expect 2 more requests but no sync progress (responses 4 and 5 cannot be added before 2 and 3)
-	ts.Run(
-		3,
+	ts.Run(3,
 		testServer2, ReqUpdates{FirstPeriod: 56, Count: 8},
-		testServer2, ReqUpdates{FirstPeriod: 64, Count: 8},
-	)
+		testServer2, ReqUpdates{FirstPeriod: 64, Count: 8})
 	chain.ExpNextSyncPeriod(t, 8)
 
 	// soft timeout for requests 2 and 3 (server 1 is overloaded)
@@ -113,12 +109,10 @@ func TestUpdateSyncParallel(t *testing.T) {
 	ts.RequestEvent(request.EvResponse, ts.Request(3, 2), testRespUpdate(ts.Request(3, 2)))
 	ts.AddAllowance(testServer2, 3)
 	// server 2 can now resend requests 2 and 3 (timed out by server 1) and also send a new one
-	ts.Run(
-		5,
+	ts.Run(5,
 		testServer2, ReqUpdates{FirstPeriod: 8, Count: 8},
 		testServer2, ReqUpdates{FirstPeriod: 16, Count: 8},
-		testServer2, ReqUpdates{FirstPeriod: 72, Count: 8},
-	)
+		testServer2, ReqUpdates{FirstPeriod: 72, Count: 8})
 
 	// server 1 finally answers timed out request 2
 	ts.RequestEvent(request.EvResponse, ts.Request(1, 2), testRespUpdate(ts.Request(1, 2)))
@@ -131,11 +125,9 @@ func TestUpdateSyncParallel(t *testing.T) {
 	ts.RequestEvent(request.EvResponse, ts.Request(5, 1), testRespUpdate(ts.Request(5, 1)))
 	ts.RequestEvent(request.EvResponse, ts.Request(5, 2), testRespUpdate(ts.Request(5, 2)))
 	ts.AddAllowance(testServer2, 2)
-	ts.Run(
-		7,
+	ts.Run(7,
 		testServer2, ReqUpdates{FirstPeriod: 88, Count: 8},
-		testServer2, ReqUpdates{FirstPeriod: 96, Count: 4},
-	)
+		testServer2, ReqUpdates{FirstPeriod: 96, Count: 4})
 	// finally the gap is filled, update can process responses up to req6
 	chain.ExpNextSyncPeriod(t, 48)
 

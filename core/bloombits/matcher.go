@@ -26,8 +26,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ripoff2/go-ethereum/common/bitutil"
-	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/common/bitutil"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // bloomIndexes represents the bit indexes inside the bloom filter that belong
@@ -256,9 +256,7 @@ func (m *Matcher) run(begin, end uint64, buffer int, session *MatcherSession) ch
 // binary AND-s the result to the daisy-chain input (source) and forwards it to the daisy-chain output.
 // The matches of each address/topic are calculated by fetching the given sections of the three bloom bit indexes belonging to
 // that address/topic, and binary AND-ing those vectors together.
-func (m *Matcher) subMatch(
-	source chan *partialMatches, dist chan *request, bloom []bloomIndexes, session *MatcherSession,
-) chan *partialMatches {
+func (m *Matcher) subMatch(source chan *partialMatches, dist chan *request, bloom []bloomIndexes, session *MatcherSession) chan *partialMatches {
 	// Start the concurrent schedulers for each bit required by the bloom filter
 	sectionSources := make([][3]chan uint64, len(bloom))
 	sectionSinks := make([][3]chan []byte, len(bloom))
@@ -271,9 +269,7 @@ func (m *Matcher) subMatch(
 		}
 	}
 
-	process := make(
-		chan *partialMatches, cap(source),
-	) // entries from source are forwarded here after fetches have been initiated
+	process := make(chan *partialMatches, cap(source)) // entries from source are forwarded here after fetches have been initiated
 	results := make(chan *partialMatches, cap(source))
 
 	session.pend.Add(2)
@@ -525,13 +521,11 @@ type MatcherSession struct {
 // before returning. The timeout may be used for graceful shutdown, allowing the
 // currently running retrievals to complete before this time.
 func (s *MatcherSession) Close() {
-	s.closer.Do(
-		func() {
-			// Signal termination and wait for all goroutines to tear down
-			close(s.quit)
-			s.pend.Wait()
-		},
-	)
+	s.closer.Do(func() {
+		// Signal termination and wait for all goroutines to tear down
+		close(s.quit)
+		s.pend.Wait()
+	})
 }
 
 // Error returns any failure encountered during the matching session.

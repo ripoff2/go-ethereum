@@ -26,10 +26,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/common/math"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 type diffTest struct {
@@ -78,13 +78,11 @@ func TestCalcDifficulty(t *testing.T) {
 
 	for name, test := range tests {
 		number := new(big.Int).Sub(test.CurrentBlocknumber, big.NewInt(1))
-		diff := CalcDifficulty(
-			config, test.CurrentTimestamp, &types.Header{
-				Number:     number,
-				Time:       test.ParentTimestamp,
-				Difficulty: test.ParentDifficulty,
-			},
-		)
+		diff := CalcDifficulty(config, test.CurrentTimestamp, &types.Header{
+			Number:     number,
+			Time:       test.ParentTimestamp,
+			Difficulty: test.ParentDifficulty,
+		})
 		if diff.Cmp(test.CurrentDifficulty) != 0 {
 			t.Error(name, "failed. Expected", test.CurrentDifficulty, "and calculated", diff)
 		}
@@ -134,11 +132,8 @@ func TestDifficultyCalculators(t *testing.T) {
 				continue
 			}
 			if want.Cmp(have) != 0 {
-				t.Fatalf(
-					"pair %d: want %x have %x\nparent.Number: %x\np.Time: %x\nc.Time: %x\nBombdelay: %v\n", i, want,
-					have,
-					header.Number, header.Time, time, bombDelay,
-				)
+				t.Fatalf("pair %d: want %x have %x\nparent.Number: %x\np.Time: %x\nc.Time: %x\nBombdelay: %v\n", i, want, have,
+					header.Number, header.Time, time, bombDelay)
 			}
 		}
 	}
@@ -154,52 +149,40 @@ func BenchmarkDifficultyCalculator(b *testing.B) {
 		Number:     big.NewInt(500000),
 		Time:       1000000,
 	}
-	b.Run(
-		"big-frontier", func(b *testing.B) {
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				calcDifficultyFrontier(1000014, h)
-			}
-		},
-	)
-	b.Run(
-		"u256-frontier", func(b *testing.B) {
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				CalcDifficultyFrontierU256(1000014, h)
-			}
-		},
-	)
-	b.Run(
-		"big-homestead", func(b *testing.B) {
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				calcDifficultyHomestead(1000014, h)
-			}
-		},
-	)
-	b.Run(
-		"u256-homestead", func(b *testing.B) {
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				CalcDifficultyHomesteadU256(1000014, h)
-			}
-		},
-	)
-	b.Run(
-		"big-generic", func(b *testing.B) {
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				x1(1000014, h)
-			}
-		},
-	)
-	b.Run(
-		"u256-generic", func(b *testing.B) {
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				x2(1000014, h)
-			}
-		},
-	)
+	b.Run("big-frontier", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			calcDifficultyFrontier(1000014, h)
+		}
+	})
+	b.Run("u256-frontier", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			CalcDifficultyFrontierU256(1000014, h)
+		}
+	})
+	b.Run("big-homestead", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			calcDifficultyHomestead(1000014, h)
+		}
+	})
+	b.Run("u256-homestead", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			CalcDifficultyHomesteadU256(1000014, h)
+		}
+	})
+	b.Run("big-generic", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			x1(1000014, h)
+		}
+	})
+	b.Run("u256-generic", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			x2(1000014, h)
+		}
+	})
 }
