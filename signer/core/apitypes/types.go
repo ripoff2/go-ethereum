@@ -30,14 +30,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/crypto/kzg4844"
 )
 
 var typedDataReferenceTypeRegexp = regexp.MustCompile(`^[A-Za-z](\w*)(\[\d*\])*$`)
@@ -95,7 +95,7 @@ type SendTxArgs struct {
 
 	// We accept "data" and "input" for backwards-compatibility reasons.
 	// "input" is the newer name and should be preferred by clients.
-	// Issue detail: https://github.com/ethereum/go-ethereum/issues/15628
+	// Issue detail: https://github.com/ripoff2/go-ethereum/issues/15628
 	Data  *hexutil.Bytes `json:"data,omitempty"`
 	Input *hexutil.Bytes `json:"input,omitempty"`
 
@@ -445,7 +445,9 @@ func (typedData *TypedData) TypeHash(primaryType string) hexutil.Bytes {
 // `enc(value₁) ‖ enc(value₂) ‖ … ‖ enc(valueₙ)`
 //
 // each encoded member is 32-byte long
-func (typedData *TypedData) EncodeData(primaryType string, data map[string]interface{}, depth int) (hexutil.Bytes, error) {
+func (typedData *TypedData) EncodeData(primaryType string, data map[string]interface{}, depth int) (
+	hexutil.Bytes, error,
+) {
 	if err := typedData.validate(); err != nil {
 		return nil, err
 	}
@@ -718,16 +720,20 @@ func (typedData *TypedData) Format() ([]*NameValueType, error) {
 		return nil, err
 	}
 	var nvts []*NameValueType
-	nvts = append(nvts, &NameValueType{
-		Name:  "EIP712Domain",
-		Value: domain,
-		Typ:   "domain",
-	})
-	nvts = append(nvts, &NameValueType{
-		Name:  typedData.PrimaryType,
-		Value: ptype,
-		Typ:   "primary type",
-	})
+	nvts = append(
+		nvts, &NameValueType{
+			Name:  "EIP712Domain",
+			Value: domain,
+			Typ:   "domain",
+		},
+	)
+	nvts = append(
+		nvts, &NameValueType{
+			Name:  typedData.PrimaryType,
+			Value: ptype,
+			Typ:   "primary type",
+		},
+	)
 	return nvts, nil
 }
 

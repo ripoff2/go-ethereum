@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
 )
 
 type v2Reporter struct {
@@ -26,7 +26,10 @@ type v2Reporter struct {
 }
 
 // InfluxDBV2WithTags starts a InfluxDB reporter which will post the from the given metrics.Registry at each d interval with the specified tags
-func InfluxDBV2WithTags(r metrics.Registry, d time.Duration, endpoint string, token string, bucket string, organization string, namespace string, tags map[string]string) {
+func InfluxDBV2WithTags(
+	r metrics.Registry, d time.Duration, endpoint string, token string, bucket string, organization string,
+	namespace string, tags map[string]string,
+) {
 	rep := &v2Reporter{
 		reg:          r,
 		interval:     d,
@@ -77,20 +80,22 @@ func (r *v2Reporter) run() {
 // send sends the measurements. If provided tstamp is >0, it is used. Otherwise,
 // a 'fresh' timestamp is used.
 func (r *v2Reporter) send(tstamp int64) {
-	r.reg.Each(func(name string, i interface{}) {
-		var now time.Time
-		if tstamp <= 0 {
-			now = time.Now()
-		} else {
-			now = time.Unix(tstamp, 0)
-		}
-		measurement, fields := readMeter(r.namespace, name, i)
-		if fields == nil {
-			return
-		}
-		pt := influxdb2.NewPoint(measurement, r.tags, fields, now)
-		r.write.WritePoint(pt)
-	})
+	r.reg.Each(
+		func(name string, i interface{}) {
+			var now time.Time
+			if tstamp <= 0 {
+				now = time.Now()
+			} else {
+				now = time.Unix(tstamp, 0)
+			}
+			measurement, fields := readMeter(r.namespace, name, i)
+			if fields == nil {
+				return
+			}
+			pt := influxdb2.NewPoint(measurement, r.tags, fields, now)
+			r.write.WritePoint(pt)
+		},
+	)
 	// Force all unwritten data to be sent
 	r.write.Flush()
 }

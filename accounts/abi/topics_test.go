@@ -22,8 +22,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/crypto"
 )
 
 func TestMakeTopics(t *testing.T) {
@@ -57,10 +57,12 @@ func TestMakeTopics(t *testing.T) {
 		},
 		{
 			"support positive *big.Int types in topics",
-			args{[][]interface{}{
-				{big.NewInt(1)},
-				{big.NewInt(1).Lsh(big.NewInt(2), 254)},
-			}},
+			args{
+				[][]interface{}{
+					{big.NewInt(1)},
+					{big.NewInt(1).Lsh(big.NewInt(2), 254)},
+				},
+			},
 			[][]common.Hash{
 				{common.HexToHash("0000000000000000000000000000000000000000000000000000000000000001")},
 				{common.Hash{128}},
@@ -69,10 +71,12 @@ func TestMakeTopics(t *testing.T) {
 		},
 		{
 			"support negative *big.Int types in topics",
-			args{[][]interface{}{
-				{big.NewInt(-1)},
-				{big.NewInt(math.MinInt64)},
-			}},
+			args{
+				[][]interface{}{
+					{big.NewInt(-1)},
+					{big.NewInt(math.MinInt64)},
+				},
+			},
 			[][]common.Hash{
 				{common.MaxHash},
 				{common.HexToHash("ffffffffffffffffffffffffffffffffffffffffffffffff8000000000000000")},
@@ -81,45 +85,105 @@ func TestMakeTopics(t *testing.T) {
 		},
 		{
 			"support boolean types in topics",
-			args{[][]interface{}{
-				{true},
-				{false},
-			}},
+			args{
+				[][]interface{}{
+					{true},
+					{false},
+				},
+			},
 			[][]common.Hash{
-				{common.Hash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}},
+				{
+					common.Hash{
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+					},
+				},
 				{common.Hash{0}},
 			},
 			false,
 		},
 		{
 			"support int/uint(8/16/32/64) types in topics",
-			args{[][]interface{}{
-				{int8(-2)},
-				{int16(-3)},
-				{int32(-4)},
-				{int64(-5)},
-				{int8(1)},
-				{int16(256)},
-				{int32(65536)},
-				{int64(4294967296)},
-				{uint8(1)},
-				{uint16(256)},
-				{uint32(65536)},
-				{uint64(4294967296)},
-			}},
+			args{
+				[][]interface{}{
+					{int8(-2)},
+					{int16(-3)},
+					{int32(-4)},
+					{int64(-5)},
+					{int8(1)},
+					{int16(256)},
+					{int32(65536)},
+					{int64(4294967296)},
+					{uint8(1)},
+					{uint16(256)},
+					{uint32(65536)},
+					{uint64(4294967296)},
+				},
+			},
 			[][]common.Hash{
-				{common.Hash{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 254}},
-				{common.Hash{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 253}},
-				{common.Hash{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 252}},
-				{common.Hash{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 251}},
-				{common.Hash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}},
-				{common.Hash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0}},
-				{common.Hash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0}},
-				{common.Hash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0}},
-				{common.Hash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}},
-				{common.Hash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0}},
-				{common.Hash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0}},
-				{common.Hash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0}},
+				{
+					common.Hash{
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 254,
+					},
+				},
+				{
+					common.Hash{
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 253,
+					},
+				},
+				{
+					common.Hash{
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 252,
+					},
+				},
+				{
+					common.Hash{
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 251,
+					},
+				},
+				{
+					common.Hash{
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+					},
+				},
+				{
+					common.Hash{
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+					},
+				},
+				{
+					common.Hash{
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+					},
+				},
+				{
+					common.Hash{
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+					},
+				},
+				{
+					common.Hash{
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+					},
+				},
+				{
+					common.Hash{
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+					},
+				},
+				{
+					common.Hash{
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+					},
+				},
+				{
+					common.Hash{
+						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+					},
+				},
 			},
 			false,
 		},
@@ -138,17 +202,19 @@ func TestMakeTopics(t *testing.T) {
 	}
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			got, err := MakeTopics(tt.args.query...)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("makeTopics() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("makeTopics() = %v, want %v", got, tt.want)
-			}
-		})
+		t.Run(
+			tt.name, func(t *testing.T) {
+				t.Parallel()
+				got, err := MakeTopics(tt.args.query...)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("makeTopics() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("makeTopics() = %v, want %v", got, tt.want)
+				}
+			},
+		)
 	}
 }
 
@@ -201,11 +267,13 @@ func setupTopicsTests() []topicTest {
 				resultMap: func() map[string]interface{} {
 					return map[string]interface{}{"staticBytes": [5]byte{1, 2, 3, 4, 5}}
 				},
-				fields: Arguments{Argument{
-					Name:    "staticBytes",
-					Type:    bytesType,
-					Indexed: true,
-				}},
+				fields: Arguments{
+					Argument{
+						Name:    "staticBytes",
+						Type:    bytesType,
+						Indexed: true,
+					},
+				},
 				topics: []common.Hash{
 					{1, 2, 3, 4, 5},
 				},
@@ -220,14 +288,18 @@ func setupTopicsTests() []topicTest {
 				resultMap: func() map[string]interface{} {
 					return map[string]interface{}{"int8Value": int8(-1)}
 				},
-				fields: Arguments{Argument{
-					Name:    "int8Value",
-					Type:    int8Type,
-					Indexed: true,
-				}},
+				fields: Arguments{
+					Argument{
+						Name:    "int8Value",
+						Type:    int8Type,
+						Indexed: true,
+					},
+				},
 				topics: []common.Hash{
-					{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255},
+					{
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+					},
 				},
 			},
 			wantErr: false,
@@ -240,14 +312,18 @@ func setupTopicsTests() []topicTest {
 				resultMap: func() map[string]interface{} {
 					return map[string]interface{}{"int256Value": big.NewInt(-1)}
 				},
-				fields: Arguments{Argument{
-					Name:    "int256Value",
-					Type:    int256Type,
-					Indexed: true,
-				}},
+				fields: Arguments{
+					Argument{
+						Name:    "int256Value",
+						Type:    int256Type,
+						Indexed: true,
+					},
+				},
 				topics: []common.Hash{
-					{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255},
+					{
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+					},
 				},
 			},
 			wantErr: false,
@@ -260,11 +336,13 @@ func setupTopicsTests() []topicTest {
 				resultMap: func() map[string]interface{} {
 					return map[string]interface{}{"hashValue": crypto.Keccak256Hash([]byte("stringtopic"))}
 				},
-				fields: Arguments{Argument{
-					Name:    "hashValue",
-					Type:    stringType,
-					Indexed: true,
-				}},
+				fields: Arguments{
+					Argument{
+						Name:    "hashValue",
+						Type:    stringType,
+						Indexed: true,
+					},
+				},
 				topics: []common.Hash{
 					crypto.Keccak256Hash([]byte("stringtopic")),
 				},
@@ -276,21 +354,33 @@ func setupTopicsTests() []topicTest {
 			args: args{
 				createObj: func() interface{} { return &funcStruct{} },
 				resultObj: func() interface{} {
-					return &funcStruct{[24]byte{255, 255, 255, 255, 255, 255, 255, 255,
-						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}}
+					return &funcStruct{
+						[24]byte{
+							255, 255, 255, 255, 255, 255, 255, 255,
+							255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+						},
+					}
 				},
 				resultMap: func() map[string]interface{} {
-					return map[string]interface{}{"funcValue": [24]byte{255, 255, 255, 255, 255, 255, 255, 255,
-						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}}
+					return map[string]interface{}{
+						"funcValue": [24]byte{
+							255, 255, 255, 255, 255, 255, 255, 255,
+							255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+						},
+					}
 				},
-				fields: Arguments{Argument{
-					Name:    "funcValue",
-					Type:    funcType,
-					Indexed: true,
-				}},
+				fields: Arguments{
+					Argument{
+						Name:    "funcValue",
+						Type:    funcType,
+						Indexed: true,
+					},
+				},
 				topics: []common.Hash{
-					{0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255,
-						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255},
+					{
+						0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255,
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+					},
 				},
 			},
 			wantErr: false,
@@ -301,11 +391,13 @@ func setupTopicsTests() []topicTest {
 				createObj: func() interface{} { return nil },
 				resultObj: func() interface{} { return nil },
 				resultMap: func() map[string]interface{} { return make(map[string]interface{}) },
-				fields: Arguments{Argument{
-					Name:    "tupletype",
-					Type:    tupleType,
-					Indexed: true,
-				}},
+				fields: Arguments{
+					Argument{
+						Name:    "tupletype",
+						Type:    tupleType,
+						Indexed: true,
+					},
+				},
 				topics: []common.Hash{},
 			},
 			wantErr: true,
@@ -316,14 +408,18 @@ func setupTopicsTests() []topicTest {
 				createObj: func() interface{} { return &int256Struct{} },
 				resultObj: func() interface{} { return &int256Struct{} },
 				resultMap: func() map[string]interface{} { return make(map[string]interface{}) },
-				fields: Arguments{Argument{
-					Name:    "int256Value",
-					Type:    int256Type,
-					Indexed: false,
-				}},
+				fields: Arguments{
+					Argument{
+						Name:    "int256Value",
+						Type:    int256Type,
+						Indexed: false,
+					},
+				},
 				topics: []common.Hash{
-					{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255},
+					{
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+					},
 				},
 			},
 			wantErr: true,
@@ -334,11 +430,13 @@ func setupTopicsTests() []topicTest {
 				createObj: func() interface{} { return &tupleType },
 				resultObj: func() interface{} { return &tupleType },
 				resultMap: func() map[string]interface{} { return make(map[string]interface{}) },
-				fields: Arguments{Argument{
-					Name:    "tupletype",
-					Type:    tupleType,
-					Indexed: true,
-				}},
+				fields: Arguments{
+					Argument{
+						Name:    "tupletype",
+						Type:    tupleType,
+						Indexed: true,
+					},
+				},
 				topics: []common.Hash{{0}},
 			},
 			wantErr: true,
@@ -351,14 +449,18 @@ func setupTopicsTests() []topicTest {
 				resultMap: func() map[string]interface{} {
 					return make(map[string]interface{})
 				},
-				fields: Arguments{Argument{
-					Name:    "funcValue",
-					Type:    funcType,
-					Indexed: true,
-				}},
+				fields: Arguments{
+					Argument{
+						Name:    "funcValue",
+						Type:    funcType,
+						Indexed: true,
+					},
+				},
 				topics: []common.Hash{
-					{0, 0, 0, 0, 0, 0, 0, 128, 255, 255, 255, 255, 255, 255, 255, 255,
-						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255},
+					{
+						0, 0, 0, 0, 0, 0, 0, 128, 255, 255, 255, 255, 255, 255, 255, 255,
+						255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+					},
 				},
 			},
 			wantErr: true,
@@ -374,17 +476,19 @@ func TestParseTopics(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			createObj := tt.args.createObj()
-			if err := ParseTopics(createObj, tt.args.fields, tt.args.topics); (err != nil) != tt.wantErr {
-				t.Errorf("parseTopics() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			resultObj := tt.args.resultObj()
-			if !reflect.DeepEqual(createObj, resultObj) {
-				t.Errorf("parseTopics() = %v, want %v", createObj, resultObj)
-			}
-		})
+		t.Run(
+			tt.name, func(t *testing.T) {
+				t.Parallel()
+				createObj := tt.args.createObj()
+				if err := ParseTopics(createObj, tt.args.fields, tt.args.topics); (err != nil) != tt.wantErr {
+					t.Errorf("parseTopics() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				resultObj := tt.args.resultObj()
+				if !reflect.DeepEqual(createObj, resultObj) {
+					t.Errorf("parseTopics() = %v, want %v", createObj, resultObj)
+				}
+			},
+		)
 	}
 }
 
@@ -394,16 +498,18 @@ func TestParseTopicsIntoMap(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			outMap := make(map[string]interface{})
-			if err := ParseTopicsIntoMap(outMap, tt.args.fields, tt.args.topics); (err != nil) != tt.wantErr {
-				t.Errorf("parseTopicsIntoMap() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			resultMap := tt.args.resultMap()
-			if !reflect.DeepEqual(outMap, resultMap) {
-				t.Errorf("parseTopicsIntoMap() = %v, want %v", outMap, resultMap)
-			}
-		})
+		t.Run(
+			tt.name, func(t *testing.T) {
+				t.Parallel()
+				outMap := make(map[string]interface{})
+				if err := ParseTopicsIntoMap(outMap, tt.args.fields, tt.args.topics); (err != nil) != tt.wantErr {
+					t.Errorf("parseTopicsIntoMap() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				resultMap := tt.args.resultMap()
+				if !reflect.DeepEqual(outMap, resultMap) {
+					t.Errorf("parseTopicsIntoMap() = %v, want %v", outMap, resultMap)
+				}
+			},
+		)
 	}
 }

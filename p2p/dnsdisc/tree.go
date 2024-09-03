@@ -27,10 +27,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/enr"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -215,9 +215,11 @@ func (t *Tree) build(entries []entry) entry {
 }
 
 func sortByID(nodes []*enode.Node) []*enode.Node {
-	slices.SortFunc(nodes, func(a, b *enode.Node) int {
-		return bytes.Compare(a.ID().Bytes(), b.ID().Bytes())
-	})
+	slices.SortFunc(
+		nodes, func(a, b *enode.Node) int {
+			return bytes.Compare(a.ID().Bytes(), b.ID().Bytes())
+		},
+	)
 	return nodes
 }
 

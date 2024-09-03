@@ -21,10 +21,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 // DownloaderAPI provides an API which gives information about the current
@@ -179,20 +179,22 @@ type SyncStatusSubscription struct {
 // The status channel that was passed to subscribeSyncStatus isn't used anymore
 // after this method returns.
 func (s *SyncStatusSubscription) Unsubscribe() {
-	s.unsubOnce.Do(func() {
-		req := uninstallSyncSubscriptionRequest{s.c, make(chan interface{})}
-		s.api.uninstallSyncSubscription <- &req
+	s.unsubOnce.Do(
+		func() {
+			req := uninstallSyncSubscriptionRequest{s.c, make(chan interface{})}
+			s.api.uninstallSyncSubscription <- &req
 
-		for {
-			select {
-			case <-s.c:
-				// drop new status events until uninstall confirmation
-				continue
-			case <-req.uninstalled:
-				return
+			for {
+				select {
+				case <-s.c:
+					// drop new status events until uninstall confirmation
+					continue
+				case <-req.uninstalled:
+					return
+				}
 			}
-		}
-	})
+		},
+	)
 }
 
 // SubscribeSyncStatus creates a subscription that will broadcast new synchronisation updates.

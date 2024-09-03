@@ -23,8 +23,8 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core/types"
 )
 
 type fuzzer struct {
@@ -138,8 +138,13 @@ func (f *fuzzer) fuzz() int {
 		want := pair.bigFn(time, header)
 		have := pair.u256Fn(time, header)
 		if want.Cmp(have) != 0 {
-			panic(fmt.Sprintf("pair %d: want %x have %x\nparent.Number: %x\np.Time: %x\nc.Time: %x\nBombdelay: %v\n", i, want, have,
-				header.Number, header.Time, time, bombDelay))
+			panic(
+				fmt.Sprintf(
+					"pair %d: want %x have %x\nparent.Number: %x\np.Time: %x\nc.Time: %x\nBombdelay: %v\n", i, want,
+					have,
+					header.Number, header.Time, time, bombDelay,
+				),
+			)
 		}
 	}
 	return 1
