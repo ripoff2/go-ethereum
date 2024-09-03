@@ -22,10 +22,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/ethdb"
-	"github.com/ripoff2/go-ethereum/log"
-	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 const (

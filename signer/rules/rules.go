@@ -24,11 +24,11 @@ import (
 	"strings"
 
 	"github.com/dop251/goja"
-	"github.com/ripoff2/go-ethereum/internal/ethapi"
-	"github.com/ripoff2/go-ethereum/internal/jsre/deps"
-	"github.com/ripoff2/go-ethereum/log"
-	"github.com/ripoff2/go-ethereum/signer/core"
-	"github.com/ripoff2/go-ethereum/signer/storage"
+	"github.com/ethereum/go-ethereum/internal/ethapi"
+	"github.com/ethereum/go-ethereum/internal/jsre/deps"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/signer/core"
+	"github.com/ethereum/go-ethereum/signer/storage"
 )
 
 // consoleOutput is an override for the console.log and console.error methods to
@@ -79,24 +79,20 @@ func (r *rulesetUI) execute(jsfunc string, jsarg interface{}) (goja.Value, error
 	vm.Set("console", consoleObj)
 
 	storageObj := vm.NewObject()
-	storageObj.Set(
-		"put", func(call goja.FunctionCall) goja.Value {
-			key, val := call.Argument(0).String(), call.Argument(1).String()
-			if val == "" {
-				r.storage.Del(key)
-			} else {
-				r.storage.Put(key, val)
-			}
-			return goja.Null()
-		},
-	)
-	storageObj.Set(
-		"get", func(call goja.FunctionCall) goja.Value {
-			goval, _ := r.storage.Get(call.Argument(0).String())
-			jsval := vm.ToValue(goval)
-			return jsval
-		},
-	)
+	storageObj.Set("put", func(call goja.FunctionCall) goja.Value {
+		key, val := call.Argument(0).String(), call.Argument(1).String()
+		if val == "" {
+			r.storage.Del(key)
+		} else {
+			r.storage.Put(key, val)
+		}
+		return goja.Null()
+	})
+	storageObj.Set("get", func(call goja.FunctionCall) goja.Value {
+		goval, _ := r.storage.Get(call.Argument(0).String())
+		jsval := vm.ToValue(goval)
+		return jsval
+	})
 	vm.Set("storage", storageObj)
 
 	// Load bootstrap libraries
@@ -165,8 +161,7 @@ func (r *rulesetUI) ApproveTx(request *core.SignTxRequest) (core.SignTxResponse,
 	if approved {
 		return core.SignTxResponse{
 				Transaction: request.Transaction,
-				Approved:    true,
-			},
+				Approved:    true},
 			nil
 	}
 	return core.SignTxResponse{Approved: false}, err

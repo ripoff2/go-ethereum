@@ -23,10 +23,10 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/common/mclock"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/eth/fetcher"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/mclock"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/fetcher"
 )
 
 var (
@@ -44,9 +44,7 @@ func init() {
 	}
 	txs = make([]*types.Transaction, 65536) // We need to bump enough to hit all the limits
 	for i := 0; i < len(txs); i++ {
-		txs[i] = types.NewTransaction(
-			rand.Uint64(), common.Address{byte(rand.Intn(256))}, new(big.Int), 0, new(big.Int), nil,
-		)
+		txs[i] = types.NewTransaction(rand.Uint64(), common.Address{byte(rand.Intn(256))}, new(big.Int), 0, new(big.Int), nil)
 	}
 }
 

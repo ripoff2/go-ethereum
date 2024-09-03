@@ -23,7 +23,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/ripoff2/go-ethereum/rlp/internal/rlpstruct"
+	"github.com/ethereum/go-ethereum/rlp/internal/rlpstruct"
 )
 
 // typeinfo is an entry in the type cache.
@@ -128,15 +128,13 @@ func structFields(typ reflect.Type) (fields []field, err error) {
 	var allStructFields []rlpstruct.Field
 	for i := 0; i < typ.NumField(); i++ {
 		rf := typ.Field(i)
-		allStructFields = append(
-			allStructFields, rlpstruct.Field{
-				Name:     rf.Name,
-				Index:    i,
-				Exported: rf.PkgPath == "",
-				Tag:      string(rf.Tag),
-				Type:     *rtypeToStructType(rf.Type, nil),
-			},
-		)
+		allStructFields = append(allStructFields, rlpstruct.Field{
+			Name:     rf.Name,
+			Index:    i,
+			Exported: rf.PkgPath == "",
+			Tag:      string(rf.Tag),
+			Type:     *rtypeToStructType(rf.Type, nil),
+		})
 	}
 
 	// Filter/validate fields.

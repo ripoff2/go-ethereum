@@ -30,7 +30,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 var (
@@ -199,21 +199,19 @@ func (tm *testMatcher) walk(t *testing.T, dir string, runTest interface{}) {
 		fmt.Fprintf(os.Stderr, "can't find test files in %s, did you clone the tests submodule?\n", dir)
 		t.Skip("missing test files")
 	}
-	err = filepath.Walk(
-		dir, func(path string, info os.FileInfo, err error) error {
-			name := filepath.ToSlash(strings.TrimPrefix(path, dir+string(filepath.Separator)))
-			if info.IsDir() {
-				if _, skipload := tm.findSkip(name + "/"); skipload {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			if filepath.Ext(path) == ".json" {
-				t.Run(name, func(t *testing.T) { tm.runTestFile(t, path, name, runTest) })
+	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		name := filepath.ToSlash(strings.TrimPrefix(path, dir+string(filepath.Separator)))
+		if info.IsDir() {
+			if _, skipload := tm.findSkip(name + "/"); skipload {
+				return filepath.SkipDir
 			}
 			return nil
-		},
-	)
+		}
+		if filepath.Ext(path) == ".json" {
+			t.Run(name, func(t *testing.T) { tm.runTestFile(t, path, name, runTest) })
+		}
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -243,14 +241,12 @@ func (tm *testMatcher) runTestFile(t *testing.T, path, name string, runTest inte
 	} else {
 		for _, key := range keys {
 			name := name + "/" + key
-			t.Run(
-				key, func(t *testing.T) {
-					if r, _ := tm.findSkip(name); r != "" {
-						t.Skip(r)
-					}
-					runTestFunc(runTest, t, name, m, key)
-				},
-			)
+			t.Run(key, func(t *testing.T) {
+				if r, _ := tm.findSkip(name); r != "" {
+					t.Skip(r)
+				}
+				runTestFunc(runTest, t, name, m, key)
+			})
 		}
 	}
 }
@@ -277,24 +273,20 @@ func sortedMapKeys(m reflect.Value) []string {
 }
 
 func runTestFunc(runTest interface{}, t *testing.T, name string, m reflect.Value, key string) {
-	reflect.ValueOf(runTest).Call(
-		[]reflect.Value{
-			reflect.ValueOf(t),
-			reflect.ValueOf(name),
-			m.MapIndex(reflect.ValueOf(key)),
-		},
-	)
+	reflect.ValueOf(runTest).Call([]reflect.Value{
+		reflect.ValueOf(t),
+		reflect.ValueOf(name),
+		m.MapIndex(reflect.ValueOf(key)),
+	})
 }
 
 func TestMatcherRunonlylist(t *testing.T) {
 	t.Parallel()
 	tm := new(testMatcher)
 	tm.runonly("invalid*")
-	tm.walk(
-		t, rlpTestDir, func(t *testing.T, name string, test *RLPTest) {
-			if name[:len("invalidRLPTest.json")] != "invalidRLPTest.json" {
-				t.Fatalf("invalid test found: %s != invalidRLPTest.json", name)
-			}
-		},
-	)
+	tm.walk(t, rlpTestDir, func(t *testing.T, name string, test *RLPTest) {
+		if name[:len("invalidRLPTest.json")] != "invalidRLPTest.json" {
+			t.Fatalf("invalid test found: %s != invalidRLPTest.json", name)
+		}
+	})
 }

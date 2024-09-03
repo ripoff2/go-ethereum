@@ -21,15 +21,15 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/common/math"
-	"github.com/ripoff2/go-ethereum/consensus/ethash"
-	"github.com/ripoff2/go-ethereum/core/rawdb"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/core/vm"
-	"github.com/ripoff2/go-ethereum/crypto"
-	"github.com/ripoff2/go-ethereum/ethdb"
-	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/consensus/ethash"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 func BenchmarkInsertChain_empty_memdb(b *testing.B) {
@@ -89,16 +89,14 @@ func genValueTx(nbytes int) func(int, *BlockGen) {
 		if gen.header.BaseFee != nil {
 			gasPrice = gen.header.BaseFee
 		}
-		tx, _ := types.SignNewTx(
-			benchRootKey, signer, &types.LegacyTx{
-				Nonce:    gen.TxNonce(benchRootAddr),
-				To:       &toaddr,
-				Value:    big.NewInt(1),
-				Gas:      gas,
-				Data:     data,
-				GasPrice: gasPrice,
-			},
-		)
+		tx, _ := types.SignNewTx(benchRootKey, signer, &types.LegacyTx{
+			Nonce:    gen.TxNonce(benchRootAddr),
+			To:       &toaddr,
+			Value:    big.NewInt(1),
+			Gas:      gas,
+			Data:     data,
+			GasPrice: gasPrice,
+		})
 		gen.AddTx(tx)
 	}
 }
@@ -143,16 +141,14 @@ func genTxRing(naccounts int) func(int, *BlockGen) {
 			if availableFunds.Cmp(big.NewInt(1)) < 0 {
 				panic("not enough funds")
 			}
-			tx, err := types.SignNewTx(
-				ringKeys[from], signer,
+			tx, err := types.SignNewTx(ringKeys[from], signer,
 				&types.LegacyTx{
 					Nonce:    gen.TxNonce(ringAddrs[from]),
 					To:       &ringAddrs[to],
 					Value:    availableFunds,
 					Gas:      params.TxGas,
 					GasPrice: gasPrice,
-				},
-			)
+				})
 			if err != nil {
 				panic(err)
 			}

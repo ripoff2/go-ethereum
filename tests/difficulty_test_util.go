@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/common/math"
-	"github.com/ripoff2/go-ethereum/consensus/ethash"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/consensus/ethash"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 //go:generate go run github.com/fjl/gencodec -type DifficultyTest -field-override difficultyTestMarshaling -out gen_difficultytest.go
@@ -60,11 +60,9 @@ func (test *DifficultyTest) Run(config *params.ChainConfig) error {
 	exp := test.CurrentDifficulty
 
 	if actual.Cmp(exp) != 0 {
-		return fmt.Errorf(
-			"parent[time %v diff %v unclehash:%x] child[time %v number %v] diff %v != expected %v",
+		return fmt.Errorf("parent[time %v diff %v unclehash:%x] child[time %v number %v] diff %v != expected %v",
 			test.ParentTimestamp, test.ParentDifficulty, test.UncleHash,
-			test.CurrentTimestamp, test.CurrentBlockNumber, actual, exp,
-		)
+			test.CurrentTimestamp, test.CurrentBlockNumber, actual, exp)
 	}
 	return nil
 }

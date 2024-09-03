@@ -21,8 +21,8 @@ import (
 	"container/heap"
 	"errors"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 // NodeResolver is used for looking up trie nodes before reaching into the real
@@ -441,9 +441,7 @@ func (st *nodeIteratorState) resolve(it *nodeIterator, path []byte) error {
 	return nil
 }
 
-func (it *nodeIterator) findChild(n *fullNode, index int, ancestor common.Hash) (
-	node, *nodeIteratorState, []byte, int,
-) {
+func (it *nodeIterator) findChild(n *fullNode, index int, ancestor common.Hash) (node, *nodeIteratorState, []byte, int) {
 	var (
 		path      = it.path
 		child     node
@@ -497,9 +495,7 @@ func (it *nodeIterator) nextChild(parent *nodeIteratorState, ancestor common.Has
 
 // nextChildAt is similar to nextChild, except that it targets a child as close to the
 // target key as possible, thus skipping siblings.
-func (it *nodeIterator) nextChildAt(parent *nodeIteratorState, ancestor common.Hash, key []byte) (
-	*nodeIteratorState, []byte, bool,
-) {
+func (it *nodeIterator) nextChildAt(parent *nodeIteratorState, ancestor common.Hash, key []byte) (*nodeIteratorState, []byte, bool) {
 	switch n := parent.node.(type) {
 	case *fullNode:
 		// Full node, move to the first non-nil child before the desired key position
@@ -816,9 +812,7 @@ func (it *unionIterator) Next(descend bool) bool {
 
 	// Skip over other nodes as long as they're identical, or, if we're not descending, as
 	// long as they have the same prefix as the current node.
-	for len(*it.items) > 0 && ((!descend && bytes.HasPrefix((*it.items)[0].Path(), least.Path())) || compareNodes(
-		least, (*it.items)[0],
-	) == 0) {
+	for len(*it.items) > 0 && ((!descend && bytes.HasPrefix((*it.items)[0].Path(), least.Path())) || compareNodes(least, (*it.items)[0]) == 0) {
 		skipped := heap.Pop(it.items).(NodeIterator)
 		// Skip the whole subtree if the nodes have hashes; otherwise just skip this node
 		if skipped.Next(skipped.Hash() == common.Hash{}) {

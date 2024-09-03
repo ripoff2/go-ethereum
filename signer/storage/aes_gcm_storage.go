@@ -24,7 +24,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 type storedCredential struct {

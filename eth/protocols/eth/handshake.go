@@ -22,10 +22,10 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/core/forkid"
-	"github.com/ripoff2/go-ethereum/metrics"
-	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/forkid"
+	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ethereum/go-ethereum/p2p"
 )
 
 const (
@@ -36,25 +36,21 @@ const (
 
 // Handshake executes the eth protocol handshake, negotiating version number,
 // network IDs, difficulties, head and genesis blocks.
-func (p *Peer) Handshake(
-	network uint64, td *big.Int, head common.Hash, genesis common.Hash, forkID forkid.ID, forkFilter forkid.Filter,
-) error {
+func (p *Peer) Handshake(network uint64, td *big.Int, head common.Hash, genesis common.Hash, forkID forkid.ID, forkFilter forkid.Filter) error {
 	// Send out own handshake in a new thread
 	errc := make(chan error, 2)
 
 	var status StatusPacket // safe to read after two values have been received from errc
 
 	go func() {
-		errc <- p2p.Send(
-			p.rw, StatusMsg, &StatusPacket{
-				ProtocolVersion: uint32(p.version),
-				NetworkID:       network,
-				TD:              td,
-				Head:            head,
-				Genesis:         genesis,
-				ForkID:          forkID,
-			},
-		)
+		errc <- p2p.Send(p.rw, StatusMsg, &StatusPacket{
+			ProtocolVersion: uint32(p.version),
+			NetworkID:       network,
+			TD:              td,
+			Head:            head,
+			Genesis:         genesis,
+			ForkID:          forkID,
+		})
 	}()
 	go func() {
 		errc <- p.readStatus(network, &status, genesis, forkFilter)

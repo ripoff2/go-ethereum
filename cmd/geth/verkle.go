@@ -23,12 +23,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ripoff2/go-ethereum/cmd/utils"
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/core/rawdb"
-	"github.com/ripoff2/go-ethereum/internal/flags"
-	"github.com/ripoff2/go-ethereum/log"
-	"github.com/ripoff2/go-verkle"
+	"github.com/ethereum/go-ethereum/cmd/utils"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/internal/flags"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-verkle"
 	"github.com/urfave/cli/v2"
 )
 

@@ -31,8 +31,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ripoff2/go-ethereum/log"
-	"github.com/ripoff2/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/rs/cors"
 )
 

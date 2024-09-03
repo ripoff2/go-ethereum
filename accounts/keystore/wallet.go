@@ -19,10 +19,10 @@ package keystore
 import (
 	"math/big"
 
-	"github.com/ripoff2/go-ethereum"
-	"github.com/ripoff2/go-ethereum/accounts"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // keystoreWallet implements the accounts.Wallet interface for the original
@@ -99,9 +99,7 @@ func (w *keystoreWallet) SignData(account accounts.Account, mimeType string, dat
 }
 
 // SignDataWithPassphrase signs keccak256(data). The mimetype parameter describes the type of data being signed.
-func (w *keystoreWallet) SignDataWithPassphrase(
-	account accounts.Account, passphrase, mimeType string, data []byte,
-) ([]byte, error) {
+func (w *keystoreWallet) SignDataWithPassphrase(account accounts.Account, passphrase, mimeType string, data []byte) ([]byte, error) {
 	// Make sure the requested account is contained within
 	if !w.Contains(account) {
 		return nil, accounts.ErrUnknownAccount
@@ -118,9 +116,7 @@ func (w *keystoreWallet) SignText(account accounts.Account, text []byte) ([]byte
 
 // SignTextWithPassphrase implements accounts.Wallet, attempting to sign the
 // hash of the given text with the given account using passphrase as extra authentication.
-func (w *keystoreWallet) SignTextWithPassphrase(account accounts.Account, passphrase string, text []byte) (
-	[]byte, error,
-) {
+func (w *keystoreWallet) SignTextWithPassphrase(account accounts.Account, passphrase string, text []byte) ([]byte, error) {
 	// Make sure the requested account is contained within
 	if !w.Contains(account) {
 		return nil, accounts.ErrUnknownAccount
@@ -133,9 +129,7 @@ func (w *keystoreWallet) SignTextWithPassphrase(account accounts.Account, passph
 // with the given account. If the wallet does not wrap this particular account,
 // an error is returned to avoid account leakage (even though in theory we may
 // be able to sign via our shared keystore backend).
-func (w *keystoreWallet) SignTx(account accounts.Account, tx *types.Transaction, chainID *big.Int) (
-	*types.Transaction, error,
-) {
+func (w *keystoreWallet) SignTx(account accounts.Account, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
 	// Make sure the requested account is contained within
 	if !w.Contains(account) {
 		return nil, accounts.ErrUnknownAccount
@@ -146,9 +140,7 @@ func (w *keystoreWallet) SignTx(account accounts.Account, tx *types.Transaction,
 
 // SignTxWithPassphrase implements accounts.Wallet, attempting to sign the given
 // transaction with the given account using passphrase as extra authentication.
-func (w *keystoreWallet) SignTxWithPassphrase(
-	account accounts.Account, passphrase string, tx *types.Transaction, chainID *big.Int,
-) (*types.Transaction, error) {
+func (w *keystoreWallet) SignTxWithPassphrase(account accounts.Account, passphrase string, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
 	// Make sure the requested account is contained within
 	if !w.Contains(account) {
 		return nil, accounts.ErrUnknownAccount

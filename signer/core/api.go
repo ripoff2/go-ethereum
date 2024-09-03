@@ -26,18 +26,18 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/ripoff2/go-ethereum/accounts"
-	"github.com/ripoff2/go-ethereum/accounts/keystore"
-	"github.com/ripoff2/go-ethereum/accounts/scwallet"
-	"github.com/ripoff2/go-ethereum/accounts/usbwallet"
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/common/hexutil"
-	"github.com/ripoff2/go-ethereum/common/math"
-	"github.com/ripoff2/go-ethereum/internal/ethapi"
-	"github.com/ripoff2/go-ethereum/log"
-	"github.com/ripoff2/go-ethereum/rpc"
-	"github.com/ripoff2/go-ethereum/signer/core/apitypes"
-	"github.com/ripoff2/go-ethereum/signer/storage"
+	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/accounts/scwallet"
+	"github.com/ethereum/go-ethereum/accounts/usbwallet"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/internal/ethapi"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/ethereum/go-ethereum/signer/storage"
 )
 
 const (
@@ -56,13 +56,9 @@ type ExternalAPI interface {
 	// New request to create a new account
 	New(ctx context.Context) (common.Address, error)
 	// SignTransaction request to sign the specified transaction
-	SignTransaction(
-		ctx context.Context, args apitypes.SendTxArgs, methodSelector *string,
-	) (*ethapi.SignTransactionResult, error)
+	SignTransaction(ctx context.Context, args apitypes.SendTxArgs, methodSelector *string) (*ethapi.SignTransactionResult, error)
 	// SignData - request to sign the given data (plus prefix)
-	SignData(ctx context.Context, contentType string, addr common.MixedcaseAddress, data interface{}) (
-		hexutil.Bytes, error,
-	)
+	SignData(ctx context.Context, contentType string, addr common.MixedcaseAddress, data interface{}) (hexutil.Bytes, error)
 	// SignTypedData - request to sign the given structured data (plus prefix)
 	SignTypedData(ctx context.Context, addr common.MixedcaseAddress, data apitypes.TypedData) (hexutil.Bytes, error)
 	// EcRecover - recover public key from given message and signature
@@ -70,9 +66,7 @@ type ExternalAPI interface {
 	// Version info about the APIs
 	Version(ctx context.Context) (string, error)
 	// SignGnosisSafeTx signs/confirms a gnosis-safe multisig transaction
-	SignGnosisSafeTx(
-		ctx context.Context, signerAddress common.MixedcaseAddress, gnosisTx GnosisSafeTx, methodSelector *string,
-	) (*GnosisSafeTx, error)
+	SignGnosisSafeTx(ctx context.Context, signerAddress common.MixedcaseAddress, gnosisTx GnosisSafeTx, methodSelector *string) (*GnosisSafeTx, error)
 }
 
 // UIClientAPI specifies what method a UI needs to implement to be able to be used as a
@@ -289,10 +283,7 @@ var ErrRequestDenied = errors.New("request denied")
 // key that is generated when a new Account is created.
 // noUSB disables USB support that is required to support hardware devices such as
 // ledger and trezor.
-func NewSignerAPI(
-	am *accounts.Manager, chainID int64, noUSB bool, ui UIClientAPI, validator Validator, advancedMode bool,
-	credentials storage.Storage,
-) *SignerAPI {
+func NewSignerAPI(am *accounts.Manager, chainID int64, noUSB bool, ui UIClientAPI, validator Validator, advancedMode bool, credentials storage.Storage) *SignerAPI {
 	if advancedMode {
 		log.Info("Clef is in advanced mode: will warn instead of reject")
 	}
@@ -303,19 +294,17 @@ func NewSignerAPI(
 	return signer
 }
 func (api *SignerAPI) openTrezor(url accounts.URL) {
-	resp, err := api.UI.OnInputRequired(
-		UserInputRequest{
-			Prompt: "Pin required to open Trezor wallet\n" +
-				"Look at the device for number positions\n\n" +
-				"7 | 8 | 9\n" +
-				"--+---+--\n" +
-				"4 | 5 | 6\n" +
-				"--+---+--\n" +
-				"1 | 2 | 3\n\n",
-			IsPassword: true,
-			Title:      "Trezor unlock",
-		},
-	)
+	resp, err := api.UI.OnInputRequired(UserInputRequest{
+		Prompt: "Pin required to open Trezor wallet\n" +
+			"Look at the device for number positions\n\n" +
+			"7 | 8 | 9\n" +
+			"--+---+--\n" +
+			"4 | 5 | 6\n" +
+			"--+---+--\n" +
+			"1 | 2 | 3\n\n",
+		IsPassword: true,
+		Title:      "Trezor unlock",
+	})
 	if err != nil {
 		log.Warn("failed getting trezor pin", "err", err)
 		return
@@ -444,23 +433,16 @@ func (api *SignerAPI) newAccount() (common.Address, error) {
 	}
 	// Three retries to get a valid password
 	for i := 0; i < 3; i++ {
-		resp, err := api.UI.OnInputRequired(
-			UserInputRequest{
-				"New account password",
-				fmt.Sprintf("Please enter a password for the new account to be created (attempt %d of 3)", i),
-				true,
-			},
-		)
+		resp, err := api.UI.OnInputRequired(UserInputRequest{
+			"New account password",
+			fmt.Sprintf("Please enter a password for the new account to be created (attempt %d of 3)", i),
+			true})
 		if err != nil {
 			log.Warn("error obtaining password", "attempt", i, "error", err)
 			continue
 		}
 		if pwErr := ValidatePasswordFormat(resp.Text); pwErr != nil {
-			api.UI.ShowError(
-				fmt.Sprintf(
-					"Account creation attempt #%d failed due to password requirements: %v", i+1, pwErr,
-				),
-			)
+			api.UI.ShowError(fmt.Sprintf("Account creation attempt #%d failed due to password requirements: %v", i+1, pwErr))
 		} else {
 			// No error
 			acc, err := be[0].(*keystore.KeyStore).NewAccount(resp.Text)
@@ -559,9 +541,7 @@ func (api *SignerAPI) lookupOrQueryPassword(address common.Address, title, promp
 }
 
 // SignTransaction signs the given Transaction and returns it both as json and rlp-encoded form
-func (api *SignerAPI) SignTransaction(
-	ctx context.Context, args apitypes.SendTxArgs, methodSelector *string,
-) (*ethapi.SignTransactionResult, error) {
+func (api *SignerAPI) SignTransaction(ctx context.Context, args apitypes.SendTxArgs, methodSelector *string) (*ethapi.SignTransactionResult, error) {
 	var (
 		err    error
 		result SignTxResponse
@@ -581,10 +561,8 @@ func (api *SignerAPI) SignTransaction(
 		requestedChainId := (*big.Int)(args.ChainID)
 		if api.chainID.Cmp(requestedChainId) != 0 {
 			log.Error("Signing request with wrong chain id", "requested", requestedChainId, "configured", api.chainID)
-			return nil, fmt.Errorf(
-				"requested chainid %d does not match the configuration of the signer",
-				requestedChainId,
-			)
+			return nil, fmt.Errorf("requested chainid %d does not match the configuration of the signer",
+				requestedChainId)
 		}
 	}
 	req := SignTxRequest{
@@ -617,10 +595,8 @@ func (api *SignerAPI) SignTransaction(
 		return nil, err
 	}
 	// Get the password for the transaction
-	pw, err := api.lookupOrQueryPassword(
-		acc.Address, "Account password",
-		fmt.Sprintf("Please enter the password for account %s", acc.Address.String()),
-	)
+	pw, err := api.lookupOrQueryPassword(acc.Address, "Account password",
+		fmt.Sprintf("Please enter the password for account %s", acc.Address.String()))
 	if err != nil {
 		return nil, err
 	}
@@ -643,9 +619,7 @@ func (api *SignerAPI) SignTransaction(
 	return &response, nil
 }
 
-func (api *SignerAPI) SignGnosisSafeTx(
-	ctx context.Context, signerAddress common.MixedcaseAddress, gnosisTx GnosisSafeTx, methodSelector *string,
-) (*GnosisSafeTx, error) {
+func (api *SignerAPI) SignGnosisSafeTx(ctx context.Context, signerAddress common.MixedcaseAddress, gnosisTx GnosisSafeTx, methodSelector *string) (*GnosisSafeTx, error) {
 	// Do the usual validations, but on the last-stage transaction
 	args := gnosisTx.ArgsForValidation()
 	msgs, err := api.validator.ValidateTransaction(methodSelector, args)

@@ -22,9 +22,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/ripoff2/go-ethereum/crypto"
-	"github.com/ripoff2/go-ethereum/p2p/discover/v4wire"
-	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/p2p/discover/v4wire"
+	"github.com/ethereum/go-ethereum/p2p/enode"
 )
 
 const waitTime = 300 * time.Millisecond

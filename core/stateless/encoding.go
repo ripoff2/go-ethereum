@@ -23,9 +23,9 @@ import (
 	"io"
 	"slices"
 
-	"github.com/ripoff2/go-ethereum/common/hexutil"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 //go:generate go run github.com/fjl/gencodec -type extWitness -field-override extWitnessMarshalling -out gen_encoding_json.go
@@ -109,9 +109,7 @@ func (w *Witness) sanitize() error {
 		}
 	}
 	if w.Headers[0].Hash() != w.Block.ParentHash() {
-		return fmt.Errorf(
-			"parent hash different: witness %v, block parent %v", w.Headers[0].Hash(), w.Block.ParentHash(),
-		)
+		return fmt.Errorf("parent hash different: witness %v, block parent %v", w.Headers[0].Hash(), w.Block.ParentHash())
 	}
 	return nil
 }

@@ -27,10 +27,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ripoff2/go-ethereum/crypto"
-	"github.com/ripoff2/go-ethereum/ethdb"
-	"github.com/ripoff2/go-ethereum/p2p"
-	"github.com/ripoff2/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -174,19 +174,17 @@ func TestNodeOpenDatabaseFromLifecycleStart(t *testing.T) {
 
 	var db ethdb.Database
 	var err error
-	stack.RegisterLifecycle(
-		&InstrumentedService{
-			startHook: func() {
-				db, err = stack.OpenDatabase("mydb", 0, 0, "", false)
-				if err != nil {
-					t.Fatal("can't open DB:", err)
-				}
-			},
-			stopHook: func() {
-				db.Close()
-			},
+	stack.RegisterLifecycle(&InstrumentedService{
+		startHook: func() {
+			db, err = stack.OpenDatabase("mydb", 0, 0, "", false)
+			if err != nil {
+				t.Fatal("can't open DB:", err)
+			}
 		},
-	)
+		stopHook: func() {
+			db.Close()
+		},
+	})
 
 	stack.Start()
 	stack.Close()
@@ -197,17 +195,15 @@ func TestNodeOpenDatabaseFromLifecycleStop(t *testing.T) {
 	stack, _ := New(testNodeConfig())
 	defer stack.Close()
 
-	stack.RegisterLifecycle(
-		&InstrumentedService{
-			stopHook: func() {
-				db, err := stack.OpenDatabase("mydb", 0, 0, "", false)
-				if err != nil {
-					t.Fatal("can't open DB:", err)
-				}
-				db.Close()
-			},
+	stack.RegisterLifecycle(&InstrumentedService{
+		stopHook: func() {
+			db, err := stack.OpenDatabase("mydb", 0, 0, "", false)
+			if err != nil {
+				t.Fatal("can't open DB:", err)
+			}
+			db.Close()
 		},
-	)
+	})
 
 	stack.Start()
 	stack.Close()
@@ -394,11 +390,9 @@ func TestRegisterHandler_Successful(t *testing.T) {
 	node := createNode(t, 7878, 7979)
 	defer node.Close()
 	// create and mount handler
-	handler := http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("success"))
-		},
-	)
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("success"))
+	})
 	node.RegisterHandler("test", "/test", handler)
 
 	// start node
@@ -521,25 +515,23 @@ func TestNodeRPCPrefix(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		name := fmt.Sprintf("http=%s ws=%s", test.httpPrefix, test.wsPrefix)
-		t.Run(
-			name, func(t *testing.T) {
-				cfg := &Config{
-					HTTPHost:       "127.0.0.1",
-					HTTPPathPrefix: test.httpPrefix,
-					WSHost:         "127.0.0.1",
-					WSPathPrefix:   test.wsPrefix,
-				}
-				node, err := New(cfg)
-				if err != nil {
-					t.Fatal("can't create node:", err)
-				}
-				defer node.Close()
-				if err := node.Start(); err != nil {
-					t.Fatal("can't start node:", err)
-				}
-				test.check(t, node)
-			},
-		)
+		t.Run(name, func(t *testing.T) {
+			cfg := &Config{
+				HTTPHost:       "127.0.0.1",
+				HTTPPathPrefix: test.httpPrefix,
+				WSHost:         "127.0.0.1",
+				WSPathPrefix:   test.wsPrefix,
+			}
+			node, err := New(cfg)
+			if err != nil {
+				t.Fatal("can't create node:", err)
+			}
+			defer node.Close()
+			if err := node.Start(); err != nil {
+				t.Fatal("can't start node:", err)
+			}
+			test.check(t, node)
+		})
 	}
 }
 

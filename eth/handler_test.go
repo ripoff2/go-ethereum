@@ -21,19 +21,19 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/consensus/ethash"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/txpool"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/downloader"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/consensus/ethash"
-	"github.com/ripoff2/go-ethereum/core"
-	"github.com/ripoff2/go-ethereum/core/rawdb"
-	"github.com/ripoff2/go-ethereum/core/txpool"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/core/vm"
-	"github.com/ripoff2/go-ethereum/crypto"
-	"github.com/ripoff2/go-ethereum/eth/downloader"
-	"github.com/ripoff2/go-ethereum/ethdb"
-	"github.com/ripoff2/go-ethereum/event"
-	"github.com/ripoff2/go-ethereum/params"
 )
 
 var (
@@ -107,17 +107,15 @@ func (p *testTxPool) Pending(filter txpool.PendingFilter) map[common.Address][]*
 	pending := make(map[common.Address][]*txpool.LazyTransaction)
 	for addr, batch := range batches {
 		for _, tx := range batch {
-			pending[addr] = append(
-				pending[addr], &txpool.LazyTransaction{
-					Hash:      tx.Hash(),
-					Tx:        tx,
-					Time:      tx.Time(),
-					GasFeeCap: uint256.MustFromBig(tx.GasFeeCap()),
-					GasTipCap: uint256.MustFromBig(tx.GasTipCap()),
-					Gas:       tx.Gas(),
-					BlobGas:   tx.BlobGas(),
-				},
-			)
+			pending[addr] = append(pending[addr], &txpool.LazyTransaction{
+				Hash:      tx.Hash(),
+				Tx:        tx,
+				Time:      tx.Time(),
+				GasFeeCap: uint256.MustFromBig(tx.GasFeeCap()),
+				GasTipCap: uint256.MustFromBig(tx.GasTipCap()),
+				Gas:       tx.Gas(),
+				BlobGas:   tx.BlobGas(),
+			})
 		}
 	}
 	return pending
@@ -161,16 +159,14 @@ func newTestHandlerWithBlocks(blocks int) *testHandler {
 	}
 	txpool := newTestTxPool()
 
-	handler, _ := newHandler(
-		&handlerConfig{
-			Database:   db,
-			Chain:      chain,
-			TxPool:     txpool,
-			Network:    1,
-			Sync:       downloader.SnapSync,
-			BloomCache: 1,
-		},
-	)
+	handler, _ := newHandler(&handlerConfig{
+		Database:   db,
+		Chain:      chain,
+		TxPool:     txpool,
+		Network:    1,
+		Sync:       downloader.SnapSync,
+		BloomCache: 1,
+	})
 	handler.Start(1000)
 
 	return &testHandler{

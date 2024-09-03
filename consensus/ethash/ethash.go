@@ -20,9 +20,9 @@ package ethash
 import (
 	"time"
 
-	"github.com/ripoff2/go-ethereum/consensus"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/consensus"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 // Ethash is a consensus engine based on proof-of-work implementing the ethash

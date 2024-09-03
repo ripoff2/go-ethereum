@@ -21,7 +21,7 @@ import (
 	"container/heap"
 	"time"
 
-	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ethereum/go-ethereum/common/mclock"
 )
 
 // LazyQueue is a priority queue data structure where priorities can change over
@@ -50,17 +50,12 @@ type LazyQueue[P cmp.Ordered, V any] struct {
 }
 
 type (
-	PriorityCallback[P cmp.Ordered, V any]    func(data V) P // actual priority callback
-	MaxPriorityCallback[P cmp.Ordered, V any] func(
-		data V, until mclock.AbsTime,
-	) P // estimated maximum priority callback
+	PriorityCallback[P cmp.Ordered, V any]    func(data V) P                       // actual priority callback
+	MaxPriorityCallback[P cmp.Ordered, V any] func(data V, until mclock.AbsTime) P // estimated maximum priority callback
 )
 
 // NewLazyQueue creates a new lazy queue
-func NewLazyQueue[P cmp.Ordered, V any](
-	setIndex SetIndexCallback[V], priority PriorityCallback[P, V], maxPriority MaxPriorityCallback[P, V],
-	clock mclock.Clock, refreshPeriod time.Duration,
-) *LazyQueue[P, V] {
+func NewLazyQueue[P cmp.Ordered, V any](setIndex SetIndexCallback[V], priority PriorityCallback[P, V], maxPriority MaxPriorityCallback[P, V], clock mclock.Clock, refreshPeriod time.Duration) *LazyQueue[P, V] {
 	q := &LazyQueue[P, V]{
 		popQueue:     newSstack[P, V](nil),
 		setIndex:     setIndex,
@@ -119,13 +114,11 @@ func (q *LazyQueue[P, V]) Pop() (V, P) {
 		resData V
 		resPri  P
 	)
-	q.MultiPop(
-		func(data V, priority P) bool {
-			resData = data
-			resPri = priority
-			return false
-		},
-	)
+	q.MultiPop(func(data V, priority P) bool {
+		resData = data
+		resPri = priority
+		return false
+	})
 	return resData, resPri
 }
 

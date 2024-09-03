@@ -22,9 +22,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ripoff2/go-ethereum/log"
-	"github.com/ripoff2/go-ethereum/p2p/discover/v5wire"
-	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/p2p/discover/v5wire"
+	"github.com/ethereum/go-ethereum/p2p/enode"
 )
 
 // This is a limit for the number of concurrent talk requests.

@@ -25,7 +25,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ripoff2/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -245,66 +245,57 @@ func TestStartRPC(t *testing.T) {
 
 	for _, test := range tests {
 		test := test
-		t.Run(
-			test.name, func(t *testing.T) {
-				t.Parallel()
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 
-				// Apply some sane defaults.
-				config := test.cfg
-				// config.Logger = testlog.Logger(t, log.LvlDebug)
-				config.P2P.NoDiscovery = true
-				if config.HTTPTimeouts == (rpc.HTTPTimeouts{}) {
-					config.HTTPTimeouts = rpc.DefaultHTTPTimeouts
-				}
+			// Apply some sane defaults.
+			config := test.cfg
+			// config.Logger = testlog.Logger(t, log.LvlDebug)
+			config.P2P.NoDiscovery = true
+			if config.HTTPTimeouts == (rpc.HTTPTimeouts{}) {
+				config.HTTPTimeouts = rpc.DefaultHTTPTimeouts
+			}
 
-				// Create Node.
-				stack, err := New(&config)
-				if err != nil {
-					t.Fatal("can't create node:", err)
-				}
-				defer stack.Close()
+			// Create Node.
+			stack, err := New(&config)
+			if err != nil {
+				t.Fatal("can't create node:", err)
+			}
+			defer stack.Close()
 
-				// Register the test handler.
-				stack.RegisterHandler(
-					"test", "/test", http.HandlerFunc(
-						func(w http.ResponseWriter, r *http.Request) {
-							w.Write([]byte("OK"))
-						},
-					),
-				)
+			// Register the test handler.
+			stack.RegisterHandler("test", "/test", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte("OK"))
+			}))
 
-				if err := stack.Start(); err != nil {
-					t.Fatal("can't start node:", err)
-				}
+			if err := stack.Start(); err != nil {
+				t.Fatal("can't start node:", err)
+			}
 
-				// Run the API call hook.
-				if test.fn != nil {
-					test.fn(t, stack, &adminAPI{stack})
-				}
+			// Run the API call hook.
+			if test.fn != nil {
+				test.fn(t, stack, &adminAPI{stack})
+			}
 
-				// Check if the HTTP endpoints are available.
-				baseURL := stack.HTTPEndpoint()
-				reachable := checkReachable(baseURL)
-				handlersAvailable := checkBodyOK(baseURL + "/test")
-				rpcAvailable := checkRPC(baseURL)
-				wsAvailable := checkRPC(strings.Replace(baseURL, "http://", "ws://", 1))
-				if reachable != test.wantReachable {
-					t.Errorf("HTTP server is %sreachable, want it %sreachable", not(reachable), not(test.wantReachable))
-				}
-				if handlersAvailable != test.wantHandlers {
-					t.Errorf(
-						"RegisterHandler handlers %savailable, want them %savailable", not(handlersAvailable),
-						not(test.wantHandlers),
-					)
-				}
-				if rpcAvailable != test.wantRPC {
-					t.Errorf("HTTP RPC %savailable, want it %savailable", not(rpcAvailable), not(test.wantRPC))
-				}
-				if wsAvailable != test.wantWS {
-					t.Errorf("WS RPC %savailable, want it %savailable", not(wsAvailable), not(test.wantWS))
-				}
-			},
-		)
+			// Check if the HTTP endpoints are available.
+			baseURL := stack.HTTPEndpoint()
+			reachable := checkReachable(baseURL)
+			handlersAvailable := checkBodyOK(baseURL + "/test")
+			rpcAvailable := checkRPC(baseURL)
+			wsAvailable := checkRPC(strings.Replace(baseURL, "http://", "ws://", 1))
+			if reachable != test.wantReachable {
+				t.Errorf("HTTP server is %sreachable, want it %sreachable", not(reachable), not(test.wantReachable))
+			}
+			if handlersAvailable != test.wantHandlers {
+				t.Errorf("RegisterHandler handlers %savailable, want them %savailable", not(handlersAvailable), not(test.wantHandlers))
+			}
+			if rpcAvailable != test.wantRPC {
+				t.Errorf("HTTP RPC %savailable, want it %savailable", not(rpcAvailable), not(test.wantRPC))
+			}
+			if wsAvailable != test.wantWS {
+				t.Errorf("WS RPC %savailable, want it %savailable", not(wsAvailable), not(test.wantWS))
+			}
+		})
 	}
 }
 

@@ -28,7 +28,7 @@ import (
 	"testing/quick"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/ripoff2/go-ethereum/metrics"
+	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,11 +37,9 @@ import (
 func TestFreezerBasics(t *testing.T) {
 	t.Parallel()
 	// set cutoff at 50 bytes
-	f, err := newTable(
-		os.TempDir(),
+	f, err := newTable(os.TempDir(),
 		fmt.Sprintf("unittest-%d", rand.Uint64()),
-		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, false,
-	)
+		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -598,21 +596,17 @@ func TestFreezerOffset(t *testing.T) {
 		require.NoError(t, batch.AppendRaw(6, getChunk(20, 0x99)))
 		require.NoError(t, batch.commit())
 
-		checkRetrieveError(
-			t, f, map[uint64]error{
-				0: errOutOfBounds,
-				1: errOutOfBounds,
-				2: errOutOfBounds,
-				3: errOutOfBounds,
-			},
-		)
-		checkRetrieve(
-			t, f, map[uint64][]byte{
-				4: getChunk(20, 0xbb),
-				5: getChunk(20, 0xaa),
-				6: getChunk(20, 0x99),
-			},
-		)
+		checkRetrieveError(t, f, map[uint64]error{
+			0: errOutOfBounds,
+			1: errOutOfBounds,
+			2: errOutOfBounds,
+			3: errOutOfBounds,
+		})
+		checkRetrieve(t, f, map[uint64][]byte{
+			4: getChunk(20, 0xbb),
+			5: getChunk(20, 0xaa),
+			6: getChunk(20, 0x99),
+		})
 	}
 
 	// Edit the index again, with a much larger initial offset of 1M.
@@ -650,21 +644,17 @@ func TestFreezerOffset(t *testing.T) {
 		defer f.Close()
 		t.Log(f.dumpIndexString(0, 100))
 
-		checkRetrieveError(
-			t, f, map[uint64]error{
-				0:      errOutOfBounds,
-				1:      errOutOfBounds,
-				2:      errOutOfBounds,
-				3:      errOutOfBounds,
-				999999: errOutOfBounds,
-			},
-		)
-		checkRetrieve(
-			t, f, map[uint64][]byte{
-				1000000: getChunk(20, 0xbb),
-				1000001: getChunk(20, 0xaa),
-			},
-		)
+		checkRetrieveError(t, f, map[uint64]error{
+			0:      errOutOfBounds,
+			1:      errOutOfBounds,
+			2:      errOutOfBounds,
+			3:      errOutOfBounds,
+			999999: errOutOfBounds,
+		})
+		checkRetrieve(t, f, map[uint64][]byte{
+			1000000: getChunk(20, 0xbb),
+			1000001: getChunk(20, 0xaa),
+		})
 	}
 }
 
@@ -700,17 +690,15 @@ func TestTruncateTail(t *testing.T) {
 	// nothing to do, all the items should still be there.
 	f.truncateTail(0)
 	fmt.Println(f.dumpIndexString(0, 1000))
-	checkRetrieve(
-		t, f, map[uint64][]byte{
-			0: getChunk(20, 0xFF),
-			1: getChunk(20, 0xEE),
-			2: getChunk(20, 0xdd),
-			3: getChunk(20, 0xcc),
-			4: getChunk(20, 0xbb),
-			5: getChunk(20, 0xaa),
-			6: getChunk(20, 0x11),
-		},
-	)
+	checkRetrieve(t, f, map[uint64][]byte{
+		0: getChunk(20, 0xFF),
+		1: getChunk(20, 0xEE),
+		2: getChunk(20, 0xdd),
+		3: getChunk(20, 0xcc),
+		4: getChunk(20, 0xbb),
+		5: getChunk(20, 0xaa),
+		6: getChunk(20, 0x11),
+	})
 	// maxFileSize*fileCount + headBytes + indexFileSize - hiddenBytes
 	expected := 20*7 + 48 - 0
 	assertTableSize(t, f, expected)
@@ -718,21 +706,17 @@ func TestTruncateTail(t *testing.T) {
 	// truncate single element( item 0 ), deletion is only supported at file level
 	f.truncateTail(1)
 	fmt.Println(f.dumpIndexString(0, 1000))
-	checkRetrieveError(
-		t, f, map[uint64]error{
-			0: errOutOfBounds,
-		},
-	)
-	checkRetrieve(
-		t, f, map[uint64][]byte{
-			1: getChunk(20, 0xEE),
-			2: getChunk(20, 0xdd),
-			3: getChunk(20, 0xcc),
-			4: getChunk(20, 0xbb),
-			5: getChunk(20, 0xaa),
-			6: getChunk(20, 0x11),
-		},
-	)
+	checkRetrieveError(t, f, map[uint64]error{
+		0: errOutOfBounds,
+	})
+	checkRetrieve(t, f, map[uint64][]byte{
+		1: getChunk(20, 0xEE),
+		2: getChunk(20, 0xdd),
+		3: getChunk(20, 0xcc),
+		4: getChunk(20, 0xbb),
+		5: getChunk(20, 0xaa),
+		6: getChunk(20, 0x11),
+	})
 	expected = 20*7 + 48 - 20
 	assertTableSize(t, f, expected)
 
@@ -742,39 +726,31 @@ func TestTruncateTail(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	checkRetrieveError(
-		t, f, map[uint64]error{
-			0: errOutOfBounds,
-		},
-	)
-	checkRetrieve(
-		t, f, map[uint64][]byte{
-			1: getChunk(20, 0xEE),
-			2: getChunk(20, 0xdd),
-			3: getChunk(20, 0xcc),
-			4: getChunk(20, 0xbb),
-			5: getChunk(20, 0xaa),
-			6: getChunk(20, 0x11),
-		},
-	)
+	checkRetrieveError(t, f, map[uint64]error{
+		0: errOutOfBounds,
+	})
+	checkRetrieve(t, f, map[uint64][]byte{
+		1: getChunk(20, 0xEE),
+		2: getChunk(20, 0xdd),
+		3: getChunk(20, 0xcc),
+		4: getChunk(20, 0xbb),
+		5: getChunk(20, 0xaa),
+		6: getChunk(20, 0x11),
+	})
 
 	// truncate two elements( item 0, item 1 ), the file 0 should be deleted
 	f.truncateTail(2)
-	checkRetrieveError(
-		t, f, map[uint64]error{
-			0: errOutOfBounds,
-			1: errOutOfBounds,
-		},
-	)
-	checkRetrieve(
-		t, f, map[uint64][]byte{
-			2: getChunk(20, 0xdd),
-			3: getChunk(20, 0xcc),
-			4: getChunk(20, 0xbb),
-			5: getChunk(20, 0xaa),
-			6: getChunk(20, 0x11),
-		},
-	)
+	checkRetrieveError(t, f, map[uint64]error{
+		0: errOutOfBounds,
+		1: errOutOfBounds,
+	})
+	checkRetrieve(t, f, map[uint64][]byte{
+		2: getChunk(20, 0xdd),
+		3: getChunk(20, 0xcc),
+		4: getChunk(20, 0xbb),
+		5: getChunk(20, 0xaa),
+		6: getChunk(20, 0x11),
+	})
 	expected = 20*5 + 36 - 0
 	assertTableSize(t, f, expected)
 
@@ -786,56 +762,46 @@ func TestTruncateTail(t *testing.T) {
 	}
 	defer f.Close()
 
-	checkRetrieveError(
-		t, f, map[uint64]error{
-			0: errOutOfBounds,
-			1: errOutOfBounds,
-		},
-	)
-	checkRetrieve(
-		t, f, map[uint64][]byte{
-			2: getChunk(20, 0xdd),
-			3: getChunk(20, 0xcc),
-			4: getChunk(20, 0xbb),
-			5: getChunk(20, 0xaa),
-			6: getChunk(20, 0x11),
-		},
-	)
+	checkRetrieveError(t, f, map[uint64]error{
+		0: errOutOfBounds,
+		1: errOutOfBounds,
+	})
+	checkRetrieve(t, f, map[uint64][]byte{
+		2: getChunk(20, 0xdd),
+		3: getChunk(20, 0xcc),
+		4: getChunk(20, 0xbb),
+		5: getChunk(20, 0xaa),
+		6: getChunk(20, 0x11),
+	})
 
 	// truncate 3 more elements( item 2, 3, 4), the file 1 should be deleted
 	// file 2 should only contain item 5
 	f.truncateTail(5)
-	checkRetrieveError(
-		t, f, map[uint64]error{
-			0: errOutOfBounds,
-			1: errOutOfBounds,
-			2: errOutOfBounds,
-			3: errOutOfBounds,
-			4: errOutOfBounds,
-		},
-	)
-	checkRetrieve(
-		t, f, map[uint64][]byte{
-			5: getChunk(20, 0xaa),
-			6: getChunk(20, 0x11),
-		},
-	)
+	checkRetrieveError(t, f, map[uint64]error{
+		0: errOutOfBounds,
+		1: errOutOfBounds,
+		2: errOutOfBounds,
+		3: errOutOfBounds,
+		4: errOutOfBounds,
+	})
+	checkRetrieve(t, f, map[uint64][]byte{
+		5: getChunk(20, 0xaa),
+		6: getChunk(20, 0x11),
+	})
 	expected = 20*3 + 24 - 20
 	assertTableSize(t, f, expected)
 
 	// truncate all, the entire freezer should be deleted
 	f.truncateTail(7)
-	checkRetrieveError(
-		t, f, map[uint64]error{
-			0: errOutOfBounds,
-			1: errOutOfBounds,
-			2: errOutOfBounds,
-			3: errOutOfBounds,
-			4: errOutOfBounds,
-			5: errOutOfBounds,
-			6: errOutOfBounds,
-		},
-	)
+	checkRetrieveError(t, f, map[uint64]error{
+		0: errOutOfBounds,
+		1: errOutOfBounds,
+		2: errOutOfBounds,
+		3: errOutOfBounds,
+		4: errOutOfBounds,
+		5: errOutOfBounds,
+		6: errOutOfBounds,
+	})
 	expected = 12
 	assertTableSize(t, f, expected)
 }
@@ -866,17 +832,15 @@ func TestTruncateHead(t *testing.T) {
 
 	// NewHead is required to be 3, the entire table should be truncated
 	f.truncateHead(4)
-	checkRetrieveError(
-		t, f, map[uint64]error{
-			0: errOutOfBounds, // Deleted by tail
-			1: errOutOfBounds, // Deleted by tail
-			2: errOutOfBounds, // Deleted by tail
-			3: errOutOfBounds, // Deleted by tail
-			4: errOutOfBounds, // Deleted by Head
-			5: errOutOfBounds, // Deleted by Head
-			6: errOutOfBounds, // Deleted by Head
-		},
-	)
+	checkRetrieveError(t, f, map[uint64]error{
+		0: errOutOfBounds, // Deleted by tail
+		1: errOutOfBounds, // Deleted by tail
+		2: errOutOfBounds, // Deleted by tail
+		3: errOutOfBounds, // Deleted by tail
+		4: errOutOfBounds, // Deleted by Head
+		5: errOutOfBounds, // Deleted by Head
+		6: errOutOfBounds, // Deleted by Head
+	})
 
 	// Append new items
 	batch = f.newBatch()
@@ -885,13 +849,11 @@ func TestTruncateHead(t *testing.T) {
 	require.NoError(t, batch.AppendRaw(6, getChunk(20, 0x11)))
 	require.NoError(t, batch.commit())
 
-	checkRetrieve(
-		t, f, map[uint64][]byte{
-			4: getChunk(20, 0xbb),
-			5: getChunk(20, 0xaa),
-			6: getChunk(20, 0x11),
-		},
-	)
+	checkRetrieve(t, f, map[uint64][]byte{
+		4: getChunk(20, 0xbb),
+		5: getChunk(20, 0xaa),
+		6: getChunk(20, 0x11),
+	})
 }
 
 func checkRetrieve(t *testing.T, f *freezerTable, items map[uint64][]byte) {
@@ -1114,11 +1076,9 @@ func TestSequentialReadNoByteLimit(t *testing.T) {
 func TestFreezerReadonly(t *testing.T) {
 	tmpdir := os.TempDir()
 	// Case 1: Check it fails on non-existent file.
-	_, err := newTable(
-		tmpdir,
+	_, err := newTable(tmpdir,
 		fmt.Sprintf("readonlytest-%d", rand.Uint64()),
-		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, true,
-	)
+		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, true)
 	if err == nil {
 		t.Fatal("readonly table instantiation should fail for non-existent table")
 	}
@@ -1132,10 +1092,8 @@ func TestFreezerReadonly(t *testing.T) {
 	// size should not be a multiple of indexEntrySize.
 	idxFile.Write(make([]byte, 17))
 	idxFile.Close()
-	_, err = newTable(
-		tmpdir, fname,
-		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, true,
-	)
+	_, err = newTable(tmpdir, fname,
+		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, true)
 	if err == nil {
 		t.Errorf("readonly table instantiation should fail for invalid index size")
 	}
@@ -1144,10 +1102,8 @@ func TestFreezerReadonly(t *testing.T) {
 	// Then corrupt the head file and make sure opening the table
 	// again in readonly triggers an error.
 	fname = fmt.Sprintf("readonlytest-%d", rand.Uint64())
-	f, err := newTable(
-		tmpdir, fname,
-		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, false,
-	)
+	f, err := newTable(tmpdir, fname,
+		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, false)
 	if err != nil {
 		t.Fatalf("failed to instantiate table: %v", err)
 	}
@@ -1159,10 +1115,8 @@ func TestFreezerReadonly(t *testing.T) {
 	if err := f.Close(); err != nil {
 		t.Fatal(err)
 	}
-	_, err = newTable(
-		tmpdir, fname,
-		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, true,
-	)
+	_, err = newTable(tmpdir, fname,
+		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, true)
 	if err == nil {
 		t.Errorf("readonly table instantiation should fail for corrupt table file")
 	}
@@ -1170,10 +1124,8 @@ func TestFreezerReadonly(t *testing.T) {
 	// Case 4: Write some data to a table and later re-open it as readonly.
 	// Should be successful.
 	fname = fmt.Sprintf("readonlytest-%d", rand.Uint64())
-	f, err = newTable(
-		tmpdir, fname,
-		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, false,
-	)
+	f, err = newTable(tmpdir, fname,
+		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, false)
 	if err != nil {
 		t.Fatalf("failed to instantiate table: %v\n", err)
 	}
@@ -1181,10 +1133,8 @@ func TestFreezerReadonly(t *testing.T) {
 	if err := f.Close(); err != nil {
 		t.Fatal(err)
 	}
-	f, err = newTable(
-		tmpdir, fname,
-		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, true,
-	)
+	f, err = newTable(tmpdir, fname,
+		metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1333,9 +1283,7 @@ func runRandTest(rt randTest) bool {
 		switch step.op {
 		case opReload:
 			f.Close()
-			f, err = newTable(
-				os.TempDir(), fname, metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, false,
-			)
+			f, err = newTable(os.TempDir(), fname, metrics.NewMeter(), metrics.NewMeter(), metrics.NewGauge(), 50, true, false)
 			if err != nil {
 				rt[i].err = fmt.Errorf("failed to reload table %v", err)
 			}

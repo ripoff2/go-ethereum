@@ -24,20 +24,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ripoff2/go-ethereum"
-	"github.com/ripoff2/go-ethereum/accounts"
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/common/hexutil"
-	"github.com/ripoff2/go-ethereum/consensus"
-	"github.com/ripoff2/go-ethereum/core"
-	"github.com/ripoff2/go-ethereum/core/bloombits"
-	"github.com/ripoff2/go-ethereum/core/state"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/core/vm"
-	"github.com/ripoff2/go-ethereum/ethdb"
-	"github.com/ripoff2/go-ethereum/event"
-	"github.com/ripoff2/go-ethereum/params"
-	"github.com/ripoff2/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/consensus"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/bloombits"
+	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 // TestSetFeeDefaults tests the logic for filling in default fee values works as expected.
@@ -54,16 +54,8 @@ func TestSetFeeDefaults(t *testing.T) {
 		b        = newBackendMock()
 		zero     = (*hexutil.Big)(big.NewInt(0))
 		fortytwo = (*hexutil.Big)(big.NewInt(42))
-		maxFee   = (*hexutil.Big)(
-			new(big.Int).Add(
-				new(big.Int).Mul(b.current.BaseFee, big.NewInt(2)), fortytwo.ToInt(),
-			),
-		)
-		al = &types.AccessList{
-			types.AccessTuple{
-				Address: common.Address{0xaa}, StorageKeys: []common.Hash{{0x01}},
-			},
-		}
+		maxFee   = (*hexutil.Big)(new(big.Int).Add(new(big.Int).Mul(b.current.BaseFee, big.NewInt(2)), fortytwo.ToInt()))
+		al       = &types.AccessList{types.AccessTuple{Address: common.Address{0xaa}, StorageKeys: []common.Hash{{0x01}}}}
 	)
 
 	tests := []test{
@@ -226,20 +218,14 @@ func TestSetFeeDefaults(t *testing.T) {
 			"fill maxFeePerBlobGas",
 			"cancun",
 			&TransactionArgs{BlobHashes: []common.Hash{}},
-			&TransactionArgs{
-				BlobHashes: []common.Hash{}, BlobFeeCap: (*hexutil.Big)(big.NewInt(4)), MaxFeePerGas: maxFee,
-				MaxPriorityFeePerGas: fortytwo,
-			},
+			&TransactionArgs{BlobHashes: []common.Hash{}, BlobFeeCap: (*hexutil.Big)(big.NewInt(4)), MaxFeePerGas: maxFee, MaxPriorityFeePerGas: fortytwo},
 			nil,
 		},
 		{
 			"fill maxFeePerBlobGas when dynamic fees are set",
 			"cancun",
 			&TransactionArgs{BlobHashes: []common.Hash{}, MaxFeePerGas: maxFee, MaxPriorityFeePerGas: fortytwo},
-			&TransactionArgs{
-				BlobHashes: []common.Hash{}, BlobFeeCap: (*hexutil.Big)(big.NewInt(4)), MaxFeePerGas: maxFee,
-				MaxPriorityFeePerGas: fortytwo,
-			},
+			&TransactionArgs{BlobHashes: []common.Hash{}, BlobFeeCap: (*hexutil.Big)(big.NewInt(4)), MaxFeePerGas: maxFee, MaxPriorityFeePerGas: fortytwo},
 			nil,
 		},
 	}
@@ -263,9 +249,7 @@ func TestSetFeeDefaults(t *testing.T) {
 			t.Fatalf("test %d (%s): expected error: %s", i, test.name, test.err)
 		}
 		if !reflect.DeepEqual(got, test.want) {
-			t.Fatalf(
-				"test %d (%s): did not fill defaults as expected: (got: %v, want: %v)", i, test.name, got, test.want,
-			)
+			t.Fatalf("test %d (%s): did not fill defaults as expected: (got: %v, want: %v)", i, test.name, got, test.want)
 		}
 	}
 }
@@ -337,9 +321,7 @@ func (b *backendMock) ChainConfig() *params.ChainConfig { return b.config }
 
 // Other methods needed to implement Backend interface.
 func (b *backendMock) SyncProgress() ethereum.SyncProgress { return ethereum.SyncProgress{} }
-func (b *backendMock) FeeHistory(
-	ctx context.Context, blockCount uint64, lastBlock rpc.BlockNumber, rewardPercentiles []float64,
-) (*big.Int, [][]*big.Int, []*big.Int, []float64, []*big.Int, []float64, error) {
+func (b *backendMock) FeeHistory(ctx context.Context, blockCount uint64, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*big.Int, [][]*big.Int, []*big.Int, []float64, []*big.Int, []float64, error) {
 	return nil, nil, nil, nil, nil, nil, nil
 }
 func (b *backendMock) ChainDb() ethdb.Database           { return nil }
@@ -356,9 +338,7 @@ func (b *backendMock) HeaderByNumber(ctx context.Context, number rpc.BlockNumber
 func (b *backendMock) HeaderByHash(ctx context.Context, hash common.Hash) (*types.Header, error) {
 	return nil, nil
 }
-func (b *backendMock) HeaderByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (
-	*types.Header, error,
-) {
+func (b *backendMock) HeaderByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (*types.Header, error) {
 	return nil, nil
 }
 func (b *backendMock) CurrentBlock() *types.Header { return nil }
@@ -368,22 +348,16 @@ func (b *backendMock) BlockByNumber(ctx context.Context, number rpc.BlockNumber)
 func (b *backendMock) BlockByHash(ctx context.Context, hash common.Hash) (*types.Block, error) {
 	return nil, nil
 }
-func (b *backendMock) BlockByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (
-	*types.Block, error,
-) {
+func (b *backendMock) BlockByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (*types.Block, error) {
 	return nil, nil
 }
 func (b *backendMock) GetBody(ctx context.Context, hash common.Hash, number rpc.BlockNumber) (*types.Body, error) {
 	return nil, nil
 }
-func (b *backendMock) StateAndHeaderByNumber(ctx context.Context, number rpc.BlockNumber) (
-	*state.StateDB, *types.Header, error,
-) {
+func (b *backendMock) StateAndHeaderByNumber(ctx context.Context, number rpc.BlockNumber) (*state.StateDB, *types.Header, error) {
 	return nil, nil, nil
 }
-func (b *backendMock) StateAndHeaderByNumberOrHash(
-	ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash,
-) (*state.StateDB, *types.Header, error) {
+func (b *backendMock) StateAndHeaderByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (*state.StateDB, *types.Header, error) {
 	return nil, nil, nil
 }
 func (b *backendMock) Pending() (*types.Block, types.Receipts, *state.StateDB) { return nil, nil, nil }
@@ -394,10 +368,7 @@ func (b *backendMock) GetLogs(ctx context.Context, blockHash common.Hash, number
 	return nil, nil
 }
 func (b *backendMock) GetTd(ctx context.Context, hash common.Hash) *big.Int { return nil }
-func (b *backendMock) GetEVM(
-	ctx context.Context, msg *core.Message, state *state.StateDB, header *types.Header, vmConfig *vm.Config,
-	blockCtx *vm.BlockContext,
-) *vm.EVM {
+func (b *backendMock) GetEVM(ctx context.Context, msg *core.Message, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockCtx *vm.BlockContext) *vm.EVM {
 	return nil
 }
 func (b *backendMock) SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription { return nil }
@@ -408,9 +379,7 @@ func (b *backendMock) SubscribeChainSideEvent(ch chan<- core.ChainSideEvent) eve
 	return nil
 }
 func (b *backendMock) SendTx(ctx context.Context, signedTx *types.Transaction) error { return nil }
-func (b *backendMock) GetTransaction(ctx context.Context, txHash common.Hash) (
-	bool, *types.Transaction, common.Hash, uint64, uint64, error,
-) {
+func (b *backendMock) GetTransaction(ctx context.Context, txHash common.Hash) (bool, *types.Transaction, common.Hash, uint64, uint64, error) {
 	return false, nil, [32]byte{}, 0, 0, nil
 }
 func (b *backendMock) GetPoolTransactions() (types.Transactions, error)         { return nil, nil }
@@ -419,9 +388,7 @@ func (b *backendMock) GetPoolNonce(ctx context.Context, addr common.Address) (ui
 	return 0, nil
 }
 func (b *backendMock) Stats() (pending int, queued int) { return 0, 0 }
-func (b *backendMock) TxPoolContent() (
-	map[common.Address][]*types.Transaction, map[common.Address][]*types.Transaction,
-) {
+func (b *backendMock) TxPoolContent() (map[common.Address][]*types.Transaction, map[common.Address][]*types.Transaction) {
 	return nil, nil
 }
 func (b *backendMock) TxPoolContentFrom(addr common.Address) ([]*types.Transaction, []*types.Transaction) {

@@ -26,10 +26,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ripoff2/go-ethereum/beacon/merkle"
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/common/hexutil"
-	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/beacon/merkle"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/log"
 	"gopkg.in/yaml.v3"
 )
 
@@ -48,7 +48,7 @@ type Fork struct {
 	// Epoch when given fork version is activated
 	Epoch uint64
 
-	// Fork version, see https://github.com/ripoff2/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#custom-types
+	// Fork version, see https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md#custom-types
 	Version []byte
 
 	// index in list of known forks or MaxInt if unknown

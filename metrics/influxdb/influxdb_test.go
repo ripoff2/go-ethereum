@@ -27,8 +27,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ripoff2/go-ethereum/metrics"
-	"github.com/ripoff2/go-ethereum/metrics/internal"
+	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ethereum/go-ethereum/metrics/internal"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 )
 

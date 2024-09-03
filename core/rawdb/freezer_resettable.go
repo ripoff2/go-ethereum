@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/ripoff2/go-ethereum/ethdb"
-	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 const tmpSuffix = ".tmp"
@@ -49,9 +49,7 @@ type resettableFreezer struct {
 //
 // The reset function will delete directory atomically and re-create the
 // freezer from scratch.
-func newResettableFreezer(
-	datadir string, namespace string, readonly bool, maxTableSize uint32, tables map[string]bool,
-) (*resettableFreezer, error) {
+func newResettableFreezer(datadir string, namespace string, readonly bool, maxTableSize uint32, tables map[string]bool) (*resettableFreezer, error) {
 	if err := cleanup(datadir); err != nil {
 		return nil, err
 	}

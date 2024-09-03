@@ -20,20 +20,16 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/ripoff2/go-ethereum/ethdb"
-	"github.com/ripoff2/go-ethereum/ethdb/dbtest"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/ethdb/dbtest"
 )
 
 func TestMemoryDB(t *testing.T) {
-	t.Run(
-		"DatabaseSuite", func(t *testing.T) {
-			dbtest.TestDatabaseSuite(
-				t, func() ethdb.KeyValueStore {
-					return New()
-				},
-			)
-		},
-	)
+	t.Run("DatabaseSuite", func(t *testing.T) {
+		dbtest.TestDatabaseSuite(t, func() ethdb.KeyValueStore {
+			return New()
+		})
+	})
 }
 
 // BenchmarkBatchAllocs measures the time/allocs for storing 120 kB of data

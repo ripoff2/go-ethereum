@@ -26,9 +26,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/core/types"
 )
 
 // nonceHeap is a heap.Interface implementation over 64bit unsigned integers for
@@ -371,11 +371,9 @@ func (l *list) Filter(costLimit *uint256.Int, gasLimit uint64) (types.Transactio
 	l.gascap = gasLimit
 
 	// Filter out all the transactions above the account's funds
-	removed := l.txs.Filter(
-		func(tx *types.Transaction) bool {
-			return tx.Gas() > gasLimit || tx.Cost().Cmp(costLimit.ToBig()) > 0
-		},
-	)
+	removed := l.txs.Filter(func(tx *types.Transaction) bool {
+		return tx.Gas() > gasLimit || tx.Cost().Cmp(costLimit.ToBig()) > 0
+	})
 
 	if len(removed) == 0 {
 		return nil, nil
@@ -661,12 +659,10 @@ func (l *pricedList) Reheap() {
 	start := time.Now()
 	l.stales.Store(0)
 	l.urgent.list = make([]*types.Transaction, 0, l.all.RemoteCount())
-	l.all.Range(
-		func(hash common.Hash, tx *types.Transaction, local bool) bool {
-			l.urgent.list = append(l.urgent.list, tx)
-			return true
-		}, false, true,
-	) // Only iterate remotes
+	l.all.Range(func(hash common.Hash, tx *types.Transaction, local bool) bool {
+		l.urgent.list = append(l.urgent.list, tx)
+		return true
+	}, false, true) // Only iterate remotes
 	heap.Init(&l.urgent)
 
 	// balance out the two heaps by moving the worse half of transactions into the

@@ -22,14 +22,14 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/ripoff2/go-ethereum/cmd/evm/internal/t8ntool"
-	"github.com/ripoff2/go-ethereum/internal/debug"
-	"github.com/ripoff2/go-ethereum/internal/flags"
+	"github.com/ethereum/go-ethereum/cmd/evm/internal/t8ntool"
+	"github.com/ethereum/go-ethereum/internal/debug"
+	"github.com/ethereum/go-ethereum/internal/flags"
 	"github.com/urfave/cli/v2"
 
 	// Force-load the tracer engines to trigger registration
-	_ "github.com/ripoff2/go-ethereum/eth/tracers/js"
-	_ "github.com/ripoff2/go-ethereum/eth/tracers/native"
+	_ "github.com/ethereum/go-ethereum/eth/tracers/js"
+	_ "github.com/ethereum/go-ethereum/eth/tracers/native"
 )
 
 var (

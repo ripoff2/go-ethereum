@@ -28,8 +28,8 @@ import (
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/gorilla/websocket"
-	"github.com/ripoff2/go-ethereum/log"
 )
 
 const (
@@ -54,17 +54,15 @@ func (s *Server) WebsocketHandler(allowedOrigins []string) http.Handler {
 		WriteBufferPool: wsBufferPool,
 		CheckOrigin:     wsHandshakeValidator(allowedOrigins),
 	}
-	return http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			conn, err := upgrader.Upgrade(w, r, nil)
-			if err != nil {
-				log.Debug("WebSocket upgrade failed", "err", err)
-				return
-			}
-			codec := newWebsocketCodec(conn, r.Host, r.Header, wsDefaultReadLimit)
-			s.ServeCodec(codec, 0)
-		},
-	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Debug("WebSocket upgrade failed", "err", err)
+			return
+		}
+		codec := newWebsocketCodec(conn, r.Host, r.Header, wsDefaultReadLimit)
+		s.ServeCodec(codec, 0)
+	})
 }
 
 // wsHandshakeValidator returns a handler that verifies the origin during the
@@ -313,15 +311,13 @@ func newWebsocketCodec(conn *websocket.Conn, host string, req http.Header, readL
 	wc.info.HTTP.Origin = req.Get("Origin")
 	wc.info.HTTP.UserAgent = req.Get("User-Agent")
 	// Start pinger.
-	conn.SetPongHandler(
-		func(appData string) error {
-			select {
-			case wc.pongReceived <- struct{}{}:
-			case <-wc.closed():
-			}
-			return nil
-		},
-	)
+	conn.SetPongHandler(func(appData string) error {
+		select {
+		case wc.pongReceived <- struct{}{}:
+		case <-wc.closed():
+		}
+		return nil
+	})
 	wc.wg.Add(1)
 	go wc.pingLoop()
 	return wc

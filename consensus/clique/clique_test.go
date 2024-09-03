@@ -20,13 +20,13 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/core"
-	"github.com/ripoff2/go-ethereum/core/rawdb"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/core/vm"
-	"github.com/ripoff2/go-ethereum/crypto"
-	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 // This test case is a repro of an annoying bug that took us forever to catch.
@@ -58,27 +58,21 @@ func TestReimportMirroredState(t *testing.T) {
 	chain, _ := core.NewBlockChain(rawdb.NewMemoryDatabase(), nil, genspec, nil, engine, vm.Config{}, nil, nil)
 	defer chain.Stop()
 
-	_, blocks, _ := core.GenerateChainWithGenesis(
-		genspec, engine, 3, func(i int, block *core.BlockGen) {
-			// The chain maker doesn't have access to a chain, so the difficulty will be
-			// lets unset (nil). Set it here to the correct value.
-			block.SetDifficulty(diffInTurn)
+	_, blocks, _ := core.GenerateChainWithGenesis(genspec, engine, 3, func(i int, block *core.BlockGen) {
+		// The chain maker doesn't have access to a chain, so the difficulty will be
+		// lets unset (nil). Set it here to the correct value.
+		block.SetDifficulty(diffInTurn)
 
-			// We want to simulate an empty middle block, having the same state as the
-			// first one. The last is needs a state change again to force a reorg.
-			if i != 1 {
-				tx, err := types.SignTx(
-					types.NewTransaction(
-						block.TxNonce(addr), common.Address{0x00}, new(big.Int), params.TxGas, block.BaseFee(), nil,
-					), signer, key,
-				)
-				if err != nil {
-					panic(err)
-				}
-				block.AddTxWithChain(chain, tx)
+		// We want to simulate an empty middle block, having the same state as the
+		// first one. The last is needs a state change again to force a reorg.
+		if i != 1 {
+			tx, err := types.SignTx(types.NewTransaction(block.TxNonce(addr), common.Address{0x00}, new(big.Int), params.TxGas, block.BaseFee(), nil), signer, key)
+			if err != nil {
+				panic(err)
 			}
-		},
-	)
+			block.AddTxWithChain(chain, tx)
+		}
+	})
 	for i, block := range blocks {
 		header := block.Header()
 		if i > 0 {
@@ -118,14 +112,12 @@ func TestReimportMirroredState(t *testing.T) {
 }
 
 func TestSealHash(t *testing.T) {
-	have := SealHash(
-		&types.Header{
-			Difficulty: new(big.Int),
-			Number:     new(big.Int),
-			Extra:      make([]byte, 32+65),
-			BaseFee:    new(big.Int),
-		},
-	)
+	have := SealHash(&types.Header{
+		Difficulty: new(big.Int),
+		Number:     new(big.Int),
+		Extra:      make([]byte, 32+65),
+		BaseFee:    new(big.Int),
+	})
 	want := common.HexToHash("0xbd3d1fa43fbc4c5bfcc91b179ec92e2861df3654de60468beb908ff805359e8f")
 	if have != want {
 		t.Errorf("have %x, want %x", have, want)

@@ -27,7 +27,7 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 const (

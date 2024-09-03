@@ -55,10 +55,10 @@ import (
 	"time"
 
 	"github.com/cespare/cp"
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/crypto/signify"
-	"github.com/ripoff2/go-ethereum/internal/build"
-	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto/signify"
+	"github.com/ethereum/go-ethereum/internal/build"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 var (
@@ -242,8 +242,8 @@ func buildFlags(env build.Environment, staticLinking bool, buildTags []string) (
 	// cgo-linker further down.
 	ld = append(ld, "--buildid=none")
 	if env.Commit != "" {
-		ld = append(ld, "-X", "github.com/ripoff2/go-ethereum/internal/version.gitCommit="+env.Commit)
-		ld = append(ld, "-X", "github.com/ripoff2/go-ethereum/internal/version.gitDate="+env.Date)
+		ld = append(ld, "-X", "github.com/ethereum/go-ethereum/internal/version.gitCommit="+env.Commit)
+		ld = append(ld, "-X", "github.com/ethereum/go-ethereum/internal/version.gitDate="+env.Date)
 	}
 	// Strip DWARF on darwin. This used to be required for certain things,
 	// and there is no downside to this, so we just keep doing it.
@@ -344,10 +344,7 @@ func downloadSpecTestFixtures(csdb *build.ChecksumDB, cachedir string) string {
 	}
 	ext := ".tar.gz"
 	base := "fixtures_develop" // TODO(MariusVanDerWijden) rename once the version becomes part of the filename
-	url := fmt.Sprintf(
-		"https://github.com/ripoff2/execution-spec-tests/releases/download/v%s/%s%s", executionSpecTestsVersion, base,
-		ext,
-	)
+	url := fmt.Sprintf("https://github.com/ethereum/execution-spec-tests/releases/download/v%s/%s%s", executionSpecTestsVersion, base, ext)
 	archivePath := filepath.Join(cachedir, base+ext)
 	if err := csdb.DownloadFile(url, archivePath); err != nil {
 		log.Fatal(err)
@@ -363,27 +360,25 @@ func downloadSpecTestFixtures(csdb *build.ChecksumDB, cachedir string) string {
 // subrepo)
 func hashAllSourceFiles() (map[string]common.Hash, error) {
 	res := make(map[string]common.Hash)
-	err := filepath.WalkDir(
-		".", func(path string, d os.DirEntry, err error) error {
-			if strings.HasPrefix(path, filepath.FromSlash("tests/testdata")) {
-				return filepath.SkipDir
-			}
-			if !d.Type().IsRegular() {
-				return nil
-			}
-			// open the file and hash it
-			f, err := os.OpenFile(path, os.O_RDONLY, 0666)
-			if err != nil {
-				return err
-			}
-			hasher := sha256.New()
-			if _, err := io.Copy(hasher, f); err != nil {
-				return err
-			}
-			res[path] = common.Hash(hasher.Sum(nil))
+	err := filepath.WalkDir(".", func(path string, d os.DirEntry, err error) error {
+		if strings.HasPrefix(path, filepath.FromSlash("tests/testdata")) {
+			return filepath.SkipDir
+		}
+		if !d.Type().IsRegular() {
 			return nil
-		},
-	)
+		}
+		// open the file and hash it
+		f, err := os.OpenFile(path, os.O_RDONLY, 0666)
+		if err != nil {
+			return err
+		}
+		hasher := sha256.New()
+		if _, err := io.Copy(hasher, f); err != nil {
+			return err
+		}
+		res[path] = common.Hash(hasher.Sum(nil))
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -550,9 +545,7 @@ func protocArchiveBaseName() (string, error) {
 	case "darwin-amd64":
 		return "osx-x86_64", nil
 	default:
-		return "", fmt.Errorf(
-			"no prebuilt release of protoc available for this system (os: %s, arch: %s)", runtime.GOOS, runtime.GOARCH,
-		)
+		return "", fmt.Errorf("no prebuilt release of protoc available for this system (os: %s, arch: %s)", runtime.GOOS, runtime.GOARCH)
 	}
 }
 
@@ -724,9 +717,7 @@ func maybeSkipArchive(env build.Environment) {
 		os.Exit(0)
 	}
 	if env.Branch != "master" && !strings.HasPrefix(env.Tag, "v1.") {
-		log.Printf(
-			"skipping archive creation because branch %q, tag %q is not on the inclusion list", env.Branch, env.Tag,
-		)
+		log.Printf("skipping archive creation because branch %q, tag %q is not on the inclusion list", env.Branch, env.Tag)
 		os.Exit(0)
 	}
 }
@@ -735,10 +726,8 @@ func maybeSkipArchive(env build.Environment) {
 func doDocker(cmdline []string) {
 	var (
 		image    = flag.Bool("image", false, `Whether to build and push an arch specific docker image`)
-		manifest = flag.String(
-			"manifest", "", `Push a multi-arch docker image for the specified architectures (usually "amd64,arm64")`,
-		)
-		upload = flag.String("upload", "", `Where to upload the docker image (usually "ethereum/client-go")`)
+		manifest = flag.String("manifest", "", `Push a multi-arch docker image for the specified architectures (usually "amd64,arm64")`)
+		upload   = flag.String("upload", "", `Where to upload the docker image (usually "ethereum/client-go")`)
 	)
 	flag.CommandLine.Parse(cmdline)
 
@@ -774,15 +763,8 @@ func doDocker(cmdline []string) {
 	}
 	// If architecture specific image builds are requested, build and push them
 	if *image {
-		build.MustRunCommand(
-			"docker", "build", "--build-arg", "COMMIT="+env.Commit, "--build-arg", "VERSION="+params.VersionWithMeta,
-			"--build-arg", "BUILDNUM="+env.Buildnum, "--tag", fmt.Sprintf("%s:TAG", *upload), ".",
-		)
-		build.MustRunCommand(
-			"docker", "build", "--build-arg", "COMMIT="+env.Commit, "--build-arg", "VERSION="+params.VersionWithMeta,
-			"--build-arg", "BUILDNUM="+env.Buildnum, "--tag", fmt.Sprintf("%s:alltools-TAG", *upload), "-f",
-			"Dockerfile.alltools", ".",
-		)
+		build.MustRunCommand("docker", "build", "--build-arg", "COMMIT="+env.Commit, "--build-arg", "VERSION="+params.VersionWithMeta, "--build-arg", "BUILDNUM="+env.Buildnum, "--tag", fmt.Sprintf("%s:TAG", *upload), ".")
+		build.MustRunCommand("docker", "build", "--build-arg", "COMMIT="+env.Commit, "--build-arg", "VERSION="+params.VersionWithMeta, "--build-arg", "BUILDNUM="+env.Buildnum, "--tag", fmt.Sprintf("%s:alltools-TAG", *upload), "-f", "Dockerfile.alltools", ".")
 
 		// Tag and upload the images to Docker Hub
 		for _, tag := range tags {
@@ -798,9 +780,7 @@ func doDocker(cmdline []string) {
 				if exec.Command("docker", "pull", img).Run() != nil {
 					continue // Generally the only failure is a missing image, which is good
 				}
-				buildnum, err := exec.Command(
-					"docker", "inspect", "--format", "{{index .Config.Labels \"buildnum\"}}", img,
-				).CombinedOutput()
+				buildnum, err := exec.Command("docker", "inspect", "--format", "{{index .Config.Labels \"buildnum\"}}", img).CombinedOutput()
 				if err != nil {
 					log.Fatalf("Failed to inspect container: %v\nOutput: %s", err, string(buildnum))
 				}
@@ -847,9 +827,7 @@ func doDocker(cmdline []string) {
 							mismatch = true
 							break
 						}
-						buildnum, err := exec.Command(
-							"docker", "inspect", "--format", "{{index .Config.Labels \"buildnum\"}}", img,
-						).CombinedOutput()
+						buildnum, err := exec.Command("docker", "inspect", "--format", "{{index .Config.Labels \"buildnum\"}}", img).CombinedOutput()
 						if err != nil {
 							log.Fatalf("Failed to inspect container: %v\nOutput: %s", err, string(buildnum))
 						}
@@ -958,9 +936,7 @@ func doDebianSource(cmdline []string) {
 				if err := build.ExtractArchive(gobootbundle, pkgdir); err != nil {
 					log.Fatalf("Failed to extract bootstrapper Go sources: %v", err)
 				}
-				if err := os.Rename(
-					filepath.Join(pkgdir, "go"), filepath.Join(pkgdir, fmt.Sprintf(".goboot-%d", i+1)),
-				); err != nil {
+				if err := os.Rename(filepath.Join(pkgdir, "go"), filepath.Join(pkgdir, fmt.Sprintf(".goboot-%d", i+1))); err != nil {
 					log.Fatalf("Failed to rename bootstrapper Go source folder: %v", err)
 				}
 			}
@@ -973,10 +949,7 @@ func doDebianSource(cmdline []string) {
 			}
 			// Add all dependency modules in compressed form
 			os.MkdirAll(filepath.Join(pkgdir, ".mod", "cache"), 0755)
-			if err := cp.CopyAll(
-				filepath.Join(pkgdir, ".mod", "cache", "download"),
-				filepath.Join(*workdir, "modgopath", "pkg", "mod", "cache", "download"),
-			); err != nil {
+			if err := cp.CopyAll(filepath.Join(pkgdir, ".mod", "cache", "download"), filepath.Join(*workdir, "modgopath", "pkg", "mod", "cache", "download")); err != nil {
 				log.Fatalf("Failed to copy Go module dependencies: %v", err)
 			}
 			// Run the packaging and upload to the PPA
@@ -1126,9 +1099,7 @@ func (d debExecutable) Package() string {
 	return d.BinaryName
 }
 
-func newDebMetadata(
-	distro, author string, env build.Environment, t time.Time, name string, version string, exes []debExecutable,
-) debMetadata {
+func newDebMetadata(distro, author string, env build.Environment, t time.Time, name string, version string, exes []debExecutable) debMetadata {
 	if author == "" {
 		// No signing key, use default author.
 		author = "Ethereum Builds <fjl@ethereum.org>"
@@ -1231,9 +1202,7 @@ func doWindowsInstaller(cmdline []string) {
 	var (
 		arch    = flag.String("arch", runtime.GOARCH, "Architecture for cross build packaging")
 		signer  = flag.String("signer", "", `Environment variable holding the signing key (e.g. WINDOWS_SIGNING_KEY)`)
-		signify = flag.String(
-			"signify key", "", `Environment variable holding the signify signing key (e.g. WINDOWS_SIGNIFY_KEY)`,
-		)
+		signify = flag.String("signify key", "", `Environment variable holding the signify signing key (e.g. WINDOWS_SIGNIFY_KEY)`)
 		upload  = flag.String("upload", "", `Destination to upload the archives (usually "gethstore/builds")`)
 		workdir = flag.String("workdir", "", `Output directory for packages (uses temp dir if unset)`)
 	)
@@ -1289,8 +1258,7 @@ func doWindowsInstaller(cmdline []string) {
 	if err != nil {
 		log.Fatalf("Failed to convert installer file path: %v", err)
 	}
-	build.MustRunCommand(
-		"makensis.exe",
+	build.MustRunCommand("makensis.exe",
 		"/DOUTPUTFILE="+installer,
 		"/DMAJORVERSION="+version[0],
 		"/DMINORVERSION="+version[1],

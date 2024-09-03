@@ -23,14 +23,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/common/hexutil"
-	"github.com/ripoff2/go-ethereum/consensus"
-	"github.com/ripoff2/go-ethereum/core"
-	"github.com/ripoff2/go-ethereum/core/state"
-	"github.com/ripoff2/go-ethereum/core/txpool"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/consensus"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/txpool"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 // Backend wraps all methods required for mining. Only full node is capable
@@ -147,18 +147,16 @@ func (miner *Miner) getPending() *newPayloadResult {
 	if miner.chainConfig.IsShanghai(new(big.Int).Add(header.Number, big.NewInt(1)), timestamp) {
 		withdrawal = []*types.Withdrawal{}
 	}
-	ret := miner.generateWork(
-		&generateParams{
-			timestamp:   timestamp,
-			forceTime:   false,
-			parentHash:  header.Hash(),
-			coinbase:    miner.config.PendingFeeRecipient,
-			random:      common.Hash{},
-			withdrawals: withdrawal,
-			beaconRoot:  nil,
-			noTxs:       false,
-		},
-	)
+	ret := miner.generateWork(&generateParams{
+		timestamp:   timestamp,
+		forceTime:   false,
+		parentHash:  header.Hash(),
+		coinbase:    miner.config.PendingFeeRecipient,
+		random:      common.Hash{},
+		withdrawals: withdrawal,
+		beaconRoot:  nil,
+		noTxs:       false,
+	})
 	if ret.err != nil {
 		return nil
 	}

@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/core/rawdb"
-	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/ethdb"
 )
 
 // Iterator is an iterator to step over all the accounts or the specific
@@ -86,11 +86,9 @@ type diffAccountIterator struct {
 func (dl *diffLayer) AccountIterator(seek common.Hash) AccountIterator {
 	// Seek out the requested starting account
 	hashes := dl.AccountList()
-	index := sort.Search(
-		len(hashes), func(i int) bool {
-			return bytes.Compare(seek[:], hashes[i][:]) <= 0
-		},
-	)
+	index := sort.Search(len(hashes), func(i int) bool {
+		return bytes.Compare(seek[:], hashes[i][:]) <= 0
+	})
 	// Assemble and returned the already seeked iterator
 	return &diffAccountIterator{
 		layer: dl,
@@ -254,11 +252,9 @@ func (dl *diffLayer) StorageIterator(account common.Hash, seek common.Hash) (Sto
 	// as destructed. The iterator is for the new one which
 	// just has the same address as the deleted one.
 	hashes, destructed := dl.StorageList(account)
-	index := sort.Search(
-		len(hashes), func(i int) bool {
-			return bytes.Compare(seek[:], hashes[i][:]) <= 0
-		},
-	)
+	index := sort.Search(len(hashes), func(i int) bool {
+		return bytes.Compare(seek[:], hashes[i][:]) <= 0
+	})
 	// Assemble and returned the already seeked iterator
 	return &diffStorageIterator{
 		layer:   dl,

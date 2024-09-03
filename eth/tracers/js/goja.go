@@ -24,17 +24,17 @@ import (
 	"slices"
 
 	"github.com/dop251/goja"
+	"github.com/ethereum/go-ethereum/core/tracing"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/ethereum/go-ethereum/eth/tracers/internal"
 	"github.com/holiman/uint256"
-	"github.com/ripoff2/go-ethereum/core/tracing"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/eth/tracers"
-	"github.com/ripoff2/go-ethereum/eth/tracers/internal"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/common/hexutil"
-	"github.com/ripoff2/go-ethereum/core/vm"
-	"github.com/ripoff2/go-ethereum/crypto"
-	jsassets "github.com/ripoff2/go-ethereum/eth/tracers/js/internal/tracers"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
+	jsassets "github.com/ethereum/go-ethereum/eth/tracers/js/internal/tracers"
 )
 
 var assetTracers = make(map[string]string)
@@ -281,9 +281,7 @@ func (t *jsTracer) OnTxEnd(receipt *types.Receipt, err error) {
 }
 
 // onStart implements the Tracer interface to initialize the tracing operation.
-func (t *jsTracer) onStart(
-	from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int,
-) {
+func (t *jsTracer) onStart(from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
 	if t.err != nil {
 		return
 	}
@@ -319,9 +317,7 @@ func (t *jsTracer) onStart(
 }
 
 // OnOpcode implements the Tracer interface to trace a single step of VM execution.
-func (t *jsTracer) OnOpcode(
-	pc uint64, op byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error,
-) {
+func (t *jsTracer) OnOpcode(pc uint64, op byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error) {
 	if !t.traceStep {
 		return
 	}
@@ -374,9 +370,7 @@ func (t *jsTracer) onEnd(output []byte, gasUsed uint64, err error, reverted bool
 }
 
 // OnEnter is called when EVM enters a new scope (via call, create or selfdestruct).
-func (t *jsTracer) OnEnter(
-	depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int,
-) {
+func (t *jsTracer) OnEnter(depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int) {
 	if t.err != nil {
 		return
 	}
@@ -464,124 +458,105 @@ func wrapError(context string, err error) error {
 func (t *jsTracer) setBuiltinFunctions() {
 	vm := t.vm
 	// TODO: load console from goja-nodejs
-	vm.Set(
-		"toHex", func(v goja.Value) string {
-			b, err := t.fromBuf(vm, v, false)
-			if err != nil {
-				vm.Interrupt(err)
-				return ""
-			}
-			return hexutil.Encode(b)
-		},
-	)
-	vm.Set(
-		"toWord", func(v goja.Value) goja.Value {
-			// TODO: add test with []byte len < 32 or > 32
-			b, err := t.fromBuf(vm, v, true)
-			if err != nil {
-				vm.Interrupt(err)
-				return nil
-			}
-			b = common.BytesToHash(b).Bytes()
-			res, err := t.toBuf(vm, b)
-			if err != nil {
-				vm.Interrupt(err)
-				return nil
-			}
-			return res
-		},
-	)
-	vm.Set(
-		"toAddress", func(v goja.Value) goja.Value {
-			a, err := t.fromBuf(vm, v, true)
-			if err != nil {
-				vm.Interrupt(err)
-				return nil
-			}
-			a = common.BytesToAddress(a).Bytes()
-			res, err := t.toBuf(vm, a)
-			if err != nil {
-				vm.Interrupt(err)
-				return nil
-			}
-			return res
-		},
-	)
-	vm.Set(
-		"toContract", func(from goja.Value, nonce uint) goja.Value {
-			a, err := t.fromBuf(vm, from, true)
-			if err != nil {
-				vm.Interrupt(err)
-				return nil
-			}
-			addr := common.BytesToAddress(a)
-			b := crypto.CreateAddress(addr, uint64(nonce)).Bytes()
-			res, err := t.toBuf(vm, b)
-			if err != nil {
-				vm.Interrupt(err)
-				return nil
-			}
-			return res
-		},
-	)
-	vm.Set(
-		"toContract2", func(from goja.Value, salt string, initcode goja.Value) goja.Value {
-			a, err := t.fromBuf(vm, from, true)
-			if err != nil {
-				vm.Interrupt(err)
-				return nil
-			}
-			addr := common.BytesToAddress(a)
-			code, err := t.fromBuf(vm, initcode, true)
-			if err != nil {
-				vm.Interrupt(err)
-				return nil
-			}
-			code = common.CopyBytes(code)
-			codeHash := crypto.Keccak256(code)
-			b := crypto.CreateAddress2(addr, common.HexToHash(salt), codeHash).Bytes()
-			res, err := t.toBuf(vm, b)
-			if err != nil {
-				vm.Interrupt(err)
-				return nil
-			}
-			return res
-		},
-	)
-	vm.Set(
-		"isPrecompiled", func(v goja.Value) bool {
-			a, err := t.fromBuf(vm, v, true)
-			if err != nil {
-				vm.Interrupt(err)
-				return false
-			}
-			return slices.Contains(t.activePrecompiles, common.BytesToAddress(a))
-		},
-	)
-	vm.Set(
-		"slice", func(slice goja.Value, start, end int64) goja.Value {
-			b, err := t.fromBuf(vm, slice, false)
-			if err != nil {
-				vm.Interrupt(err)
-				return nil
-			}
-			if start < 0 || start > end || end > int64(len(b)) {
-				vm.Interrupt(
-					fmt.Sprintf(
-						"Tracer accessed out of bound memory: available %d, offset %d, size %d", len(b), start,
-						end-start,
-					),
-				)
-				return nil
-			}
-			res, err := t.toBuf(vm, b[start:end])
-			if err != nil {
-				vm.Interrupt(err)
-				return nil
-			}
-			return res
-		},
-	)
+	vm.Set("toHex", func(v goja.Value) string {
+		b, err := t.fromBuf(vm, v, false)
+		if err != nil {
+			vm.Interrupt(err)
+			return ""
+		}
+		return hexutil.Encode(b)
+	})
+	vm.Set("toWord", func(v goja.Value) goja.Value {
+		// TODO: add test with []byte len < 32 or > 32
+		b, err := t.fromBuf(vm, v, true)
+		if err != nil {
+			vm.Interrupt(err)
+			return nil
+		}
+		b = common.BytesToHash(b).Bytes()
+		res, err := t.toBuf(vm, b)
+		if err != nil {
+			vm.Interrupt(err)
+			return nil
+		}
+		return res
+	})
+	vm.Set("toAddress", func(v goja.Value) goja.Value {
+		a, err := t.fromBuf(vm, v, true)
+		if err != nil {
+			vm.Interrupt(err)
+			return nil
+		}
+		a = common.BytesToAddress(a).Bytes()
+		res, err := t.toBuf(vm, a)
+		if err != nil {
+			vm.Interrupt(err)
+			return nil
+		}
+		return res
+	})
+	vm.Set("toContract", func(from goja.Value, nonce uint) goja.Value {
+		a, err := t.fromBuf(vm, from, true)
+		if err != nil {
+			vm.Interrupt(err)
+			return nil
+		}
+		addr := common.BytesToAddress(a)
+		b := crypto.CreateAddress(addr, uint64(nonce)).Bytes()
+		res, err := t.toBuf(vm, b)
+		if err != nil {
+			vm.Interrupt(err)
+			return nil
+		}
+		return res
+	})
+	vm.Set("toContract2", func(from goja.Value, salt string, initcode goja.Value) goja.Value {
+		a, err := t.fromBuf(vm, from, true)
+		if err != nil {
+			vm.Interrupt(err)
+			return nil
+		}
+		addr := common.BytesToAddress(a)
+		code, err := t.fromBuf(vm, initcode, true)
+		if err != nil {
+			vm.Interrupt(err)
+			return nil
+		}
+		code = common.CopyBytes(code)
+		codeHash := crypto.Keccak256(code)
+		b := crypto.CreateAddress2(addr, common.HexToHash(salt), codeHash).Bytes()
+		res, err := t.toBuf(vm, b)
+		if err != nil {
+			vm.Interrupt(err)
+			return nil
+		}
+		return res
+	})
+	vm.Set("isPrecompiled", func(v goja.Value) bool {
+		a, err := t.fromBuf(vm, v, true)
+		if err != nil {
+			vm.Interrupt(err)
+			return false
+		}
+		return slices.Contains(t.activePrecompiles, common.BytesToAddress(a))
+	})
+	vm.Set("slice", func(slice goja.Value, start, end int64) goja.Value {
+		b, err := t.fromBuf(vm, slice, false)
+		if err != nil {
+			vm.Interrupt(err)
+			return nil
+		}
+		if start < 0 || start > end || end > int64(len(b)) {
+			vm.Interrupt(fmt.Sprintf("Tracer accessed out of bound memory: available %d, offset %d, size %d", len(b), start, end-start))
+			return nil
+		}
+		res, err := t.toBuf(vm, b[start:end])
+		if err != nil {
+			vm.Interrupt(err)
+			return nil
+		}
+		return res
+	})
 }
 
 // setTypeConverters sets up utilities for converting Go types into those
@@ -696,9 +671,7 @@ func (mo *memoryObj) GetUint(addr int64) goja.Value {
 // getUint returns the 32 bytes at the specified address interpreted as a uint.
 func (mo *memoryObj) getUint(addr int64) (*big.Int, error) {
 	if len(mo.memory) < int(addr)+32 || addr < 0 {
-		return nil, fmt.Errorf(
-			"tracer accessed out of bound memory: available %d, offset %d, size %d", len(mo.memory), addr, 32,
-		)
+		return nil, fmt.Errorf("tracer accessed out of bound memory: available %d, offset %d, size %d", len(mo.memory), addr, 32)
 	}
 	return new(big.Int).SetBytes(internal.MemoryPtr(mo.memory, addr, 32)), nil
 }

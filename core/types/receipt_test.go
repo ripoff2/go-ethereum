@@ -24,11 +24,11 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/holiman/uint256"
 	"github.com/kylelemons/godebug/diff"
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/params"
-	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 var (
@@ -91,78 +91,64 @@ var (
 	to6 = common.HexToAddress("0x6")
 	to7 = common.HexToAddress("0x7")
 	txs = Transactions{
-		NewTx(
-			&LegacyTx{
-				Nonce:    1,
-				Value:    big.NewInt(1),
-				Gas:      1,
-				GasPrice: big.NewInt(11),
-			},
-		),
-		NewTx(
-			&LegacyTx{
-				To:       &to2,
-				Nonce:    2,
-				Value:    big.NewInt(2),
-				Gas:      2,
-				GasPrice: big.NewInt(22),
-			},
-		),
-		NewTx(
-			&AccessListTx{
-				To:       &to3,
-				Nonce:    3,
-				Value:    big.NewInt(3),
-				Gas:      3,
-				GasPrice: big.NewInt(33),
-			},
-		),
+		NewTx(&LegacyTx{
+			Nonce:    1,
+			Value:    big.NewInt(1),
+			Gas:      1,
+			GasPrice: big.NewInt(11),
+		}),
+		NewTx(&LegacyTx{
+			To:       &to2,
+			Nonce:    2,
+			Value:    big.NewInt(2),
+			Gas:      2,
+			GasPrice: big.NewInt(22),
+		}),
+		NewTx(&AccessListTx{
+			To:       &to3,
+			Nonce:    3,
+			Value:    big.NewInt(3),
+			Gas:      3,
+			GasPrice: big.NewInt(33),
+		}),
 		// EIP-1559 transactions.
-		NewTx(
-			&DynamicFeeTx{
-				To:        &to4,
-				Nonce:     4,
-				Value:     big.NewInt(4),
-				Gas:       4,
-				GasTipCap: big.NewInt(44),
-				GasFeeCap: big.NewInt(1044),
-			},
-		),
-		NewTx(
-			&DynamicFeeTx{
-				To:        &to5,
-				Nonce:     5,
-				Value:     big.NewInt(5),
-				Gas:       5,
-				GasTipCap: big.NewInt(55),
-				GasFeeCap: big.NewInt(1055),
-			},
-		),
+		NewTx(&DynamicFeeTx{
+			To:        &to4,
+			Nonce:     4,
+			Value:     big.NewInt(4),
+			Gas:       4,
+			GasTipCap: big.NewInt(44),
+			GasFeeCap: big.NewInt(1044),
+		}),
+		NewTx(&DynamicFeeTx{
+			To:        &to5,
+			Nonce:     5,
+			Value:     big.NewInt(5),
+			Gas:       5,
+			GasTipCap: big.NewInt(55),
+			GasFeeCap: big.NewInt(1055),
+		}),
 		// EIP-4844 transactions.
-		NewTx(
-			&BlobTx{
-				To:         to6,
-				Nonce:      6,
-				Value:      uint256.NewInt(6),
-				Gas:        6,
-				GasTipCap:  uint256.NewInt(66),
-				GasFeeCap:  uint256.NewInt(1066),
-				BlobFeeCap: uint256.NewInt(100066),
-				BlobHashes: []common.Hash{{}},
-			},
-		),
-		NewTx(
-			&BlobTx{
-				To:         to7,
-				Nonce:      7,
-				Value:      uint256.NewInt(7),
-				Gas:        7,
-				GasTipCap:  uint256.NewInt(77),
-				GasFeeCap:  uint256.NewInt(1077),
-				BlobFeeCap: uint256.NewInt(100077),
-				BlobHashes: []common.Hash{{}, {}, {}},
-			},
-		),
+		NewTx(&BlobTx{
+			To:         to6,
+			Nonce:      6,
+			Value:      uint256.NewInt(6),
+			Gas:        6,
+			GasTipCap:  uint256.NewInt(66),
+			GasFeeCap:  uint256.NewInt(1066),
+			BlobFeeCap: uint256.NewInt(100066),
+			BlobHashes: []common.Hash{{}},
+		}),
+		NewTx(&BlobTx{
+			To:         to7,
+			Nonce:      7,
+			Value:      uint256.NewInt(7),
+			Gas:        7,
+			GasTipCap:  uint256.NewInt(77),
+			GasFeeCap:  uint256.NewInt(1077),
+			BlobFeeCap: uint256.NewInt(100077),
+			BlobHashes: []common.Hash{{}, {}, {}},
+		}),
 	}
 
 	blockNumber = big.NewInt(1)
@@ -325,9 +311,7 @@ func TestDeriveFields(t *testing.T) {
 	basefee := big.NewInt(1000)
 	blobGasPrice := big.NewInt(920)
 	derivedReceipts := clearComputedFieldsOnReceipts(receipts)
-	err := Receipts(derivedReceipts).DeriveFields(
-		params.TestChainConfig, blockHash, blockNumber.Uint64(), blockTime, basefee, blobGasPrice, txs,
-	)
+	err := Receipts(derivedReceipts).DeriveFields(params.TestChainConfig, blockHash, blockNumber.Uint64(), blockTime, basefee, blobGasPrice, txs)
 	if err != nil {
 		t.Fatalf("DeriveFields(...) = %v, want <nil>", err)
 	}

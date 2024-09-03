@@ -28,10 +28,10 @@ import (
 	"fmt"
 	"hash"
 
-	"github.com/ripoff2/go-ethereum/common/mclock"
-	"github.com/ripoff2/go-ethereum/p2p/enode"
-	"github.com/ripoff2/go-ethereum/p2p/enr"
-	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/common/mclock"
+	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ethereum/go-ethereum/p2p/enr"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 // TODO concurrent WHOAREYOU tie-breaker
@@ -359,9 +359,7 @@ func (c *Codec) encodeHandshakeHeader(toID enode.ID, addr string, challenge *Who
 }
 
 // makeHandshakeAuth creates the auth header on a request packet following WHOAREYOU.
-func (c *Codec) makeHandshakeAuth(toID enode.ID, addr string, challenge *Whoareyou) (
-	*handshakeAuthData, *session, error,
-) {
+func (c *Codec) makeHandshakeAuth(toID enode.ID, addr string, challenge *Whoareyou) (*handshakeAuthData, *session, error) {
 	auth := new(handshakeAuthData)
 	auth.h.SrcID = c.localnode.ID()
 
@@ -503,9 +501,7 @@ func (c *Codec) decodeWhoareyou(head *Header, headerData []byte) (Packet, error)
 	return p, nil
 }
 
-func (c *Codec) decodeHandshakeMessage(fromAddr string, head *Header, headerData, msgData []byte) (
-	n *enode.Node, p Packet, err error,
-) {
+func (c *Codec) decodeHandshakeMessage(fromAddr string, head *Header, headerData, msgData []byte) (n *enode.Node, p Packet, err error) {
 	node, auth, session, err := c.decodeHandshake(fromAddr, head)
 	if err != nil {
 		c.sc.deleteHandshake(auth.h.SrcID, fromAddr)
@@ -525,9 +521,7 @@ func (c *Codec) decodeHandshakeMessage(fromAddr string, head *Header, headerData
 	return node, msg, nil
 }
 
-func (c *Codec) decodeHandshake(fromAddr string, head *Header) (
-	n *enode.Node, auth handshakeAuthData, s *session, err error,
-) {
+func (c *Codec) decodeHandshake(fromAddr string, head *Header) (n *enode.Node, auth handshakeAuthData, s *session, err error) {
 	if auth, err = c.decodeHandshakeAuthData(head); err != nil {
 		return nil, auth, nil, err
 	}

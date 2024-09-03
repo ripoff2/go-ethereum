@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/log"
-	"github.com/ripoff2/go-ethereum/trie/trienode"
-	"github.com/ripoff2/go-ethereum/trie/triestate"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/trie/trienode"
+	"github.com/ethereum/go-ethereum/trie/triestate"
 )
 
 // diffLayer represents a collection of modifications made to the in-memory tries
@@ -45,10 +45,7 @@ type diffLayer struct {
 }
 
 // newDiffLayer creates a new diff layer on top of an existing layer.
-func newDiffLayer(
-	parent layer, root common.Hash, id uint64, block uint64, nodes map[common.Hash]map[string]*trienode.Node,
-	states *triestate.Set,
-) *diffLayer {
+func newDiffLayer(parent layer, root common.Hash, id uint64, block uint64, nodes map[common.Hash]map[string]*trienode.Node, states *triestate.Set) *diffLayer {
 	var (
 		size  int64
 		count int
@@ -123,9 +120,7 @@ func (dl *diffLayer) node(owner common.Hash, path []byte, depth int) ([]byte, co
 
 // update implements the layer interface, creating a new layer on top of the
 // existing layer tree with the specified data items.
-func (dl *diffLayer) update(
-	root common.Hash, id uint64, block uint64, nodes map[common.Hash]map[string]*trienode.Node, states *triestate.Set,
-) *diffLayer {
+func (dl *diffLayer) update(root common.Hash, id uint64, block uint64, nodes map[common.Hash]map[string]*trienode.Node, states *triestate.Set) *diffLayer {
 	return newDiffLayer(dl, root, id, block, nodes, states)
 }
 

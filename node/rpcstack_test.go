@@ -28,11 +28,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/internal/testlog"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/websocket"
-	"github.com/ripoff2/go-ethereum/internal/testlog"
-	"github.com/ripoff2/go-ethereum/log"
-	"github.com/ripoff2/go-ethereum/rpc"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,9 +40,7 @@ const testMethod = "rpc_modules"
 
 // TestCorsHandler makes sure CORS are properly handled on the http server.
 func TestCorsHandler(t *testing.T) {
-	srv := createAndStartServer(
-		t, &httpConfig{CorsAllowedOrigins: []string{"test", "test.com"}}, false, &wsConfig{}, nil,
-	)
+	srv := createAndStartServer(t, &httpConfig{CorsAllowedOrigins: []string{"test", "test.com"}}, false, &wsConfig{}, nil)
 	defer srv.stop()
 	url := "http://" + srv.listenAddr()
 
@@ -91,17 +89,13 @@ func TestWebsocketOrigins(t *testing.T) {
 	tests := []originTest{
 		{
 			spec: "*", // allow all
-			expOk: []string{
-				"", "http://test", "https://test", "http://test:8540", "https://test:8540",
-				"http://test.com", "https://foo.test", "http://testa", "http://atestb:8540", "https://atestb:8540",
-			},
+			expOk: []string{"", "http://test", "https://test", "http://test:8540", "https://test:8540",
+				"http://test.com", "https://foo.test", "http://testa", "http://atestb:8540", "https://atestb:8540"},
 		},
 		{
-			spec:  "test",
-			expOk: []string{"http://test", "https://test", "http://test:8540", "https://test:8540"},
-			expFail: []string{
-				"http://test.com", "https://foo.test", "http://testa", "http://atestb:8540", "https://atestb:8540",
-			},
+			spec:    "test",
+			expOk:   []string{"http://test", "https://test", "http://test:8540", "https://test:8540"},
+			expFail: []string{"http://test.com", "https://foo.test", "http://testa", "http://atestb:8540", "https://atestb:8540"},
 		},
 		// scheme tests
 		{
@@ -111,8 +105,7 @@ func TestWebsocketOrigins(t *testing.T) {
 				"test",                                // no scheme, required by spec
 				"http://test",                         // wrong scheme
 				"http://test.foo", "https://a.test.x", // subdomain variations
-				"http://testx:8540", "https://xtest:8540",
-			},
+				"http://testx:8540", "https://xtest:8540"},
 		},
 		// ip tests
 		{
@@ -123,8 +116,7 @@ func TestWebsocketOrigins(t *testing.T) {
 				"http://12.34.56.78:443", // wrong scheme
 				"http://1.12.34.56.78",   // wrong 'domain name'
 				"http://12.34.56.78.a",   // wrong 'domain name'
-				"https://87.65.43.21", "http://87.65.43.21:8540", "https://87.65.43.21:8540",
-			},
+				"https://87.65.43.21", "http://87.65.43.21:8540", "https://87.65.43.21:8540"},
 		},
 		// port tests
 		{
@@ -133,8 +125,7 @@ func TestWebsocketOrigins(t *testing.T) {
 			expFail: []string{
 				"http://test", "https://test", // spec says port required
 				"http://test:8541", "https://test:8541", // wrong port
-				"http://bad", "https://bad", "http://bad:8540", "https://bad:8540",
-			},
+				"http://bad", "https://bad", "http://bad:8540", "https://bad:8540"},
 		},
 		// scheme and port
 		{
@@ -145,20 +136,16 @@ func TestWebsocketOrigins(t *testing.T) {
 				"http://test",                           // missing port, + wrong scheme
 				"http://test:8540",                      // wrong scheme
 				"http://test:8541", "https://test:8541", // wrong port
-				"http://bad", "https://bad", "http://bad:8540", "https://bad:8540",
-			},
+				"http://bad", "https://bad", "http://bad:8540", "https://bad:8540"},
 		},
 		// several allowed origins
 		{
 			spec: "localhost,http://127.0.0.1",
-			expOk: []string{
-				"localhost", "http://localhost", "https://localhost:8443",
-				"http://127.0.0.1", "http://127.0.0.1:8080",
-			},
+			expOk: []string{"localhost", "http://localhost", "https://localhost:8443",
+				"http://127.0.0.1", "http://127.0.0.1:8080"},
 			expFail: []string{
 				"https://127.0.0.1", // wrong scheme
-				"http://bad", "https://bad", "http://bad:8540", "https://bad:8540",
-			},
+				"http://bad", "https://bad", "http://bad:8540", "https://bad:8540"},
 		},
 	}
 	for _, tc := range tests {
@@ -242,17 +229,13 @@ func Test_checkPath(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		t.Run(
-			strconv.Itoa(i), func(t *testing.T) {
-				assert.Equal(t, tt.expected, checkPath(tt.req, tt.prefix))
-			},
-		)
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			assert.Equal(t, tt.expected, checkPath(tt.req, tt.prefix))
+		})
 	}
 }
 
-func createAndStartServer(
-	t *testing.T, conf *httpConfig, ws bool, wsConf *wsConfig, timeouts *rpc.HTTPTimeouts,
-) *httpServer {
+func createAndStartServer(t *testing.T, conf *httpConfig, ws bool, wsConf *wsConfig, timeouts *rpc.HTTPTimeouts) *httpServer {
 	t.Helper()
 
 	if timeouts == nil {
@@ -374,24 +357,16 @@ func TestJWT(t *testing.T) {
 			return fmt.Sprintf("Bearer %v", issueToken(secret, nil, testClaim{"iat": time.Now().Unix() - 4}))
 		},
 		func() string {
-			return fmt.Sprintf(
-				"Bearer %v", issueToken(
-					secret, nil, testClaim{
-						"iat": time.Now().Unix(),
-						"exp": time.Now().Unix() + 2,
-					},
-				),
-			)
+			return fmt.Sprintf("Bearer %v", issueToken(secret, nil, testClaim{
+				"iat": time.Now().Unix(),
+				"exp": time.Now().Unix() + 2,
+			}))
 		},
 		func() string {
-			return fmt.Sprintf(
-				"Bearer %v", issueToken(
-					secret, nil, testClaim{
-						"iat": time.Now().Unix(),
-						"bar": "baz",
-					},
-				),
-			)
+			return fmt.Sprintf("Bearer %v", issueToken(secret, nil, testClaim{
+				"iat": time.Now().Unix(),
+				"bar": "baz",
+			}))
 		},
 	}
 	for i, tokenFn := range expOk {
@@ -408,29 +383,19 @@ func TestJWT(t *testing.T) {
 	expFail := []func() string{
 		// future
 		func() string {
-			return fmt.Sprintf(
-				"Bearer %v",
-				issueToken(secret, nil, testClaim{"iat": time.Now().Unix() + int64(jwtExpiryTimeout.Seconds()) + 1}),
-			)
+			return fmt.Sprintf("Bearer %v", issueToken(secret, nil, testClaim{"iat": time.Now().Unix() + int64(jwtExpiryTimeout.Seconds()) + 1}))
 		},
 		// stale
 		func() string {
-			return fmt.Sprintf(
-				"Bearer %v",
-				issueToken(secret, nil, testClaim{"iat": time.Now().Unix() - int64(jwtExpiryTimeout.Seconds()) - 1}),
-			)
+			return fmt.Sprintf("Bearer %v", issueToken(secret, nil, testClaim{"iat": time.Now().Unix() - int64(jwtExpiryTimeout.Seconds()) - 1}))
 		},
 		// wrong algo
 		func() string {
-			return fmt.Sprintf(
-				"Bearer %v", issueToken(secret, jwt.SigningMethodHS512, testClaim{"iat": time.Now().Unix() + 4}),
-			)
+			return fmt.Sprintf("Bearer %v", issueToken(secret, jwt.SigningMethodHS512, testClaim{"iat": time.Now().Unix() + 4}))
 		},
 		// expired
 		func() string {
-			return fmt.Sprintf(
-				"Bearer %v", issueToken(secret, nil, testClaim{"iat": time.Now().Unix(), "exp": time.Now().Unix()}),
-			)
+			return fmt.Sprintf("Bearer %v", issueToken(secret, nil, testClaim{"iat": time.Now().Unix(), "exp": time.Now().Unix()}))
 		},
 		// missing mandatory iat
 		func() string {
@@ -558,39 +523,37 @@ func TestGzipHandler(t *testing.T) {
 
 	for _, test := range tests {
 		test := test
-		t.Run(
-			test.name, func(t *testing.T) {
-				srv := httptest.NewServer(newGzipHandler(test.handler))
-				defer srv.Close()
+		t.Run(test.name, func(t *testing.T) {
+			srv := httptest.NewServer(newGzipHandler(test.handler))
+			defer srv.Close()
 
-				resp, err := http.Get(srv.URL)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer resp.Body.Close()
+			resp, err := http.Get(srv.URL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
 
-				content, err := io.ReadAll(resp.Body)
-				if err != nil {
-					t.Fatal(err)
-				}
-				wasGzip := resp.Uncompressed
+			content, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			wasGzip := resp.Uncompressed
 
-				if string(content) != "response" {
-					t.Fatalf("wrong response content %q", content)
+			if string(content) != "response" {
+				t.Fatalf("wrong response content %q", content)
+			}
+			if wasGzip != test.isGzip {
+				t.Fatalf("response gzipped == %t, want %t", wasGzip, test.isGzip)
+			}
+			if resp.StatusCode != test.status {
+				t.Fatalf("response status == %d, want %d", resp.StatusCode, test.status)
+			}
+			for name, expectedValue := range test.header {
+				if v := resp.Header.Get(name); v != expectedValue {
+					t.Fatalf("response header %s == %s, want %s", name, v, expectedValue)
 				}
-				if wasGzip != test.isGzip {
-					t.Fatalf("response gzipped == %t, want %t", wasGzip, test.isGzip)
-				}
-				if resp.StatusCode != test.status {
-					t.Fatalf("response status == %d, want %d", resp.StatusCode, test.status)
-				}
-				for name, expectedValue := range test.header {
-					if v := resp.Header.Get(name); v != expectedValue {
-						t.Fatalf("response header %s == %s, want %s", name, v, expectedValue)
-					}
-				}
-			},
-		)
+			}
+		})
 	}
 }
 
@@ -606,35 +569,31 @@ func TestHTTPWriteTimeout(t *testing.T) {
 	url := fmt.Sprintf("http://%v", srv.listenAddr())
 
 	// Send normal request
-	t.Run(
-		"message", func(t *testing.T) {
-			resp := rpcRequest(t, url, "test_sleep")
-			defer resp.Body.Close()
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if string(body) != timeoutRes {
-				t.Errorf("wrong response. have %s, want %s", string(body), timeoutRes)
-			}
-		},
-	)
+	t.Run("message", func(t *testing.T) {
+		resp := rpcRequest(t, url, "test_sleep")
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(body) != timeoutRes {
+			t.Errorf("wrong response. have %s, want %s", string(body), timeoutRes)
+		}
+	})
 
 	// Batch request
-	t.Run(
-		"batch", func(t *testing.T) {
-			want := fmt.Sprintf("[%s,%s,%s]", greetRes, timeoutRes, timeoutRes)
-			resp := batchRpcRequest(t, url, []string{"test_greet", "test_sleep", "test_greet"})
-			defer resp.Body.Close()
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if string(body) != want {
-				t.Errorf("wrong response. have %s, want %s", string(body), want)
-			}
-		},
-	)
+	t.Run("batch", func(t *testing.T) {
+		want := fmt.Sprintf("[%s,%s,%s]", greetRes, timeoutRes, timeoutRes)
+		resp := batchRpcRequest(t, url, []string{"test_greet", "test_sleep", "test_greet"})
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(body) != want {
+			t.Errorf("wrong response. have %s, want %s", string(body), want)
+		}
+	})
 }
 
 func apis() []rpc.API {

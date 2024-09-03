@@ -25,17 +25,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ripoff2/go-ethereum/beacon/engine"
-	"github.com/ripoff2/go-ethereum/common"
-	"github.com/ripoff2/go-ethereum/core/txpool"
-	"github.com/ripoff2/go-ethereum/core/types"
-	"github.com/ripoff2/go-ethereum/crypto/kzg4844"
-	"github.com/ripoff2/go-ethereum/eth"
-	"github.com/ripoff2/go-ethereum/event"
-	"github.com/ripoff2/go-ethereum/log"
-	"github.com/ripoff2/go-ethereum/node"
-	"github.com/ripoff2/go-ethereum/params"
-	"github.com/ripoff2/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/beacon/engine"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/txpool"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto/kzg4844"
+	"github.com/ethereum/go-ethereum/eth"
+	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/node"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 const devEpochLength = 32
@@ -175,15 +175,13 @@ func (c *SimulatedBeacon) sealBlock(withdrawals []*types.Withdrawal, timestamp u
 
 	var random [32]byte
 	rand.Read(random[:])
-	fcResponse, err := c.engineAPI.forkchoiceUpdated(
-		c.curForkchoiceState, &engine.PayloadAttributes{
-			Timestamp:             timestamp,
-			SuggestedFeeRecipient: feeRecipient,
-			Withdrawals:           withdrawals,
-			Random:                random,
-			BeaconRoot:            &common.Hash{},
-		}, engine.PayloadV3,
-	)
+	fcResponse, err := c.engineAPI.forkchoiceUpdated(c.curForkchoiceState, &engine.PayloadAttributes{
+		Timestamp:             timestamp,
+		SuggestedFeeRecipient: feeRecipient,
+		Withdrawals:           withdrawals,
+		Random:                random,
+		BeaconRoot:            &common.Hash{},
+	}, engine.PayloadV3)
 	if err != nil {
 		return err
 	}
@@ -328,13 +326,11 @@ func (c *SimulatedBeacon) AdjustTime(adjustment time.Duration) error {
 // stack.
 func RegisterSimulatedBeaconAPIs(stack *node.Node, sim *SimulatedBeacon) {
 	api := newSimulatedBeaconAPI(sim)
-	stack.RegisterAPIs(
-		[]rpc.API{
-			{
-				Namespace: "dev",
-				Service:   api,
-				Version:   "1.0",
-			},
+	stack.RegisterAPIs([]rpc.API{
+		{
+			Namespace: "dev",
+			Service:   api,
+			Version:   "1.0",
 		},
-	)
+	})
 }
