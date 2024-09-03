@@ -19,10 +19,10 @@ package state
 import (
 	"maps"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/trie/utils"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/trie/utils"
 	"github.com/holiman/uint256"
 )
 

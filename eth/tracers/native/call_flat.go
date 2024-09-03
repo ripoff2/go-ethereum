@@ -25,12 +25,12 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
 )
 
 //go:generate go run github.com/fjl/gencodec -type flatCallAction -field-override flatCallActionMarshaling -out gen_flatcallaction_json.go
@@ -154,7 +154,9 @@ func newFlatCallTracer(ctx *tracers.Context, cfg json.RawMessage) (*tracers.Trac
 }
 
 // OnEnter is called when EVM enters a new scope (via call, create or selfdestruct).
-func (t *flatCallTracer) OnEnter(depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int) {
+func (t *flatCallTracer) OnEnter(
+	depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int,
+) {
 	if t.interrupt.Load() {
 		return
 	}
@@ -246,7 +248,9 @@ func (t *flatCallTracer) isPrecompiled(addr common.Address) bool {
 	return slices.Contains(t.activePrecompiles, addr)
 }
 
-func flatFromNested(input *callFrame, traceAddress []int, convertErrs bool, ctx *tracers.Context) (output []flatCallFrame, err error) {
+func flatFromNested(
+	input *callFrame, traceAddress []int, convertErrs bool, ctx *tracers.Context,
+) (output []flatCallFrame, err error) {
 	var frame *flatCallFrame
 	switch input.Type {
 	case vm.CREATE, vm.CREATE2:

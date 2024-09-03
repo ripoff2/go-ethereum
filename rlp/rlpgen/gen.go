@@ -23,7 +23,7 @@ import (
 	"go/types"
 	"sort"
 
-	"github.com/ethereum/go-ethereum/rlp/internal/rlpstruct"
+	"github.com/ripoff2/go-ethereum/rlp/internal/rlpstruct"
 )
 
 // buildContext keeps the data needed for make*Op.
@@ -498,13 +498,15 @@ func (bctx *buildContext) makeStructOp(named *types.Named, typ *types.Struct) (o
 	var allStructFields []rlpstruct.Field
 	for i := 0; i < typ.NumFields(); i++ {
 		f := typ.Field(i)
-		allStructFields = append(allStructFields, rlpstruct.Field{
-			Name:     f.Name(),
-			Exported: f.Exported(),
-			Index:    i,
-			Tag:      typ.Tag(i),
-			Type:     *bctx.typeToStructType(f.Type()),
-		})
+		allStructFields = append(
+			allStructFields, rlpstruct.Field{
+				Name:     f.Name(),
+				Exported: f.Exported(),
+				Index:    i,
+				Tag:      typ.Tag(i),
+				Type:     *bctx.typeToStructType(f.Type()),
+			},
+		)
 	}
 
 	// Filter/validate fields.

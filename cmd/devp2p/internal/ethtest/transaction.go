@@ -22,10 +22,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/internal/utesting"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/eth/protocols/eth"
+	"github.com/ripoff2/go-ethereum/internal/utesting"
 )
 
 // sendTxs sends the given transactions to the node and
@@ -80,10 +80,12 @@ func (s *Suite) sendTxs(t *utesting.T, txs []*types.Transaction) error {
 			if err != nil {
 				t.Logf("invalid GetBlockHeaders request: %v", err)
 			}
-			recvConn.Write(ethProto, eth.BlockHeadersMsg, &eth.BlockHeadersPacket{
-				RequestId:           msg.RequestId,
-				BlockHeadersRequest: headers,
-			})
+			recvConn.Write(
+				ethProto, eth.BlockHeadersMsg, &eth.BlockHeadersPacket{
+					RequestId:           msg.RequestId,
+					BlockHeadersRequest: headers,
+				},
+			)
 		default:
 			return fmt.Errorf("unexpected eth wire msg: %s", pretty.Sdump(msg))
 		}
@@ -167,10 +169,12 @@ func (s *Suite) sendInvalidTxs(t *utesting.T, txs []*types.Transaction) error {
 			if err != nil {
 				t.Logf("invalid GetBlockHeaders request: %v", err)
 			}
-			recvConn.Write(ethProto, eth.BlockHeadersMsg, &eth.BlockHeadersPacket{
-				RequestId:           msg.RequestId,
-				BlockHeadersRequest: headers,
-			})
+			recvConn.Write(
+				ethProto, eth.BlockHeadersMsg, &eth.BlockHeadersPacket{
+					RequestId:           msg.RequestId,
+					BlockHeadersRequest: headers,
+				},
+			)
 		default:
 			return fmt.Errorf("unexpected eth message: %v", pretty.Sdump(msg))
 		}

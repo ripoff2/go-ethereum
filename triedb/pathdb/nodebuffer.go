@@ -23,12 +23,12 @@ import (
 	"time"
 
 	"github.com/VictoriaMetrics/fastcache"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/trie/trienode"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
 )
 
 // nodebuffer is a collection of modified trie nodes to aggregate the disk
@@ -158,7 +158,11 @@ func (b *nodebuffer) revert(db ethdb.KeyValueReader, nodes map[common.Hash]map[s
 				if bytes.Equal(blob, n.Blob) {
 					continue
 				}
-				panic(fmt.Sprintf("non-existent node (%x %v) blob: %v", owner, path, crypto.Keccak256Hash(n.Blob).Hex()))
+				panic(
+					fmt.Sprintf(
+						"non-existent node (%x %v) blob: %v", owner, path, crypto.Keccak256Hash(n.Blob).Hex(),
+					),
+				)
 			}
 			current[path] = n
 			delta += int64(len(n.Blob)) - int64(len(orig.Blob))
@@ -221,7 +225,10 @@ func (b *nodebuffer) flush(db ethdb.KeyValueStore, clean *fastcache.Cache, id ui
 	// Ensure the target state id is aligned with the internal counter.
 	head := rawdb.ReadPersistentStateID(db)
 	if head+b.layers != id {
-		return fmt.Errorf("buffer layers (%d) cannot be applied on top of persisted state id (%d) to reach requested state id (%d)", b.layers, head, id)
+		return fmt.Errorf(
+			"buffer layers (%d) cannot be applied on top of persisted state id (%d) to reach requested state id (%d)",
+			b.layers, head, id,
+		)
 	}
 	var (
 		start = time.Now()
@@ -238,7 +245,10 @@ func (b *nodebuffer) flush(db ethdb.KeyValueStore, clean *fastcache.Cache, id ui
 	commitBytesMeter.Mark(int64(size))
 	commitNodesMeter.Mark(int64(nodes))
 	commitTimeTimer.UpdateSince(start)
-	log.Debug("Persisted pathdb nodes", "nodes", len(b.nodes), "bytes", common.StorageSize(size), "elapsed", common.PrettyDuration(time.Since(start)))
+	log.Debug(
+		"Persisted pathdb nodes", "nodes", len(b.nodes), "bytes", common.StorageSize(size), "elapsed",
+		common.PrettyDuration(time.Since(start)),
+	)
 	b.reset()
 	return nil
 }
@@ -246,7 +256,9 @@ func (b *nodebuffer) flush(db ethdb.KeyValueStore, clean *fastcache.Cache, id ui
 // writeNodes writes the trie nodes into the provided database batch.
 // Note this function will also inject all the newly written nodes
 // into clean cache.
-func writeNodes(batch ethdb.Batch, nodes map[common.Hash]map[string]*trienode.Node, clean *fastcache.Cache) (total int) {
+func writeNodes(
+	batch ethdb.Batch, nodes map[common.Hash]map[string]*trienode.Node, clean *fastcache.Cache,
+) (total int) {
 	for owner, subset := range nodes {
 		for path, n := range subset {
 			if n.IsDeleted() {

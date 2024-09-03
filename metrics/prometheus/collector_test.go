@@ -22,8 +22,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/metrics/internal"
+	"github.com/ripoff2/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/metrics/internal"
 )
 
 func TestMain(m *testing.M) {
@@ -36,9 +36,11 @@ func TestCollector(t *testing.T) {
 		c    = newCollector()
 		want string
 	)
-	internal.ExampleMetrics().Each(func(name string, i interface{}) {
-		c.Add(name, i)
-	})
+	internal.ExampleMetrics().Each(
+		func(name string, i interface{}) {
+			c.Add(name, i)
+		},
+	)
 	if wantB, err := os.ReadFile("./testdata/prometheus.want"); err != nil {
 		t.Fatal(err)
 	} else {

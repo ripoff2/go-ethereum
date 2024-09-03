@@ -17,7 +17,7 @@
 // Package bind generates Ethereum contract Go bindings.
 //
 // Detailed usage document and tutorial available on the go-ethereum Wiki page:
-// https://github.com/ethereum/go-ethereum/wiki/Native-DApps:-Go-bindings-to-Ethereum-contracts
+// https://github.com/ripoff2/go-ethereum/wiki/Native-DApps:-Go-bindings-to-Ethereum-contracts
 package bind
 
 import (
@@ -29,8 +29,8 @@ import (
 	"text/template"
 	"unicode"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/accounts/abi"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // Lang is a target programming language selector to generate bindings for.
@@ -81,7 +81,10 @@ func isKeyWord(arg string) bool {
 // to be used as is in client code, but rather as an intermediate struct which
 // enforces compile time type safety and naming convention as opposed to having to
 // manually maintain hard coded strings that break on runtime.
-func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]string, pkg string, lang Lang, libs map[string]string, aliases map[string]string) (string, error) {
+func Bind(
+	types []string, abis []string, bytecodes []string, fsigs []map[string]string, pkg string, lang Lang,
+	libs map[string]string, aliases map[string]string,
+) (string, error) {
 	var (
 		// contracts is the map of each individual contract requested binding
 		contracts = make(map[string]*tmplContract)
@@ -99,12 +102,14 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 			return "", err
 		}
 		// Strip any whitespace from the JSON ABI
-		strippedABI := strings.Map(func(r rune) rune {
-			if unicode.IsSpace(r) {
-				return -1
-			}
-			return r
-		}, abis[i])
+		strippedABI := strings.Map(
+			func(r rune) rune {
+				if unicode.IsSpace(r) {
+					return -1
+				}
+				return r
+			}, abis[i],
+		)
 
 		// Extract the call and transact methods; events, struct definitions; and sort them alphabetically
 		var (
@@ -141,13 +146,18 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 			// Name shouldn't start with a digit. It will make the generated code invalid.
 			if len(normalizedName) > 0 && unicode.IsDigit(rune(normalizedName[0])) {
 				normalizedName = fmt.Sprintf("M%s", normalizedName)
-				normalizedName = abi.ResolveNameConflict(normalizedName, func(name string) bool {
-					_, ok := identifiers[name]
-					return ok
-				})
+				normalizedName = abi.ResolveNameConflict(
+					normalizedName, func(name string) bool {
+						_, ok := identifiers[name]
+						return ok
+					},
+				)
 			}
 			if identifiers[normalizedName] {
-				return "", fmt.Errorf("duplicated identifier \"%s\"(normalized \"%s\"), use --alias for renaming", original.Name, normalizedName)
+				return "", fmt.Errorf(
+					"duplicated identifier \"%s\"(normalized \"%s\"), use --alias for renaming", original.Name,
+					normalizedName,
+				)
 			}
 			identifiers[normalizedName] = true
 
@@ -174,9 +184,13 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 			}
 			// Append the methods to the call or transact lists
 			if original.IsConstant() {
-				calls[original.Name] = &tmplMethod{Original: original, Normalized: normalized, Structured: structured(original.Outputs)}
+				calls[original.Name] = &tmplMethod{
+					Original: original, Normalized: normalized, Structured: structured(original.Outputs),
+				}
 			} else {
-				transacts[original.Name] = &tmplMethod{Original: original, Normalized: normalized, Structured: structured(original.Outputs)}
+				transacts[original.Name] = &tmplMethod{
+					Original: original, Normalized: normalized, Structured: structured(original.Outputs),
+				}
 			}
 		}
 		for _, original := range evmABI.Events {
@@ -192,13 +206,18 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 			// Name shouldn't start with a digit. It will make the generated code invalid.
 			if len(normalizedName) > 0 && unicode.IsDigit(rune(normalizedName[0])) {
 				normalizedName = fmt.Sprintf("E%s", normalizedName)
-				normalizedName = abi.ResolveNameConflict(normalizedName, func(name string) bool {
-					_, ok := eventIdentifiers[name]
-					return ok
-				})
+				normalizedName = abi.ResolveNameConflict(
+					normalizedName, func(name string) bool {
+						_, ok := eventIdentifiers[name]
+						return ok
+					},
+				)
 			}
 			if eventIdentifiers[normalizedName] {
-				return "", fmt.Errorf("duplicated identifier \"%s\"(normalized \"%s\"), use --alias for renaming", original.Name, normalizedName)
+				return "", fmt.Errorf(
+					"duplicated identifier \"%s\"(normalized \"%s\"), use --alias for renaming", original.Name,
+					normalizedName,
+				)
 			}
 			eventIdentifiers[normalizedName] = true
 			normalized.Name = normalizedName
@@ -254,7 +273,9 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 		for pattern, name := range libs {
 			matched, err := regexp.Match("__\\$"+pattern+"\\$__", []byte(contracts[types[i]].InputBin))
 			if err != nil {
-				log.Error("Could not search for pattern", "pattern", pattern, "contract", contracts[types[i]], "err", err)
+				log.Error(
+					"Could not search for pattern", "pattern", pattern, "contract", contracts[types[i]], "err", err,
+				)
 			}
 			if matched {
 				contracts[types[i]].Libraries[pattern] = name

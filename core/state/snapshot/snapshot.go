@@ -23,14 +23,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/triedb"
 )
 
 var (
@@ -58,8 +58,12 @@ var (
 	snapshotDirtyStorageReadMeter  = metrics.NewRegisteredMeter("state/snapshot/dirty/storage/read", nil)
 	snapshotDirtyStorageWriteMeter = metrics.NewRegisteredMeter("state/snapshot/dirty/storage/write", nil)
 
-	snapshotDirtyAccountHitDepthHist = metrics.NewRegisteredHistogram("state/snapshot/dirty/account/hit/depth", nil, metrics.NewExpDecaySample(1028, 0.015))
-	snapshotDirtyStorageHitDepthHist = metrics.NewRegisteredHistogram("state/snapshot/dirty/storage/hit/depth", nil, metrics.NewExpDecaySample(1028, 0.015))
+	snapshotDirtyAccountHitDepthHist = metrics.NewRegisteredHistogram(
+		"state/snapshot/dirty/account/hit/depth", nil, metrics.NewExpDecaySample(1028, 0.015),
+	)
+	snapshotDirtyStorageHitDepthHist = metrics.NewRegisteredHistogram(
+		"state/snapshot/dirty/storage/hit/depth", nil, metrics.NewExpDecaySample(1028, 0.015),
+	)
 
 	snapshotFlushAccountItemMeter = metrics.NewRegisteredMeter("state/snapshot/flush/account/item", nil)
 	snapshotFlushAccountSizeMeter = metrics.NewRegisteredMeter("state/snapshot/flush/account/size", nil)
@@ -130,7 +134,10 @@ type snapshot interface {
 	// the specified data items.
 	//
 	// Note, the maps are retained by the method to avoid copying everything.
-	Update(blockRoot common.Hash, destructs map[common.Hash]struct{}, accounts map[common.Hash][]byte, storage map[common.Hash]map[common.Hash][]byte) *diffLayer
+	Update(
+		blockRoot common.Hash, destructs map[common.Hash]struct{}, accounts map[common.Hash][]byte,
+		storage map[common.Hash]map[common.Hash][]byte,
+	) *diffLayer
 
 	// Journal commits an entire diff hierarchy to disk into a single journal entry.
 	// This is meant to be used during shutdown to persist the snapshot without
@@ -348,7 +355,10 @@ func (t *Tree) Snapshots(root common.Hash, limits int, nodisk bool) []Snapshot {
 
 // Update adds a new snapshot into the tree, if that can be linked to an existing
 // old parent. It is disallowed to insert a disk layer (the origin of all).
-func (t *Tree) Update(blockRoot common.Hash, parentRoot common.Hash, destructs map[common.Hash]struct{}, accounts map[common.Hash][]byte, storage map[common.Hash]map[common.Hash][]byte) error {
+func (t *Tree) Update(
+	blockRoot common.Hash, parentRoot common.Hash, destructs map[common.Hash]struct{}, accounts map[common.Hash][]byte,
+	storage map[common.Hash]map[common.Hash][]byte,
+) error {
 	// Reject noop updates to avoid self-loops in the snapshot tree. This is a
 	// special case that can only happen for Clique networks where empty blocks
 	// don't modify the state (0 block subsidy).
@@ -794,19 +804,22 @@ func (t *Tree) Verify(root common.Hash) error {
 	}
 	defer acctIt.Release()
 
-	got, err := generateTrieRoot(nil, "", acctIt, common.Hash{}, stackTrieGenerate, func(db ethdb.KeyValueWriter, accountHash, codeHash common.Hash, stat *generateStats) (common.Hash, error) {
-		storageIt, err := t.StorageIterator(root, accountHash, common.Hash{})
-		if err != nil {
-			return common.Hash{}, err
-		}
-		defer storageIt.Release()
+	got, err := generateTrieRoot(
+		nil, "", acctIt, common.Hash{}, stackTrieGenerate,
+		func(db ethdb.KeyValueWriter, accountHash, codeHash common.Hash, stat *generateStats) (common.Hash, error) {
+			storageIt, err := t.StorageIterator(root, accountHash, common.Hash{})
+			if err != nil {
+				return common.Hash{}, err
+			}
+			defer storageIt.Release()
 
-		hash, err := generateTrieRoot(nil, "", storageIt, accountHash, stackTrieGenerate, nil, stat, false)
-		if err != nil {
-			return common.Hash{}, err
-		}
-		return hash, nil
-	}, newGenerateStats(), true)
+			hash, err := generateTrieRoot(nil, "", storageIt, accountHash, stackTrieGenerate, nil, stat, false)
+			if err != nil {
+				return common.Hash{}, err
+			}
+			return hash, nil
+		}, newGenerateStats(), true,
+	)
 
 	if err != nil {
 		return err

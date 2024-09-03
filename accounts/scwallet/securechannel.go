@@ -26,8 +26,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/crypto"
 	pcsc "github.com/gballet/go-libpcsclite"
+	"github.com/ripoff2/go-ethereum/crypto"
 	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/text/unicode/norm"
 )
@@ -81,7 +81,9 @@ func NewSecureChannelSession(card *pcsc.Card, keyData []byte) (*SecureChannelSes
 
 // Pair establishes a new pairing with the smartcard.
 func (s *SecureChannelSession) Pair(pairingPassword []byte) error {
-	secretHash := pbkdf2.Key(norm.NFKD.Bytes(pairingPassword), norm.NFKD.Bytes([]byte(pairingSalt)), 50000, 32, sha256.New)
+	secretHash := pbkdf2.Key(
+		norm.NFKD.Bytes(pairingPassword), norm.NFKD.Bytes([]byte(pairingSalt)), 50000, 32, sha256.New,
+	)
 
 	challenge := make([]byte, 32)
 	if _, err := rand.Read(challenge); err != nil {
@@ -182,7 +184,9 @@ func (s *SecureChannelSession) mutuallyAuthenticate() error {
 	}
 
 	if len(response.Data) != scSecretLength {
-		return fmt.Errorf("response from MUTUALLY_AUTHENTICATE was %d bytes, expected %d", len(response.Data), scSecretLength)
+		return fmt.Errorf(
+			"response from MUTUALLY_AUTHENTICATE was %d bytes, expected %d", len(response.Data), scSecretLength,
+		)
 	}
 
 	return nil
@@ -190,26 +194,30 @@ func (s *SecureChannelSession) mutuallyAuthenticate() error {
 
 // open is an internal method that sends an open APDU.
 func (s *SecureChannelSession) open() (*responseAPDU, error) {
-	return transmit(s.card, &commandAPDU{
-		Cla:  claSCWallet,
-		Ins:  insOpenSecureChannel,
-		P1:   s.PairingIndex,
-		P2:   0,
-		Data: s.publicKey,
-		Le:   0,
-	})
+	return transmit(
+		s.card, &commandAPDU{
+			Cla:  claSCWallet,
+			Ins:  insOpenSecureChannel,
+			P1:   s.PairingIndex,
+			P2:   0,
+			Data: s.publicKey,
+			Le:   0,
+		},
+	)
 }
 
 // pair is an internal method that sends a pair APDU.
 func (s *SecureChannelSession) pair(p1 uint8, data []byte) (*responseAPDU, error) {
-	return transmit(s.card, &commandAPDU{
-		Cla:  claSCWallet,
-		Ins:  insPair,
-		P1:   p1,
-		P2:   0,
-		Data: data,
-		Le:   0,
-	})
+	return transmit(
+		s.card, &commandAPDU{
+			Cla:  claSCWallet,
+			Ins:  insPair,
+			P1:   p1,
+			P2:   0,
+			Data: data,
+			Le:   0,
+		},
+	)
 }
 
 // transmitEncrypted sends an encrypted message, and decrypts and returns the response.
@@ -231,13 +239,15 @@ func (s *SecureChannelSession) transmitEncrypted(cla, ins, p1, p2 byte, data []b
 	copy(fulldata, s.iv)
 	copy(fulldata[len(s.iv):], data)
 
-	response, err := transmit(s.card, &commandAPDU{
-		Cla:  cla,
-		Ins:  ins,
-		P1:   p1,
-		P2:   p2,
-		Data: fulldata,
-	})
+	response, err := transmit(
+		s.card, &commandAPDU{
+			Cla:  cla,
+			Ins:  ins,
+			P1:   p1,
+			P2:   p2,
+			Data: fulldata,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}

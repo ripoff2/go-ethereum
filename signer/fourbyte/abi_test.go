@@ -22,8 +22,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/accounts/abi"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 func verify(t *testing.T, jsondata, calldata string, exp []interface{}) {
@@ -59,7 +59,8 @@ func TestNewUnpacker(t *testing.T) {
 		exp      []interface{}
 	}
 	testcases := []unpackTest{
-		{ // https://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
+		{
+			// https://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
 			`[{"type":"function","name":"f", "inputs":[{"type":"uint256"},{"type":"uint32[]"},{"type":"bytes10"},{"type":"bytes"}]}]`,
 			// 0x123, [0x456, 0x789], "1234567890", "Hello, world!"
 			"8be65246" + "00000000000000000000000000000000000000000000000000000000000001230000000000000000000000000000000000000000000000000000000000000080313233343536373839300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000004560000000000000000000000000000000000000000000000000000000000000789000000000000000000000000000000000000000000000000000000000000000d48656c6c6f2c20776f726c642100000000000000000000000000000000000000",
@@ -69,7 +70,8 @@ func TestNewUnpacker(t *testing.T) {
 				[10]byte{49, 50, 51, 52, 53, 54, 55, 56, 57, 48},
 				common.Hex2Bytes("48656c6c6f2c20776f726c6421"),
 			},
-		}, { // https://docs.soliditylang.org/en/develop/abi-spec.html#examples
+		}, {
+			// https://docs.soliditylang.org/en/develop/abi-spec.html#examples
 			`[{"type":"function","name":"sam","inputs":[{"type":"bytes"},{"type":"bool"},{"type":"uint256[]"}]}]`,
 			//  "dave", true and [1,2,3]
 			"a5643bf20000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000464617665000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003",
@@ -155,7 +157,10 @@ func TestCalldataDecoding(t *testing.T) {
 	} {
 		_, err := parseCallData(common.Hex2Bytes(hexdata), jsondata)
 		if err != nil {
-			t.Errorf("test %d: unexpected failure on input %s:\n %v (%d bytes) ", i, hexdata, err, len(common.Hex2Bytes(hexdata)))
+			t.Errorf(
+				"test %d: unexpected failure on input %s:\n %v (%d bytes) ", i, hexdata, err,
+				len(common.Hex2Bytes(hexdata)),
+			)
 		}
 	}
 }

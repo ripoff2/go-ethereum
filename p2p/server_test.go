@@ -29,12 +29,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/internal/testlog"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/enr"
-	"github.com/ethereum/go-ethereum/p2p/rlpx"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/internal/testlog"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/p2p/rlpx"
 )
 
 type testTransport struct {
@@ -45,12 +45,14 @@ type testTransport struct {
 
 func newTestTransport(rpub *ecdsa.PublicKey, fd net.Conn, dialDest *ecdsa.PublicKey) transport {
 	wrapped := newRLPX(fd, dialDest).(*rlpxTransport)
-	wrapped.conn.InitWithSecrets(rlpx.Secrets{
-		AES:        make([]byte, 16),
-		MAC:        make([]byte, 16),
-		EgressMAC:  sha256.New(),
-		IngressMAC: sha256.New(),
-	})
+	wrapped.conn.InitWithSecrets(
+		rlpx.Secrets{
+			AES:        make([]byte, 16),
+			MAC:        make([]byte, 16),
+			EgressMAC:  sha256.New(),
+			IngressMAC: sha256.New(),
+		},
+	)
 	return &testTransport{rpub: rpub, rlpxTransport: wrapped}
 }
 
@@ -94,12 +96,14 @@ func TestServerListen(t *testing.T) {
 	// start the test server
 	connected := make(chan *Peer)
 	remid := &newkey().PublicKey
-	srv := startTestServer(t, remid, func(p *Peer) {
-		if p.ID() != enode.PubkeyToIDV4(remid) {
-			t.Error("peer func called with wrong node id")
-		}
-		connected <- p
-	})
+	srv := startTestServer(
+		t, remid, func(p *Peer) {
+			if p.ID() != enode.PubkeyToIDV4(remid) {
+				t.Error("peer func called with wrong node id")
+			}
+			connected <- p
+		},
+	)
 	defer close(connected)
 	defer srv.Stop()
 
@@ -113,8 +117,10 @@ func TestServerListen(t *testing.T) {
 	select {
 	case peer := <-connected:
 		if peer.LocalAddr().String() != conn.RemoteAddr().String() {
-			t.Errorf("peer started with wrong conn: got %v, want %v",
-				peer.LocalAddr(), conn.RemoteAddr())
+			t.Errorf(
+				"peer started with wrong conn: got %v, want %v",
+				peer.LocalAddr(), conn.RemoteAddr(),
+			)
 		}
 		peers := srv.Peers()
 		if !reflect.DeepEqual(peers, []*Peer{peer}) {
@@ -166,8 +172,10 @@ func TestServerDial(t *testing.T) {
 				t.Errorf("peer has wrong name")
 			}
 			if peer.RemoteAddr().String() != conn.LocalAddr().String() {
-				t.Errorf("peer started with wrong conn: got %v, want %v",
-					peer.RemoteAddr(), conn.LocalAddr())
+				t.Errorf(
+					"peer started with wrong conn: got %v, want %v",
+					peer.RemoteAddr(), conn.LocalAddr(),
+				)
 			}
 			peers := srv.Peers()
 			if !reflect.DeepEqual(peers, []*Peer{peer}) {
@@ -207,20 +215,24 @@ func TestServerDial(t *testing.T) {
 
 // This test checks that RemovePeer disconnects the peer if it is connected.
 func TestServerRemovePeerDisconnect(t *testing.T) {
-	srv1 := &Server{Config: Config{
-		PrivateKey:  newkey(),
-		MaxPeers:    1,
-		NoDiscovery: true,
-		Logger:      testlog.Logger(t, log.LvlTrace).New("server", "1"),
-	}}
-	srv2 := &Server{Config: Config{
-		PrivateKey:  newkey(),
-		MaxPeers:    1,
-		NoDiscovery: true,
-		NoDial:      true,
-		ListenAddr:  "127.0.0.1:0",
-		Logger:      testlog.Logger(t, log.LvlTrace).New("server", "2"),
-	}}
+	srv1 := &Server{
+		Config: Config{
+			PrivateKey:  newkey(),
+			MaxPeers:    1,
+			NoDiscovery: true,
+			Logger:      testlog.Logger(t, log.LvlTrace).New("server", "1"),
+		},
+	}
+	srv2 := &Server{
+		Config: Config{
+			PrivateKey:  newkey(),
+			MaxPeers:    1,
+			NoDiscovery: true,
+			NoDial:      true,
+			ListenAddr:  "127.0.0.1:0",
+			Logger:      testlog.Logger(t, log.LvlTrace).New("server", "2"),
+		},
+	}
 	srv1.Start()
 	defer srv1.Stop()
 	srv2.Start()
@@ -423,7 +435,9 @@ func TestServerSetupConn(t *testing.T) {
 			wantCloseErr: DiscSelf,
 		},
 		{
-			tt:           &setupTransport{pubkey: clientpub, phs: protoHandshake{ID: crypto.FromECDSAPub(clientpub)[1:]}},
+			tt: &setupTransport{
+				pubkey: clientpub, phs: protoHandshake{ID: crypto.FromECDSAPub(clientpub)[1:]},
+			},
 			flags:        inboundConn,
 			wantCalls:    "doEncHandshake,doProtoHandshake,close,",
 			wantCloseErr: DiscUselessPeer,
@@ -431,35 +445,37 @@ func TestServerSetupConn(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		t.Run(test.wantCalls, func(t *testing.T) {
-			cfg := Config{
-				PrivateKey:  srvkey,
-				MaxPeers:    10,
-				NoDial:      true,
-				NoDiscovery: true,
-				Protocols:   []Protocol{discard},
-				Logger:      testlog.Logger(t, log.LvlTrace),
-			}
-			srv := &Server{
-				Config:       cfg,
-				newTransport: func(fd net.Conn, dialDest *ecdsa.PublicKey) transport { return test.tt },
-				log:          cfg.Logger,
-			}
-			if !test.dontstart {
-				if err := srv.Start(); err != nil {
-					t.Fatalf("couldn't start server: %v", err)
+		t.Run(
+			test.wantCalls, func(t *testing.T) {
+				cfg := Config{
+					PrivateKey:  srvkey,
+					MaxPeers:    10,
+					NoDial:      true,
+					NoDiscovery: true,
+					Protocols:   []Protocol{discard},
+					Logger:      testlog.Logger(t, log.LvlTrace),
 				}
-				defer srv.Stop()
-			}
-			p1, _ := net.Pipe()
-			srv.SetupConn(p1, test.flags, test.dialDest)
-			if !errors.Is(test.tt.closeErr, test.wantCloseErr) {
-				t.Errorf("test %d: close error mismatch: got %q, want %q", i, test.tt.closeErr, test.wantCloseErr)
-			}
-			if test.tt.calls != test.wantCalls {
-				t.Errorf("test %d: calls mismatch: got %q, want %q", i, test.tt.calls, test.wantCalls)
-			}
-		})
+				srv := &Server{
+					Config:       cfg,
+					newTransport: func(fd net.Conn, dialDest *ecdsa.PublicKey) transport { return test.tt },
+					log:          cfg.Logger,
+				}
+				if !test.dontstart {
+					if err := srv.Start(); err != nil {
+						t.Fatalf("couldn't start server: %v", err)
+					}
+					defer srv.Stop()
+				}
+				p1, _ := net.Pipe()
+				srv.SetupConn(p1, test.flags, test.dialDest)
+				if !errors.Is(test.tt.closeErr, test.wantCloseErr) {
+					t.Errorf("test %d: close error mismatch: got %q, want %q", i, test.tt.closeErr, test.wantCloseErr)
+				}
+				if test.tt.calls != test.wantCalls {
+					t.Errorf("test %d: calls mismatch: got %q, want %q", i, test.tt.calls, test.wantCalls)
+				}
+			},
+		)
 	}
 }
 

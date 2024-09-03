@@ -33,13 +33,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
 	pcsc "github.com/gballet/go-libpcsclite"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/log"
 	"github.com/status-im/keycard-go/derivationpath"
 )
 
@@ -164,18 +164,23 @@ func transmit(card *pcsc.Card, command *commandAPDU) (*responseAPDU, error) {
 
 	// Are we being asked to fetch the response separately?
 	if response.Sw1 == sw1GetResponse && (command.Cla != claISO7816 || command.Ins != insGetResponse) {
-		return transmit(card, &commandAPDU{
-			Cla:  claISO7816,
-			Ins:  insGetResponse,
-			P1:   0,
-			P2:   0,
-			Data: nil,
-			Le:   response.Sw2,
-		})
+		return transmit(
+			card, &commandAPDU{
+				Cla:  claISO7816,
+				Ins:  insGetResponse,
+				P1:   0,
+				P2:   0,
+				Data: nil,
+				Le:   response.Sw2,
+			},
+		)
 	}
 
 	if response.Sw1 != sw1Ok {
-		return nil, fmt.Errorf("unexpected insecure response status Cla=%#x, Ins=%#x, Sw=%#x%x", command.Cla, command.Ins, response.Sw1, response.Sw2)
+		return nil, fmt.Errorf(
+			"unexpected insecure response status Cla=%#x, Ins=%#x, Sw=%#x%x", command.Cla, command.Ins, response.Sw1,
+			response.Sw2,
+		)
 	}
 
 	return response, nil
@@ -215,13 +220,15 @@ func (w *Wallet) connect() error {
 
 // doselect is an internal (unlocked) function to send a SELECT APDU to the card.
 func (w *Wallet) doselect() (*applicationInfo, error) {
-	response, err := transmit(w.card, &commandAPDU{
-		Cla:  claISO7816,
-		Ins:  insSelect,
-		P1:   4,
-		P2:   0,
-		Data: appletAID,
-	})
+	response, err := transmit(
+		w.card, &commandAPDU{
+			Cla:  claISO7816,
+			Ins:  insSelect,
+			P1:   4,
+			P2:   0,
+			Data: appletAID,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +305,9 @@ func (w *Wallet) Unpair(pin []byte) error {
 func (w *Wallet) URL() accounts.URL {
 	return accounts.URL{
 		Scheme: w.Hub.scheme,
-		Path:   fmt.Sprintf("%x", w.PublicKey[1:5]), // Byte #0 isn't unique; 1:5 covers << 64K cards, bump to 1:9 for << 4M
+		Path: fmt.Sprintf(
+			"%x", w.PublicKey[1:5],
+		), // Byte #0 isn't unique; 1:5 covers << 64K cards, bump to 1:9 for << 4M
 	}
 }
 
@@ -522,7 +531,10 @@ func (w *Wallet) selfDerive() {
 
 				// Display a log message to the user for new (or previously empty accounts)
 				if _, known := pairing.Accounts[nextAddrs[i]]; !known || !empty || nextAddrs[i] != w.deriveNextAddrs[i] {
-					w.log.Info("Smartcard wallet discovered new account", "address", nextAddrs[i], "path", path, "balance", balance, "nonce", nonce)
+					w.log.Info(
+						"Smartcard wallet discovered new account", "address", nextAddrs[i], "path", path, "balance",
+						balance, "nonce", nonce,
+					)
 				}
 				pairing.Accounts[nextAddrs[i]] = path
 
@@ -721,7 +733,9 @@ func (w *Wallet) SignTx(account accounts.Account, tx *types.Transaction, chainID
 //
 // It looks up the account specified either solely via its address contained within,
 // or optionally with the aid of any location metadata from the embedded URL field.
-func (w *Wallet) SignDataWithPassphrase(account accounts.Account, passphrase, mimeType string, data []byte) ([]byte, error) {
+func (w *Wallet) SignDataWithPassphrase(account accounts.Account, passphrase, mimeType string, data []byte) (
+	[]byte, error,
+) {
 	return w.signHashWithPassphrase(account, passphrase, crypto.Keccak256(data))
 }
 
@@ -761,7 +775,9 @@ func (w *Wallet) SignTextWithPassphrase(account accounts.Account, passphrase str
 //
 // It looks up the account specified either solely via its address contained within,
 // or optionally with the aid of any location metadata from the embedded URL field.
-func (w *Wallet) SignTxWithPassphrase(account accounts.Account, passphrase string, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
+func (w *Wallet) SignTxWithPassphrase(
+	account accounts.Account, passphrase string, tx *types.Transaction, chainID *big.Int,
+) (*types.Transaction, error) {
 	if !w.session.verified {
 		if err := w.Open(passphrase); err != nil {
 			return nil, err

@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/accounts/abi"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 // decodedCallData is an internal type to represent a method call parsed according
@@ -114,10 +114,12 @@ func parseCallData(calldata []byte, unescapedAbidata string) (*decodedCallData, 
 	// Everything valid, assemble the call infos for the signer
 	decoded := decodedCallData{signature: method.Sig, name: method.RawName}
 	for i := 0; i < len(method.Inputs); i++ {
-		decoded.inputs = append(decoded.inputs, decodedArgument{
-			soltype: method.Inputs[i],
-			value:   values[i],
-		})
+		decoded.inputs = append(
+			decoded.inputs, decodedArgument{
+				soltype: method.Inputs[i],
+				value:   values[i],
+			},
+		)
 	}
 	// We're finished decoding the data. At this point, we encode the decoded data
 	// to see if it matches with the original data. If we didn't do that, it would
@@ -130,7 +132,9 @@ func parseCallData(calldata []byte, unescapedAbidata string) (*decodedCallData, 
 	if !bytes.Equal(encoded, argdata) {
 		was := common.Bytes2Hex(encoded)
 		exp := common.Bytes2Hex(argdata)
-		return nil, fmt.Errorf("WARNING: Supplied data is stuffed with extra data. \nWant %s\nHave %s\nfor method %v", exp, was, method.Sig)
+		return nil, fmt.Errorf(
+			"WARNING: Supplied data is stuffed with extra data. \nWant %s\nHave %s\nfor method %v", exp, was, method.Sig,
+		)
 	}
 	return &decoded, nil
 }

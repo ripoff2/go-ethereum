@@ -21,16 +21,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/consensus/beacon"
-	"github.com/ethereum/go-ethereum/consensus/clique"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus"
+	"github.com/ripoff2/go-ethereum/consensus/beacon"
+	"github.com/ripoff2/go-ethereum/consensus/clique"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 // Tests that simple header verification works, for both good and bad blocks.
@@ -50,7 +50,10 @@ func testHeaderVerification(t *testing.T, scheme string) {
 		headers[i] = block.Header()
 	}
 	// Run the header checker for blocks one-by-one, checking for both valid and invalid nonces
-	chain, _ := NewBlockChain(rawdb.NewMemoryDatabase(), DefaultCacheConfigWithScheme(scheme), gspec, nil, ethash.NewFaker(), vm.Config{}, nil, nil)
+	chain, _ := NewBlockChain(
+		rawdb.NewMemoryDatabase(), DefaultCacheConfigWithScheme(scheme), gspec, nil, ethash.NewFaker(), vm.Config{},
+		nil, nil,
+	)
 	defer chain.Stop()
 
 	for i := 0; i < len(blocks); i++ {
@@ -146,9 +149,11 @@ func testHeaderVerificationForMerging(t *testing.T, isClique bool) {
 		preBlocks = blocks
 		gspec.Config.TerminalTotalDifficulty = big.NewInt(int64(td))
 		t.Logf("Set ttd to %v\n", gspec.Config.TerminalTotalDifficulty)
-		postBlocks, _ = GenerateChain(gspec.Config, preBlocks[len(preBlocks)-1], engine, genDb, 8, func(i int, gen *BlockGen) {
-			gen.SetPoS()
-		})
+		postBlocks, _ = GenerateChain(
+			gspec.Config, preBlocks[len(preBlocks)-1], engine, genDb, 8, func(i int, gen *BlockGen) {
+				gen.SetPoS()
+			},
+		)
 	}
 	// Assemble header batch
 	preHeaders := make([]*types.Header, len(preBlocks))

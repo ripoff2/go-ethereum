@@ -23,10 +23,10 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/p2p/discover/v4wire"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/p2p/discover/v4wire"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
 )
 
 func TestUDPv4_Lookup(t *testing.T) {
@@ -136,17 +136,19 @@ func TestUDPv4_LookupIteratorClose(t *testing.T) {
 
 func serveTestnet(test *udpTest, testnet *preminedTestnet) {
 	for done := false; !done; {
-		done = test.waitPacketOut(func(p v4wire.Packet, to netip.AddrPort, hash []byte) {
-			n, key := testnet.nodeByAddr(to)
-			switch p.(type) {
-			case *v4wire.Ping:
-				test.packetInFrom(nil, key, to, &v4wire.Pong{Expiration: futureExp, ReplyTok: hash})
-			case *v4wire.Findnode:
-				dist := enode.LogDist(n.ID(), testnet.target.ID())
-				nodes := testnet.nodesAtDistance(dist - 1)
-				test.packetInFrom(nil, key, to, &v4wire.Neighbors{Expiration: futureExp, Nodes: nodes})
-			}
-		})
+		done = test.waitPacketOut(
+			func(p v4wire.Packet, to netip.AddrPort, hash []byte) {
+				n, key := testnet.nodeByAddr(to)
+				switch p.(type) {
+				case *v4wire.Ping:
+					test.packetInFrom(nil, key, to, &v4wire.Pong{Expiration: futureExp, ReplyTok: hash})
+				case *v4wire.Findnode:
+					dist := enode.LogDist(n.ID(), testnet.target.ID())
+					nodes := testnet.nodesAtDistance(dist - 1)
+					test.packetInFrom(nil, key, to, &v4wire.Neighbors{Expiration: futureExp, Nodes: nodes})
+				}
+			},
+		)
 	}
 }
 
@@ -303,9 +305,11 @@ func (tn *preminedTestnet) closest(n int) (nodes []*enode.Node) {
 			nodes = append(nodes, tn.node(d, i))
 		}
 	}
-	slices.SortFunc(nodes, func(a, b *enode.Node) int {
-		return enode.DistCmp(tn.target.ID(), a.ID(), b.ID())
-	})
+	slices.SortFunc(
+		nodes, func(a, b *enode.Node) int {
+			return enode.DistCmp(tn.target.ID(), a.ID(), b.ID())
+		},
+	)
 	return nodes[:n]
 }
 

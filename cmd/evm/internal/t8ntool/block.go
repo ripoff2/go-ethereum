@@ -24,13 +24,13 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/consensus/clique"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/consensus/clique"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/rlp"
 	"github.com/urfave/cli/v2"
 )
 
@@ -160,7 +160,11 @@ func (i *bbInput) ToBlock() *types.Block {
 	if i.Header.Difficulty != nil {
 		header.Difficulty = i.Header.Difficulty
 	}
-	return types.NewBlockWithHeader(header).WithBody(types.Body{Transactions: i.Txs, Uncles: i.Ommers, Withdrawals: i.Withdrawals})
+	return types.NewBlockWithHeader(header).WithBody(
+		types.Body{
+			Transactions: i.Txs, Uncles: i.Ommers, Withdrawals: i.Withdrawals,
+		},
+	)
 }
 
 // SealBlock seals the given block using the configured engine.
@@ -183,13 +187,17 @@ func (i *bbInput) sealClique(block *types.Block) (*types.Block, error) {
 	header := block.Header()
 	if i.Clique.Voted != nil {
 		if i.Header.Coinbase != nil {
-			return nil, NewError(ErrorConfig, errors.New("sealing with clique and voting will overwrite provided coinbase"))
+			return nil, NewError(
+				ErrorConfig, errors.New("sealing with clique and voting will overwrite provided coinbase"),
+			)
 		}
 		header.Coinbase = *i.Clique.Voted
 	}
 	if i.Clique.Authorize != nil {
 		if i.Header.Nonce != nil {
-			return nil, NewError(ErrorConfig, errors.New("sealing with clique and voting will overwrite provided nonce"))
+			return nil, NewError(
+				ErrorConfig, errors.New("sealing with clique and voting will overwrite provided nonce"),
+			)
 		}
 		if *i.Clique.Authorize {
 			header.Nonce = [8]byte{}

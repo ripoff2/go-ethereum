@@ -21,12 +21,12 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -45,20 +45,30 @@ func getBlock(transactions int, uncles int, dataSize int) *types.Block {
 		}
 	)
 	// We need to generate as many blocks +1 as uncles
-	_, blocks, _ := GenerateChainWithGenesis(gspec, engine, uncles+1,
+	_, blocks, _ := GenerateChainWithGenesis(
+		gspec, engine, uncles+1,
 		func(n int, b *BlockGen) {
 			if n == uncles {
 				// Add transactions and stuff on the last block
 				for i := 0; i < transactions; i++ {
-					tx, _ := types.SignTx(types.NewTransaction(uint64(i), aa,
-						big.NewInt(0), 50000, b.header.BaseFee, make([]byte, dataSize)), types.HomesteadSigner{}, key)
+					tx, _ := types.SignTx(
+						types.NewTransaction(
+							uint64(i), aa,
+							big.NewInt(0), 50000, b.header.BaseFee, make([]byte, dataSize),
+						), types.HomesteadSigner{}, key,
+					)
 					b.AddTx(tx)
 				}
 				for i := 0; i < uncles; i++ {
-					b.AddUncle(&types.Header{ParentHash: b.PrevBlock(n - 1 - i).Hash(), Number: big.NewInt(int64(n - i))})
+					b.AddUncle(
+						&types.Header{
+							ParentHash: b.PrevBlock(n - 1 - i).Hash(), Number: big.NewInt(int64(n - i)),
+						},
+					)
 				}
 			}
-		})
+		},
+	)
 	block := blocks[len(blocks)-1]
 	return block
 }
@@ -148,49 +158,55 @@ func BenchmarkHashing(b *testing.B) {
 	}
 	var got common.Hash
 	var hasher = sha3.NewLegacyKeccak256()
-	b.Run("iteratorhashing", func(b *testing.B) {
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			var hash common.Hash
-			it, err := rlp.NewListIterator(bodyRlp)
-			if err != nil {
-				b.Fatal(err)
+	b.Run(
+		"iteratorhashing", func(b *testing.B) {
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				var hash common.Hash
+				it, err := rlp.NewListIterator(bodyRlp)
+				if err != nil {
+					b.Fatal(err)
+				}
+				it.Next()
+				txs := it.Value()
+				txIt, err := rlp.NewListIterator(txs)
+				if err != nil {
+					b.Fatal(err)
+				}
+				for txIt.Next() {
+					hasher.Reset()
+					hasher.Write(txIt.Value())
+					hasher.Sum(hash[:0])
+					got = hash
+				}
 			}
-			it.Next()
-			txs := it.Value()
-			txIt, err := rlp.NewListIterator(txs)
-			if err != nil {
-				b.Fatal(err)
-			}
-			for txIt.Next() {
-				hasher.Reset()
-				hasher.Write(txIt.Value())
-				hasher.Sum(hash[:0])
-				got = hash
-			}
-		}
-	})
+		},
+	)
 	var exp common.Hash
-	b.Run("fullbodyhashing", func(b *testing.B) {
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			var body types.Body
-			rlp.DecodeBytes(bodyRlp, &body)
-			for _, tx := range body.Transactions {
-				exp = tx.Hash()
+	b.Run(
+		"fullbodyhashing", func(b *testing.B) {
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				var body types.Body
+				rlp.DecodeBytes(bodyRlp, &body)
+				for _, tx := range body.Transactions {
+					exp = tx.Hash()
+				}
 			}
-		}
-	})
-	b.Run("fullblockhashing", func(b *testing.B) {
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			var block types.Block
-			rlp.DecodeBytes(blockRlp, &block)
-			for _, tx := range block.Transactions() {
-				tx.Hash()
+		},
+	)
+	b.Run(
+		"fullblockhashing", func(b *testing.B) {
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				var block types.Block
+				rlp.DecodeBytes(blockRlp, &block)
+				for _, tx := range block.Transactions() {
+					tx.Hash()
+				}
 			}
-		}
-	})
+		},
+	)
 	if got != exp {
 		b.Fatalf("hash wrong, got %x exp %x", got, exp)
 	}

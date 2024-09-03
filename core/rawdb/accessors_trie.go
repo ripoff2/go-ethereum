@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // HashScheme is the legacy hash-based state scheme with which trie nodes are
@@ -209,7 +209,9 @@ func ReadTrieNode(db ethdb.KeyValueReader, owner common.Hash, path []byte, hash 
 //
 // hash-scheme requires the node hash as the identifier.
 // path-scheme requires the node owner and path as the identifier.
-func WriteTrieNode(db ethdb.KeyValueWriter, owner common.Hash, path []byte, hash common.Hash, node []byte, scheme string) {
+func WriteTrieNode(
+	db ethdb.KeyValueWriter, owner common.Hash, path []byte, hash common.Hash, node []byte, scheme string,
+) {
 	switch scheme {
 	case HashScheme:
 		WriteLegacyTrieNode(db, hash, node)

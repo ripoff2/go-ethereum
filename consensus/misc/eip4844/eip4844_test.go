@@ -21,7 +21,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 func TestCalcExcessBlobGas(t *testing.T) {
@@ -44,9 +44,18 @@ func TestCalcExcessBlobGas(t *testing.T) {
 
 		// The excess blob gas should decrease by however much the target was
 		// under-shot, capped at zero.
-		{params.BlobTxTargetBlobGasPerBlock, params.BlobTxTargetBlobGasPerBlock / params.BlobTxBlobGasPerBlob, params.BlobTxTargetBlobGasPerBlock},
-		{params.BlobTxTargetBlobGasPerBlock, (params.BlobTxTargetBlobGasPerBlock / params.BlobTxBlobGasPerBlob) - 1, params.BlobTxTargetBlobGasPerBlock - params.BlobTxBlobGasPerBlob},
-		{params.BlobTxTargetBlobGasPerBlock, (params.BlobTxTargetBlobGasPerBlock / params.BlobTxBlobGasPerBlob) - 2, params.BlobTxTargetBlobGasPerBlock - (2 * params.BlobTxBlobGasPerBlob)},
+		{
+			params.BlobTxTargetBlobGasPerBlock, params.BlobTxTargetBlobGasPerBlock / params.BlobTxBlobGasPerBlob,
+			params.BlobTxTargetBlobGasPerBlock,
+		},
+		{
+			params.BlobTxTargetBlobGasPerBlock, (params.BlobTxTargetBlobGasPerBlock / params.BlobTxBlobGasPerBlob) - 1,
+			params.BlobTxTargetBlobGasPerBlock - params.BlobTxBlobGasPerBlob,
+		},
+		{
+			params.BlobTxTargetBlobGasPerBlock, (params.BlobTxTargetBlobGasPerBlock / params.BlobTxBlobGasPerBlob) - 2,
+			params.BlobTxTargetBlobGasPerBlock - (2 * params.BlobTxBlobGasPerBlob),
+		},
 		{params.BlobTxBlobGasPerBlob - 1, (params.BlobTxTargetBlobGasPerBlock / params.BlobTxBlobGasPerBlob) - 1, 0},
 	}
 	for i, tt := range tests {
