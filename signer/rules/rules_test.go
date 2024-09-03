@@ -22,14 +22,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/internal/ethapi"
-	"github.com/ethereum/go-ethereum/signer/core"
-	"github.com/ethereum/go-ethereum/signer/core/apitypes"
-	"github.com/ethereum/go-ethereum/signer/storage"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/internal/ethapi"
+	"github.com/ripoff2/go-ethereum/signer/core"
+	"github.com/ripoff2/go-ethereum/signer/core/apitypes"
+	"github.com/ripoff2/go-ethereum/signer/storage"
 )
 
 const JS = `
@@ -143,10 +143,12 @@ func TestListRequest(t *testing.T) {
 		t.Errorf("Couldn't create evaluator %v", err)
 		return
 	}
-	resp, _ := r.ApproveListing(&core.ListRequest{
-		Accounts: accs,
-		Meta:     core.Metadata{Remote: "remoteip", Local: "localip", Scheme: "inproc"},
-	})
+	resp, _ := r.ApproveListing(
+		&core.ListRequest{
+			Accounts: accs,
+			Meta:     core.Metadata{Remote: "remoteip", Local: "localip", Scheme: "inproc"},
+		},
+	)
 	if len(resp.Accounts) != len(accs) {
 		t.Errorf("Expected check to resolve to 'Approve'")
 	}
@@ -181,13 +183,16 @@ func TestSignTxRequest(t *testing.T) {
 		return
 	}
 	t.Logf("to %v", to.Address().String())
-	resp, err := r.ApproveTx(&core.SignTxRequest{
-		Transaction: apitypes.SendTxArgs{
-			From: *from,
-			To:   to},
-		Callinfo: nil,
-		Meta:     core.Metadata{Remote: "remoteip", Local: "localip", Scheme: "inproc"},
-	})
+	resp, err := r.ApproveTx(
+		&core.SignTxRequest{
+			Transaction: apitypes.SendTxArgs{
+				From: *from,
+				To:   to,
+			},
+			Callinfo: nil,
+			Meta:     core.Metadata{Remote: "remoteip", Local: "localip", Scheme: "inproc"},
+		},
+	)
 	if err != nil {
 		t.Errorf("Unexpected error %v", err)
 	}
@@ -610,13 +615,15 @@ function ApproveSignData(r){
 			Value: message,
 		},
 	}
-	resp, err := r.ApproveSignData(&core.SignDataRequest{
-		Address:  *addr,
-		Messages: nvt,
-		Hash:     hash,
-		Meta:     core.Metadata{Remote: "remoteip", Local: "localip", Scheme: "inproc"},
-		Rawdata:  []byte(rawdata),
-	})
+	resp, err := r.ApproveSignData(
+		&core.SignDataRequest{
+			Address:  *addr,
+			Messages: nvt,
+			Hash:     hash,
+			Meta:     core.Metadata{Remote: "remoteip", Local: "localip", Scheme: "inproc"},
+			Rawdata:  []byte(rawdata),
+		},
+	)
 	if err != nil {
 		t.Fatalf("Unexpected error %v", err)
 	}

@@ -17,9 +17,9 @@
 package vm
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 func gasSStore4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
@@ -95,7 +95,9 @@ var (
 	gasDelegateCallEIP4762 = makeCallVariantGasEIP4762(gasDelegateCall)
 )
 
-func gasSelfdestructEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
+func gasSelfdestructEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (
+	uint64, error,
+) {
 	beneficiaryAddr := common.Address(stack.peek().Bytes20())
 	if _, isPrecompile := evm.precompile(beneficiaryAddr); isPrecompile {
 		return 0, nil
@@ -130,7 +132,9 @@ func gasCodeCopyEip4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory,
 	}
 	_, copyOffset, nonPaddedCopyLength := getDataAndAdjustedBounds(contract.Code, uint64CodeOffset, length.Uint64())
 	if !contract.IsDeployment {
-		gas += evm.AccessEvents.CodeChunksRangeGas(contract.Address(), copyOffset, nonPaddedCopyLength, uint64(len(contract.Code)), false)
+		gas += evm.AccessEvents.CodeChunksRangeGas(
+			contract.Address(), copyOffset, nonPaddedCopyLength, uint64(len(contract.Code)), false,
+		)
 	}
 	return gas, nil
 }

@@ -25,17 +25,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/lru"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/bloombits"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/lru"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/bloombits"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 // Config represents the configuration of the filter system.
@@ -96,7 +96,9 @@ type logCacheElem struct {
 }
 
 // cachedLogElem loads block logs from the backend and caches the result.
-func (sys *FilterSystem) cachedLogElem(ctx context.Context, blockHash common.Hash, number uint64) (*logCacheElem, error) {
+func (sys *FilterSystem) cachedLogElem(ctx context.Context, blockHash common.Hash, number uint64) (
+	*logCacheElem, error,
+) {
 	cached, ok := sys.logsCache.Get(blockHash)
 	if ok {
 		return cached, nil
@@ -128,7 +130,9 @@ func (sys *FilterSystem) cachedLogElem(ctx context.Context, blockHash common.Has
 	return elem, nil
 }
 
-func (sys *FilterSystem) cachedGetBody(ctx context.Context, elem *logCacheElem, hash common.Hash, number uint64) (*types.Body, error) {
+func (sys *FilterSystem) cachedGetBody(
+	ctx context.Context, elem *logCacheElem, hash common.Hash, number uint64,
+) (*types.Body, error) {
 	if body := elem.body.Load(); body != nil {
 		return body, nil
 	}
@@ -251,27 +255,29 @@ func (sub *Subscription) Err() <-chan error {
 
 // Unsubscribe uninstalls the subscription from the event broadcast loop.
 func (sub *Subscription) Unsubscribe() {
-	sub.unsubOnce.Do(func() {
-	uninstallLoop:
-		for {
-			// write uninstall request and consume logs/hashes. This prevents
-			// the eventLoop broadcast method to deadlock when writing to the
-			// filter event channel while the subscription loop is waiting for
-			// this method to return (and thus not reading these events).
-			select {
-			case sub.es.uninstall <- sub.f:
-				break uninstallLoop
-			case <-sub.f.logs:
-			case <-sub.f.txs:
-			case <-sub.f.headers:
+	sub.unsubOnce.Do(
+		func() {
+		uninstallLoop:
+			for {
+				// write uninstall request and consume logs/hashes. This prevents
+				// the eventLoop broadcast method to deadlock when writing to the
+				// filter event channel while the subscription loop is waiting for
+				// this method to return (and thus not reading these events).
+				select {
+				case sub.es.uninstall <- sub.f:
+					break uninstallLoop
+				case <-sub.f.logs:
+				case <-sub.f.txs:
+				case <-sub.f.headers:
+				}
 			}
-		}
 
-		// wait for filter to be uninstalled in work loop before returning
-		// this ensures that the manager won't use the event channel which
-		// will probably be closed by the client asap after this method returns.
-		<-sub.Err()
-	})
+			// wait for filter to be uninstalled in work loop before returning
+			// this ensures that the manager won't use the event channel which
+			// will probably be closed by the client asap after this method returns.
+			<-sub.Err()
+		},
+	)
 }
 
 // subscribe installs the subscription in the event broadcast loop.

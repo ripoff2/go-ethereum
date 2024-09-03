@@ -22,10 +22,10 @@ import (
 	"math/big"
 	"slices"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/bloombits"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/bloombits"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 // Filter can be used to retrieve and filter logs.
@@ -314,7 +314,9 @@ func (f *Filter) checkMatches(ctx context.Context, header *types.Header) ([]*typ
 }
 
 // filterLogs creates a slice of logs matching the given criteria.
-func filterLogs(logs []*types.Log, fromBlock, toBlock *big.Int, addresses []common.Address, topics [][]common.Hash) []*types.Log {
+func filterLogs(
+	logs []*types.Log, fromBlock, toBlock *big.Int, addresses []common.Address, topics [][]common.Hash,
+) []*types.Log {
 	var check = func(log *types.Log) bool {
 		if fromBlock != nil && fromBlock.Int64() >= 0 && fromBlock.Uint64() > log.BlockNumber {
 			return false

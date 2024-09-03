@@ -26,8 +26,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common/math"
 )
 
 type testEncoder struct {
@@ -180,7 +180,10 @@ var encTests = []encTest{
 	{val: [1]byte{0x80}, output: "8180"},
 	{val: [1]byte{0xFF}, output: "81FF"},
 	{val: [3]byte{1, 2, 3}, output: "83010203"},
-	{val: [57]byte{1, 2, 3}, output: "B839010203000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"},
+	{
+		val:    [57]byte{1, 2, 3},
+		output: "B839010203000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+	},
 
 	// named byte type arrays
 	{val: [0]namedByteType{}, output: "80"},
@@ -190,7 +193,10 @@ var encTests = []encTest{
 	{val: [1]namedByteType{0x80}, output: "8180"},
 	{val: [1]namedByteType{0xFF}, output: "81FF"},
 	{val: [3]namedByteType{1, 2, 3}, output: "83010203"},
-	{val: [57]namedByteType{1, 2, 3}, output: "B839010203000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"},
+	{
+		val:    [57]namedByteType{1, 2, 3},
+		output: "B839010203000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+	},
 
 	// byte slices
 	{val: []byte{}, output: "80"},
@@ -232,11 +238,15 @@ var encTests = []encTest{
 	{val: []uint{1, 2, 3}, output: "C3010203"},
 	{
 		// [ [], [[]], [ [], [[]] ] ]
-		val:    []interface{}{[]interface{}{}, [][]interface{}{{}}, []interface{}{[]interface{}{}, [][]interface{}{{}}}},
+		val: []interface{}{
+			[]interface{}{}, [][]interface{}{{}}, []interface{}{[]interface{}{}, [][]interface{}{{}}},
+		},
 		output: "C7C0C1C0C3C0C1C0",
 	},
 	{
-		val:    []string{"aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg", "hhh", "iii", "jjj", "kkk", "lll", "mmm", "nnn", "ooo"},
+		val: []string{
+			"aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg", "hhh", "iii", "jjj", "kkk", "lll", "mmm", "nnn", "ooo",
+		},
 		output: "F83C836161618362626283636363836464648365656583666666836767678368686883696969836A6A6A836B6B6B836C6C6C836D6D6D836E6E6E836F6F6F",
 	},
 	{
@@ -323,8 +333,10 @@ var encTests = []encTest{
 	{val: &optionalPtrFieldNil{A: 1}, output: "C101"},
 	{val: &multipleOptionalFields{A: nil, B: nil}, output: "C0"},
 	{val: &multipleOptionalFields{A: &[3]byte{1, 2, 3}, B: &[3]byte{1, 2, 3}}, output: "C88301020383010203"},
-	{val: &multipleOptionalFields{A: nil, B: &[3]byte{1, 2, 3}}, output: "C58083010203"}, // encodes without error but decode will fail
-	{val: &nonOptionalPtrField{A: 1}, output: "C20180"},                                  // encodes without error but decode will fail
+	{
+		val: &multipleOptionalFields{A: nil, B: &[3]byte{1, 2, 3}}, output: "C58083010203",
+	}, // encodes without error but decode will fail
+	{val: &nonOptionalPtrField{A: 1}, output: "C20180"}, // encodes without error but decode will fail
 
 	// nil
 	{val: (*uint)(nil), output: "80"},
@@ -406,28 +418,36 @@ func runEncTests(t *testing.T, f func(val interface{}) ([]byte, error)) {
 	for i, test := range encTests {
 		output, err := f(test.val)
 		if err != nil && test.error == "" {
-			t.Errorf("test %d: unexpected error: %v\nvalue %#v\ntype %T",
-				i, err, test.val, test.val)
+			t.Errorf(
+				"test %d: unexpected error: %v\nvalue %#v\ntype %T",
+				i, err, test.val, test.val,
+			)
 			continue
 		}
 		if test.error != "" && fmt.Sprint(err) != test.error {
-			t.Errorf("test %d: error mismatch\ngot   %v\nwant  %v\nvalue %#v\ntype  %T",
-				i, err, test.error, test.val, test.val)
+			t.Errorf(
+				"test %d: error mismatch\ngot   %v\nwant  %v\nvalue %#v\ntype  %T",
+				i, err, test.error, test.val, test.val,
+			)
 			continue
 		}
 		if err == nil && !bytes.Equal(output, unhex(test.output)) {
-			t.Errorf("test %d: output mismatch:\ngot   %X\nwant  %s\nvalue %#v\ntype  %T",
-				i, output, test.output, test.val, test.val)
+			t.Errorf(
+				"test %d: output mismatch:\ngot   %X\nwant  %s\nvalue %#v\ntype  %T",
+				i, output, test.output, test.val, test.val,
+			)
 		}
 	}
 }
 
 func TestEncode(t *testing.T) {
-	runEncTests(t, func(val interface{}) ([]byte, error) {
-		b := new(bytes.Buffer)
-		err := Encode(b, val)
-		return b.Bytes(), err
-	})
+	runEncTests(
+		t, func(val interface{}) ([]byte, error) {
+			b := new(bytes.Buffer)
+			err := Encode(b, val)
+			return b.Bytes(), err
+		},
+	)
 }
 
 func TestEncodeToBytes(t *testing.T) {
@@ -436,54 +456,60 @@ func TestEncodeToBytes(t *testing.T) {
 
 func TestEncodeAppendToBytes(t *testing.T) {
 	buffer := make([]byte, 20)
-	runEncTests(t, func(val interface{}) ([]byte, error) {
-		w := NewEncoderBuffer(nil)
-		defer w.Flush()
+	runEncTests(
+		t, func(val interface{}) ([]byte, error) {
+			w := NewEncoderBuffer(nil)
+			defer w.Flush()
 
-		err := Encode(w, val)
-		if err != nil {
-			return nil, err
-		}
-		output := w.AppendToBytes(buffer[:0])
-		return output, nil
-	})
+			err := Encode(w, val)
+			if err != nil {
+				return nil, err
+			}
+			output := w.AppendToBytes(buffer[:0])
+			return output, nil
+		},
+	)
 }
 
 func TestEncodeToReader(t *testing.T) {
-	runEncTests(t, func(val interface{}) ([]byte, error) {
-		_, r, err := EncodeToReader(val)
-		if err != nil {
-			return nil, err
-		}
-		return io.ReadAll(r)
-	})
+	runEncTests(
+		t, func(val interface{}) ([]byte, error) {
+			_, r, err := EncodeToReader(val)
+			if err != nil {
+				return nil, err
+			}
+			return io.ReadAll(r)
+		},
+	)
 }
 
 func TestEncodeToReaderPiecewise(t *testing.T) {
-	runEncTests(t, func(val interface{}) ([]byte, error) {
-		size, r, err := EncodeToReader(val)
-		if err != nil {
-			return nil, err
-		}
-
-		// read output piecewise
-		output := make([]byte, size)
-		for start, end := 0, 0; start < size; start = end {
-			if remaining := size - start; remaining < 3 {
-				end += remaining
-			} else {
-				end = start + 3
-			}
-			n, err := r.Read(output[start:end])
-			end = start + n
-			if err == io.EOF {
-				break
-			} else if err != nil {
+	runEncTests(
+		t, func(val interface{}) ([]byte, error) {
+			size, r, err := EncodeToReader(val)
+			if err != nil {
 				return nil, err
 			}
-		}
-		return output, nil
-	})
+
+			// read output piecewise
+			output := make([]byte, size)
+			for start, end := 0, 0; start < size; start = end {
+				if remaining := size - start; remaining < 3 {
+					end += remaining
+				} else {
+					end = start + 3
+				}
+				n, err := r.Read(output[start:end])
+				end = start + n
+				if err == io.EOF {
+					break
+				} else if err != nil {
+					return nil, err
+				}
+			}
+			return output, nil
+		},
+	)
 }
 
 // This is a regression test verifying that encReader

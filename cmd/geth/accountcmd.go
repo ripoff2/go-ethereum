@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/accounts/keystore"
+	"github.com/ripoff2/go-ethereum/cmd/utils"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/log"
 	"github.com/urfave/cli/v2"
 )
 
@@ -292,7 +292,10 @@ func accountCreate(ctx *cli.Context) error {
 		scryptP = keystore.LightScryptP
 	}
 
-	password := utils.GetPassPhraseWithList("Your new account is locked with a password. Please give a password. Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
+	password := utils.GetPassPhraseWithList(
+		"Your new account is locked with a password. Please give a password. Do not forget this password.", true, 0,
+		utils.MakePasswordList(ctx),
+	)
 
 	account, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
 
@@ -324,7 +327,9 @@ func accountUpdate(ctx *cli.Context) error {
 
 	for _, addr := range ctx.Args().Slice() {
 		account, oldPassword := unlockAccount(ks, addr, 0, nil)
-		newPassword := utils.GetPassPhraseWithList("Please give a new password. Do not forget this password.", true, 0, nil)
+		newPassword := utils.GetPassPhraseWithList(
+			"Please give a new password. Do not forget this password.", true, 0, nil,
+		)
 		if err := ks.Update(account, oldPassword, newPassword); err != nil {
 			utils.Fatalf("Could not update the account: %v", err)
 		}
@@ -373,7 +378,10 @@ func accountImport(ctx *cli.Context) error {
 		utils.Fatalf("Keystore is not available")
 	}
 	ks := backends[0].(*keystore.KeyStore)
-	passphrase := utils.GetPassPhraseWithList("Your new account is locked with a password. Please give a password. Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
+	passphrase := utils.GetPassPhraseWithList(
+		"Your new account is locked with a password. Please give a password. Do not forget this password.", true, 0,
+		utils.MakePasswordList(ctx),
+	)
 
 	acct, err := ks.ImportECDSA(key, passphrase)
 	if err != nil {

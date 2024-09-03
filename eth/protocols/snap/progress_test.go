@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 // Legacy sync progress definitions
@@ -103,10 +103,12 @@ func convertLegacy(legacy legacyProgress) SyncProgress {
 		for owner, list := range task.SubTasks {
 			var cpy []*storageTask
 			for i := 0; i < len(list); i++ {
-				cpy = append(cpy, &storageTask{
-					Next: list[i].Next,
-					Last: list[i].Last,
-				})
+				cpy = append(
+					cpy, &storageTask{
+						Next: list[i].Next,
+						Last: list[i].Last,
+					},
+				)
 			}
 			subTasks[owner] = cpy
 		}

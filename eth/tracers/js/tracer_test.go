@@ -24,13 +24,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 type account struct{}
@@ -59,12 +59,18 @@ type vmContext struct {
 }
 
 func testCtx() *vmContext {
-	return &vmContext{blockCtx: vm.BlockContext{BlockNumber: big.NewInt(1)}, txCtx: vm.TxContext{GasPrice: big.NewInt(100000)}}
+	return &vmContext{
+		blockCtx: vm.BlockContext{BlockNumber: big.NewInt(1)}, txCtx: vm.TxContext{GasPrice: big.NewInt(100000)},
+	}
 }
 
-func runTrace(tracer *tracers.Tracer, vmctx *vmContext, chaincfg *params.ChainConfig, contractCode []byte) (json.RawMessage, error) {
+func runTrace(
+	tracer *tracers.Tracer, vmctx *vmContext, chaincfg *params.ChainConfig, contractCode []byte,
+) (json.RawMessage, error) {
 	var (
-		env             = vm.NewEVM(vmctx.blockCtx, vmctx.txCtx, &dummyStatedb{}, chaincfg, vm.Config{Tracer: tracer.Hooks})
+		env = vm.NewEVM(
+			vmctx.blockCtx, vmctx.txCtx, &dummyStatedb{}, chaincfg, vm.Config{Tracer: tracer.Hooks},
+		)
 		gasLimit uint64 = 31000
 		startGas uint64 = 10000
 		value           = uint256.NewInt(0)
@@ -106,37 +112,46 @@ func TestTracer(t *testing.T) {
 		fail     string
 		contract []byte
 	}{
-		{ // tests that we don't panic on bad arguments to memory access
+		{
+			// tests that we don't panic on bad arguments to memory access
 			code: "{depths: [], step: function(log) { this.depths.push(log.memory.slice(-1,-2)); }, fault: function() {}, result: function() { return this.depths; }}",
 			want: ``,
 			fail: "tracer accessed out of bound memory: offset -1, end -2 at step (<eval>:1:53(13))    in server-side tracer function 'step'",
-		}, { // tests that we don't panic on bad arguments to stack peeks
+		}, {
+			// tests that we don't panic on bad arguments to stack peeks
 			code: "{depths: [], step: function(log) { this.depths.push(log.stack.peek(-1)); }, fault: function() {}, result: function() { return this.depths; }}",
 			want: ``,
 			fail: "tracer accessed out of bound stack: size 0, index -1 at step (<eval>:1:53(11))    in server-side tracer function 'step'",
-		}, { //  tests that we don't panic on bad arguments to memory getUint
+		}, {
+			//  tests that we don't panic on bad arguments to memory getUint
 			code: "{ depths: [], step: function(log, db) { this.depths.push(log.memory.getUint(-64));}, fault: function() {}, result: function() { return this.depths; }}",
 			want: ``,
 			fail: "tracer accessed out of bound memory: available 0, offset -64, size 32 at step (<eval>:1:58(11))    in server-side tracer function 'step'",
-		}, { // tests some general counting
+		}, {
+			// tests some general counting
 			code: "{count: 0, step: function() { this.count += 1; }, fault: function() {}, result: function() { return this.count; }}",
 			want: `3`,
-		}, { // tests that depth is reported correctly
+		}, {
+			// tests that depth is reported correctly
 			code: "{depths: [], step: function(log) { this.depths.push(log.stack.length()); }, fault: function() {}, result: function() { return this.depths; }}",
 			want: `[0,1,2]`,
-		}, { // tests memory length
+		}, {
+			// tests memory length
 			code: "{lengths: [], step: function(log) { this.lengths.push(log.memory.length()); }, fault: function() {}, result: function() { return this.lengths; }}",
 			want: `[0,0,0]`,
-		}, { // tests to-string of opcodes
+		}, {
+			// tests to-string of opcodes
 			code: "{opcodes: [], step: function(log) { this.opcodes.push(log.op.toString()); }, fault: function() {}, result: function() { return this.opcodes; }}",
 			want: `["PUSH1","PUSH1","STOP"]`,
-		}, { // tests gasUsed
+		}, {
+			// tests gasUsed
 			code: "{depths: [], step: function() {}, fault: function() {}, result: function(ctx) { return ctx.gasPrice+'.'+ctx.gasUsed; }}",
 			want: `"100000.21006"`,
 		}, {
 			code: "{res: null, step: function(log) {}, fault: function() {}, result: function() { return toWord('0xffaa') }}",
 			want: `{"0":0,"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":0,"12":0,"13":0,"14":0,"15":0,"16":0,"17":0,"18":0,"19":0,"20":0,"21":0,"22":0,"23":0,"24":0,"25":0,"26":0,"27":0,"28":0,"29":0,"30":255,"31":170}`,
-		}, { // test feeding a buffer back into go
+		}, {
+			// test feeding a buffer back into go
 			code: "{res: null, step: function(log) { var address = log.contract.getAddress(); this.res = toAddress(address); }, fault: function() {}, result: function() { return this.res }}",
 			want: `{"0":0,"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":0,"12":0,"13":0,"14":0,"15":0,"16":0,"17":0,"18":0,"19":0}`,
 		}, {
@@ -154,20 +169,26 @@ func TestTracer(t *testing.T) {
 			want:     "",
 			fail:     "reached limit for padding memory slice: 1049568 at step (<eval>:1:83(20))    in server-side tracer function 'step'",
 			contract: []byte{byte(vm.PUSH1), byte(0xff), byte(vm.PUSH1), byte(0x00), byte(vm.MSTORE8), byte(vm.STOP)},
-		}, { // tests ctx.coinbase
+		}, {
+			// tests ctx.coinbase
 			code: "{lengths: [], step: function(log) { }, fault: function() {}, result: function(ctx) { var coinbase = ctx.coinbase; return toAddress(coinbase); }}",
 			want: `{"0":0,"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":0,"12":0,"13":0,"14":0,"15":0,"16":0,"17":0,"18":0,"19":0}`,
 		},
 	} {
 		if have, err := execTracer(tt.code, tt.contract); tt.want != string(have) || tt.fail != err {
-			t.Errorf("testcase %d: expected return value to be \n'%s'\n\tgot\n'%s'\nerror to be\n'%s'\n\tgot\n'%s'\n\tcode: %v", i, tt.want, string(have), tt.fail, err, tt.code)
+			t.Errorf(
+				"testcase %d: expected return value to be \n'%s'\n\tgot\n'%s'\nerror to be\n'%s'\n\tgot\n'%s'\n\tcode: %v",
+				i, tt.want, string(have), tt.fail, err, tt.code,
+			)
 		}
 	}
 }
 
 func TestHalt(t *testing.T) {
 	timeout := errors.New("stahp")
-	tracer, err := newJsTracer("{step: function() { while(1); }, result: function() { return null; }, fault: function(){}}", nil, nil)
+	tracer, err := newJsTracer(
+		"{step: function() { while(1); }, result: function() { return null; }, fault: function(){}}", nil, nil,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -181,14 +202,19 @@ func TestHalt(t *testing.T) {
 }
 
 func TestHaltBetweenSteps(t *testing.T) {
-	tracer, err := newJsTracer("{step: function() {}, fault: function() {}, result: function() { return null; }}", nil, nil)
+	tracer, err := newJsTracer(
+		"{step: function() {}, fault: function() {}, result: function() { return null; }}", nil, nil,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	scope := &vm.ScopeContext{
 		Contract: vm.NewContract(&account{}, &account{}, uint256.NewInt(0), 0),
 	}
-	env := vm.NewEVM(vm.BlockContext{BlockNumber: big.NewInt(1)}, vm.TxContext{GasPrice: big.NewInt(1)}, &dummyStatedb{}, params.TestChainConfig, vm.Config{Tracer: tracer.Hooks})
+	env := vm.NewEVM(
+		vm.BlockContext{BlockNumber: big.NewInt(1)}, vm.TxContext{GasPrice: big.NewInt(1)}, &dummyStatedb{},
+		params.TestChainConfig, vm.Config{Tracer: tracer.Hooks},
+	)
 	tracer.OnTxStart(env.GetVMContext(), types.NewTx(&types.LegacyTx{}), common.Address{})
 	tracer.OnEnter(0, byte(vm.CALL), common.Address{}, common.Address{}, []byte{}, 0, big.NewInt(0))
 	tracer.OnOpcode(0, 0, 0, 0, scope, nil, 0, nil)
@@ -210,7 +236,10 @@ func TestNoStepExec(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		env := vm.NewEVM(vm.BlockContext{BlockNumber: big.NewInt(1)}, vm.TxContext{GasPrice: big.NewInt(100)}, &dummyStatedb{}, params.TestChainConfig, vm.Config{Tracer: tracer.Hooks})
+		env := vm.NewEVM(
+			vm.BlockContext{BlockNumber: big.NewInt(1)}, vm.TxContext{GasPrice: big.NewInt(100)}, &dummyStatedb{},
+			params.TestChainConfig, vm.Config{Tracer: tracer.Hooks},
+		)
 		tracer.OnTxStart(env.GetVMContext(), types.NewTx(&types.LegacyTx{}), common.Address{})
 		tracer.OnEnter(0, byte(vm.CALL), common.Address{}, common.Address{}, []byte{}, 1000, big.NewInt(0))
 		tracer.OnExit(0, nil, 0, nil, false)
@@ -224,24 +253,36 @@ func TestNoStepExec(t *testing.T) {
 		code string
 		want string
 	}{
-		{ // tests that we don't panic on accessing the db methods
+		{
+			// tests that we don't panic on accessing the db methods
 			code: "{depths: [], step: function() {}, fault: function() {},  result: function(ctx, db){ return db.getBalance(ctx.to)} }",
 			want: `"0"`,
 		},
 	} {
 		if have := execTracer(tt.code); tt.want != string(have) {
-			t.Errorf("testcase %d: expected return value to be %s got %s\n\tcode: %v", i, tt.want, string(have), tt.code)
+			t.Errorf(
+				"testcase %d: expected return value to be %s got %s\n\tcode: %v", i, tt.want, string(have), tt.code,
+			)
 		}
 	}
 }
 
 func TestIsPrecompile(t *testing.T) {
-	chaincfg := &params.ChainConfig{ChainID: big.NewInt(1), HomesteadBlock: big.NewInt(0), DAOForkBlock: nil, DAOForkSupport: false, EIP150Block: big.NewInt(0), EIP155Block: big.NewInt(0), EIP158Block: big.NewInt(0), ByzantiumBlock: big.NewInt(100), ConstantinopleBlock: big.NewInt(0), PetersburgBlock: big.NewInt(0), IstanbulBlock: big.NewInt(200), MuirGlacierBlock: big.NewInt(0), BerlinBlock: big.NewInt(300), LondonBlock: big.NewInt(0), TerminalTotalDifficulty: nil, Ethash: new(params.EthashConfig), Clique: nil}
+	chaincfg := &params.ChainConfig{
+		ChainID: big.NewInt(1), HomesteadBlock: big.NewInt(0), DAOForkBlock: nil, DAOForkSupport: false,
+		EIP150Block: big.NewInt(0), EIP155Block: big.NewInt(0), EIP158Block: big.NewInt(0),
+		ByzantiumBlock: big.NewInt(100), ConstantinopleBlock: big.NewInt(0), PetersburgBlock: big.NewInt(0),
+		IstanbulBlock: big.NewInt(200), MuirGlacierBlock: big.NewInt(0), BerlinBlock: big.NewInt(300),
+		LondonBlock: big.NewInt(0), TerminalTotalDifficulty: nil, Ethash: new(params.EthashConfig), Clique: nil,
+	}
 	chaincfg.ByzantiumBlock = big.NewInt(100)
 	chaincfg.IstanbulBlock = big.NewInt(200)
 	chaincfg.BerlinBlock = big.NewInt(300)
 	txCtx := vm.TxContext{GasPrice: big.NewInt(100000)}
-	tracer, err := newJsTracer("{addr: toAddress('0000000000000000000000000000000000000009'), res: null, step: function() { this.res = isPrecompiled(this.addr); }, fault: function() {}, result: function() { return this.res; }}", nil, nil)
+	tracer, err := newJsTracer(
+		"{addr: toAddress('0000000000000000000000000000000000000009'), res: null, step: function() { this.res = isPrecompiled(this.addr); }, fault: function() {}, result: function() { return this.res; }}",
+		nil, nil,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,7 +296,10 @@ func TestIsPrecompile(t *testing.T) {
 		t.Errorf("tracer should not consider blake2f as precompile in byzantium")
 	}
 
-	tracer, _ = newJsTracer("{addr: toAddress('0000000000000000000000000000000000000009'), res: null, step: function() { this.res = isPrecompiled(this.addr); }, fault: function() {}, result: function() { return this.res; }}", nil, nil)
+	tracer, _ = newJsTracer(
+		"{addr: toAddress('0000000000000000000000000000000000000009'), res: null, step: function() { this.res = isPrecompiled(this.addr); }, fault: function() {}, result: function() { return this.res; }}",
+		nil, nil,
+	)
 	blockCtx = vm.BlockContext{BlockNumber: big.NewInt(250)}
 	res, err = runTrace(tracer, &vmContext{blockCtx, txCtx}, chaincfg, nil)
 	if err != nil {
@@ -268,14 +312,23 @@ func TestIsPrecompile(t *testing.T) {
 
 func TestEnterExit(t *testing.T) {
 	// test that either both or none of enter() and exit() are defined
-	if _, err := newJsTracer("{step: function() {}, fault: function() {}, result: function() { return null; }, enter: function() {}}", new(tracers.Context), nil); err == nil {
+	if _, err := newJsTracer(
+		"{step: function() {}, fault: function() {}, result: function() { return null; }, enter: function() {}}",
+		new(tracers.Context), nil,
+	); err == nil {
 		t.Fatal("tracer creation should've failed without exit() definition")
 	}
-	if _, err := newJsTracer("{step: function() {}, fault: function() {}, result: function() { return null; }, enter: function() {}, exit: function() {}}", new(tracers.Context), nil); err != nil {
+	if _, err := newJsTracer(
+		"{step: function() {}, fault: function() {}, result: function() { return null; }, enter: function() {}, exit: function() {}}",
+		new(tracers.Context), nil,
+	); err != nil {
 		t.Fatal(err)
 	}
 	// test that the enter and exit method are correctly invoked and the values passed
-	tracer, err := newJsTracer("{enters: 0, exits: 0, enterGas: 0, gasUsed: 0, step: function() {}, fault: function() {}, result: function() { return {enters: this.enters, exits: this.exits, enterGas: this.enterGas, gasUsed: this.gasUsed} }, enter: function(frame) { this.enters++; this.enterGas = frame.getGas(); }, exit: function(res) { this.exits++; this.gasUsed = res.getGasUsed(); }}", new(tracers.Context), nil)
+	tracer, err := newJsTracer(
+		"{enters: 0, exits: 0, enterGas: 0, gasUsed: 0, step: function() {}, fault: function() {}, result: function() { return {enters: this.enters, exits: this.exits, enterGas: this.enterGas, gasUsed: this.gasUsed} }, enter: function(frame) { this.enters++; this.enterGas = frame.getGas(); }, exit: function(res) { this.exits++; this.gasUsed = res.getGasUsed(); }}",
+		new(tracers.Context), nil,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -297,7 +350,10 @@ func TestEnterExit(t *testing.T) {
 
 func TestSetup(t *testing.T) {
 	// Test empty config
-	_, err := newJsTracer(`{setup: function(cfg) { if (cfg !== "{}") { throw("invalid empty config") } }, fault: function() {}, result: function() {}}`, new(tracers.Context), nil)
+	_, err := newJsTracer(
+		`{setup: function(cfg) { if (cfg !== "{}") { throw("invalid empty config") } }, fault: function() {}, result: function() {}}`,
+		new(tracers.Context), nil,
+	)
 	if err != nil {
 		t.Error(err)
 	}
@@ -312,7 +368,10 @@ func TestSetup(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Test config value
-	tracer, err := newJsTracer("{config: null, setup: function(cfg) { this.config = JSON.parse(cfg) }, step: function() {}, fault: function() {}, result: function() { return this.config.foo }}", new(tracers.Context), cfg)
+	tracer, err := newJsTracer(
+		"{config: null, setup: function(cfg) { this.config = JSON.parse(cfg) }, step: function() {}, fault: function() {}, result: function() { return this.config.foo }}",
+		new(tracers.Context), cfg,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

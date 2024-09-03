@@ -35,27 +35,27 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/consensus/beacon"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/bloombits"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/crypto/kzg4844"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/internal/blocktest"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/accounts/keystore"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/consensus"
+	"github.com/ripoff2/go-ethereum/consensus/beacon"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/bloombits"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/crypto/kzg4844"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/internal/blocktest"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 func testTransactionMarshal(t *testing.T, tests []txData, config *params.ChainConfig) {
@@ -434,7 +434,9 @@ type testBackend struct {
 	acc     accounts.Account
 }
 
-func newTestBackend(t *testing.T, n int, gspec *core.Genesis, engine consensus.Engine, generator func(i int, b *core.BlockGen)) *testBackend {
+func newTestBackend(
+	t *testing.T, n int, gspec *core.Genesis, engine consensus.Engine, generator func(i int, b *core.BlockGen),
+) *testBackend {
 	var (
 		cacheConfig = &core.CacheConfig{
 			TrieCleanLimit:    256,
@@ -469,7 +471,9 @@ func (b testBackend) SyncProgress() ethereum.SyncProgress { return ethereum.Sync
 func (b testBackend) SuggestGasTipCap(ctx context.Context) (*big.Int, error) {
 	return big.NewInt(0), nil
 }
-func (b testBackend) FeeHistory(ctx context.Context, blockCount uint64, lastBlock rpc.BlockNumber, rewardPercentiles []float64) (*big.Int, [][]*big.Int, []*big.Int, []float64, []*big.Int, []float64, error) {
+func (b testBackend) FeeHistory(
+	ctx context.Context, blockCount uint64, lastBlock rpc.BlockNumber, rewardPercentiles []float64,
+) (*big.Int, [][]*big.Int, []*big.Int, []float64, []*big.Int, []float64, error) {
 	return nil, nil, nil, nil, nil, nil, nil
 }
 func (b testBackend) BlobBaseFee(ctx context.Context) *big.Int { return new(big.Int) }
@@ -493,7 +497,9 @@ func (b testBackend) HeaderByNumber(ctx context.Context, number rpc.BlockNumber)
 func (b testBackend) HeaderByHash(ctx context.Context, hash common.Hash) (*types.Header, error) {
 	return b.chain.GetHeaderByHash(hash), nil
 }
-func (b testBackend) HeaderByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (*types.Header, error) {
+func (b testBackend) HeaderByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (
+	*types.Header, error,
+) {
 	if blockNr, ok := blockNrOrHash.Number(); ok {
 		return b.HeaderByNumber(ctx, blockNr)
 	}
@@ -517,7 +523,9 @@ func (b testBackend) BlockByNumber(ctx context.Context, number rpc.BlockNumber) 
 func (b testBackend) BlockByHash(ctx context.Context, hash common.Hash) (*types.Block, error) {
 	return b.chain.GetBlockByHash(hash), nil
 }
-func (b testBackend) BlockByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (*types.Block, error) {
+func (b testBackend) BlockByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (
+	*types.Block, error,
+) {
 	if blockNr, ok := blockNrOrHash.Number(); ok {
 		return b.BlockByNumber(ctx, blockNr)
 	}
@@ -529,7 +537,9 @@ func (b testBackend) BlockByNumberOrHash(ctx context.Context, blockNrOrHash rpc.
 func (b testBackend) GetBody(ctx context.Context, hash common.Hash, number rpc.BlockNumber) (*types.Body, error) {
 	return b.chain.GetBlock(hash, uint64(number.Int64())).Body(), nil
 }
-func (b testBackend) StateAndHeaderByNumber(ctx context.Context, number rpc.BlockNumber) (*state.StateDB, *types.Header, error) {
+func (b testBackend) StateAndHeaderByNumber(ctx context.Context, number rpc.BlockNumber) (
+	*state.StateDB, *types.Header, error,
+) {
 	if number == rpc.PendingBlockNumber {
 		panic("pending state not implemented")
 	}
@@ -543,7 +553,9 @@ func (b testBackend) StateAndHeaderByNumber(ctx context.Context, number rpc.Bloc
 	stateDb, err := b.chain.StateAt(header.Root)
 	return stateDb, header, err
 }
-func (b testBackend) StateAndHeaderByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (*state.StateDB, *types.Header, error) {
+func (b testBackend) StateAndHeaderByNumberOrHash(
+	ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash,
+) (*state.StateDB, *types.Header, error) {
 	if blockNr, ok := blockNrOrHash.Number(); ok {
 		return b.StateAndHeaderByNumber(ctx, blockNr)
 	}
@@ -564,7 +576,10 @@ func (b testBackend) GetTd(ctx context.Context, hash common.Hash) *big.Int {
 	}
 	return big.NewInt(1)
 }
-func (b testBackend) GetEVM(ctx context.Context, msg *core.Message, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockContext *vm.BlockContext) *vm.EVM {
+func (b testBackend) GetEVM(
+	ctx context.Context, msg *core.Message, state *state.StateDB, header *types.Header, vmConfig *vm.Config,
+	blockContext *vm.BlockContext,
+) *vm.EVM {
 	if vmConfig == nil {
 		vmConfig = b.chain.GetVMConfig()
 	}
@@ -587,7 +602,9 @@ func (b testBackend) SubscribeChainSideEvent(ch chan<- core.ChainSideEvent) even
 func (b testBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {
 	panic("implement me")
 }
-func (b testBackend) GetTransaction(ctx context.Context, txHash common.Hash) (bool, *types.Transaction, common.Hash, uint64, uint64, error) {
+func (b testBackend) GetTransaction(ctx context.Context, txHash common.Hash) (
+	bool, *types.Transaction, common.Hash, uint64, uint64, error,
+) {
 	tx, blockHash, blockNumber, index := rawdb.ReadTransaction(b.db, txHash)
 	return true, tx, blockHash, blockNumber, index, nil
 }
@@ -597,7 +614,9 @@ func (b testBackend) GetPoolNonce(ctx context.Context, addr common.Address) (uin
 	return 0, nil
 }
 func (b testBackend) Stats() (pending int, queued int) { panic("implement me") }
-func (b testBackend) TxPoolContent() (map[common.Address][]*types.Transaction, map[common.Address][]*types.Transaction) {
+func (b testBackend) TxPoolContent() (
+	map[common.Address][]*types.Transaction, map[common.Address][]*types.Transaction,
+) {
 	panic("implement me")
 }
 func (b testBackend) TxPoolContentFrom(addr common.Address) ([]*types.Transaction, []*types.Transaction) {
@@ -638,14 +657,25 @@ func TestEstimateGas(t *testing.T) {
 		signer         = types.HomesteadSigner{}
 		randomAccounts = newAccounts(2)
 	)
-	api := NewBlockChainAPI(newTestBackend(t, genBlocks, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
-		// Transfer from account[0] to account[1]
-		//    value: 1000 wei
-		//    fee:   0 wei
-		tx, _ := types.SignTx(types.NewTx(&types.LegacyTx{Nonce: uint64(i), To: &accounts[1].addr, Value: big.NewInt(1000), Gas: params.TxGas, GasPrice: b.BaseFee(), Data: nil}), signer, accounts[0].key)
-		b.AddTx(tx)
-		b.SetPoS()
-	}))
+	api := NewBlockChainAPI(
+		newTestBackend(
+			t, genBlocks, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
+				// Transfer from account[0] to account[1]
+				//    value: 1000 wei
+				//    fee:   0 wei
+				tx, _ := types.SignTx(
+					types.NewTx(
+						&types.LegacyTx{
+							Nonce: uint64(i), To: &accounts[1].addr, Value: big.NewInt(1000), Gas: params.TxGas,
+							GasPrice: b.BaseFee(), Data: nil,
+						},
+					), signer, accounts[0].key,
+				)
+				b.AddTx(tx)
+				b.SetPoS()
+			},
+		),
+	)
 	var testSuite = []struct {
 		blockNumber rpc.BlockNumber
 		call        TransactionArgs
@@ -686,7 +716,13 @@ func TestEstimateGas(t *testing.T) {
 			blockNumber: rpc.LatestBlockNumber,
 			call:        TransactionArgs{},
 			overrides: StateOverride{
-				randomAccounts[0].addr: OverrideAccount{Balance: newRPCBalance(new(big.Int).Mul(big.NewInt(1), big.NewInt(params.Ether)))},
+				randomAccounts[0].addr: OverrideAccount{
+					Balance: newRPCBalance(
+						new(big.Int).Mul(
+							big.NewInt(1), big.NewInt(params.Ether),
+						),
+					),
+				},
 			},
 			expectErr: nil,
 			want:      53000,
@@ -758,7 +794,9 @@ func TestEstimateGas(t *testing.T) {
 		},
 	}
 	for i, tc := range testSuite {
-		result, err := api.EstimateGas(context.Background(), tc.call, &rpc.BlockNumberOrHash{BlockNumber: &tc.blockNumber}, &tc.overrides)
+		result, err := api.EstimateGas(
+			context.Background(), tc.call, &rpc.BlockNumberOrHash{BlockNumber: &tc.blockNumber}, &tc.overrides,
+		)
 		if tc.expectErr != nil {
 			if err == nil {
 				t.Errorf("test %d: want error %v, have nothing", i, tc.expectErr)
@@ -804,14 +842,25 @@ func TestCall(t *testing.T) {
 		genBlocks = 10
 		signer    = types.HomesteadSigner{}
 	)
-	api := NewBlockChainAPI(newTestBackend(t, genBlocks, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
-		// Transfer from account[0] to account[1]
-		//    value: 1000 wei
-		//    fee:   0 wei
-		tx, _ := types.SignTx(types.NewTx(&types.LegacyTx{Nonce: uint64(i), To: &accounts[1].addr, Value: big.NewInt(1000), Gas: params.TxGas, GasPrice: b.BaseFee(), Data: nil}), signer, accounts[0].key)
-		b.AddTx(tx)
-		b.SetPoS()
-	}))
+	api := NewBlockChainAPI(
+		newTestBackend(
+			t, genBlocks, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
+				// Transfer from account[0] to account[1]
+				//    value: 1000 wei
+				//    fee:   0 wei
+				tx, _ := types.SignTx(
+					types.NewTx(
+						&types.LegacyTx{
+							Nonce: uint64(i), To: &accounts[1].addr, Value: big.NewInt(1000), Gas: params.TxGas,
+							GasPrice: b.BaseFee(), Data: nil,
+						},
+					), signer, accounts[0].key,
+				)
+				b.AddTx(tx)
+				b.SetPoS()
+			},
+		),
+	)
 	randomAccounts := newAccounts(3)
 	var testSuite = []struct {
 		blockNumber    rpc.BlockNumber
@@ -873,7 +922,13 @@ func TestCall(t *testing.T) {
 				Value: (*hexutil.Big)(big.NewInt(1000)),
 			},
 			overrides: StateOverride{
-				randomAccounts[0].addr: OverrideAccount{Balance: newRPCBalance(new(big.Int).Mul(big.NewInt(1), big.NewInt(params.Ether)))},
+				randomAccounts[0].addr: OverrideAccount{
+					Balance: newRPCBalance(
+						new(big.Int).Mul(
+							big.NewInt(1), big.NewInt(params.Ether),
+						),
+					),
+				},
 			},
 			want: "0x",
 		},
@@ -986,7 +1041,10 @@ func TestCall(t *testing.T) {
 		},
 	}
 	for i, tc := range testSuite {
-		result, err := api.Call(context.Background(), tc.call, &rpc.BlockNumberOrHash{BlockNumber: &tc.blockNumber}, &tc.overrides, &tc.blockOverrides)
+		result, err := api.Call(
+			context.Background(), tc.call, &rpc.BlockNumberOrHash{BlockNumber: &tc.blockNumber}, &tc.overrides,
+			&tc.blockOverrides,
+		)
 		if tc.expectErr != nil {
 			if err == nil {
 				t.Errorf("test %d: want error %v, have nothing", i, tc.expectErr)
@@ -1021,15 +1079,19 @@ func TestSignTransaction(t *testing.T) {
 			Alloc:  types.GenesisAlloc{},
 		}
 	)
-	b := newTestBackend(t, 1, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
-		b.SetPoS()
-	})
+	b := newTestBackend(
+		t, 1, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
+			b.SetPoS()
+		},
+	)
 	api := NewTransactionAPI(b, nil)
-	res, err := api.FillTransaction(context.Background(), TransactionArgs{
-		From:  &b.acc.Address,
-		To:    &to,
-		Value: (*hexutil.Big)(big.NewInt(1)),
-	})
+	res, err := api.FillTransaction(
+		context.Background(), TransactionArgs{
+			From:  &b.acc.Address,
+			To:    &to,
+			Value: (*hexutil.Big)(big.NewInt(1)),
+		},
+	)
 	if err != nil {
 		t.Fatalf("failed to fill tx defaults: %v\n", err)
 	}
@@ -1059,16 +1121,20 @@ func TestSignBlobTransaction(t *testing.T) {
 			Alloc:  types.GenesisAlloc{},
 		}
 	)
-	b := newTestBackend(t, 1, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
-		b.SetPoS()
-	})
+	b := newTestBackend(
+		t, 1, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
+			b.SetPoS()
+		},
+	)
 	api := NewTransactionAPI(b, nil)
-	res, err := api.FillTransaction(context.Background(), TransactionArgs{
-		From:       &b.acc.Address,
-		To:         &to,
-		Value:      (*hexutil.Big)(big.NewInt(1)),
-		BlobHashes: []common.Hash{{0x01, 0x22}},
-	})
+	res, err := api.FillTransaction(
+		context.Background(), TransactionArgs{
+			From:       &b.acc.Address,
+			To:         &to,
+			Value:      (*hexutil.Big)(big.NewInt(1)),
+			BlobHashes: []common.Hash{{0x01, 0x22}},
+		},
+	)
 	if err != nil {
 		t.Fatalf("failed to fill tx defaults: %v\n", err)
 	}
@@ -1090,16 +1156,20 @@ func TestSendBlobTransaction(t *testing.T) {
 			Alloc:  types.GenesisAlloc{},
 		}
 	)
-	b := newTestBackend(t, 1, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
-		b.SetPoS()
-	})
+	b := newTestBackend(
+		t, 1, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
+			b.SetPoS()
+		},
+	)
 	api := NewTransactionAPI(b, nil)
-	res, err := api.FillTransaction(context.Background(), TransactionArgs{
-		From:       &b.acc.Address,
-		To:         &to,
-		Value:      (*hexutil.Big)(big.NewInt(1)),
-		BlobHashes: []common.Hash{{0x01, 0x22}},
-	})
+	res, err := api.FillTransaction(
+		context.Background(), TransactionArgs{
+			From:       &b.acc.Address,
+			To:         &to,
+			Value:      (*hexutil.Big)(big.NewInt(1)),
+			BlobHashes: []common.Hash{{0x01, 0x22}},
+		},
+	)
 	if err != nil {
 		t.Fatalf("failed to fill tx defaults: %v\n", err)
 	}
@@ -1128,9 +1198,11 @@ func TestFillBlobTransaction(t *testing.T) {
 		emptyBlobProof, _              = kzg4844.ComputeBlobProof(emptyBlob, emptyBlobCommit)
 		emptyBlobHash      common.Hash = kzg4844.CalcBlobHashV1(sha256.New(), &emptyBlobCommit)
 	)
-	b := newTestBackend(t, 1, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
-		b.SetPoS()
-	})
+	b := newTestBackend(
+		t, 1, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
+			b.SetPoS()
+		},
+	)
 	api := NewTransactionAPI(b, nil)
 	type result struct {
 		Hashes  []common.Hash
@@ -1250,7 +1322,9 @@ func TestFillBlobTransaction(t *testing.T) {
 				Commitments: []kzg4844.Commitment{emptyBlobCommit},
 				Proofs:      []kzg4844.Proof{emptyBlobProof},
 			},
-			err: fmt.Sprintf("blob hash verification failed (have=%s, want=%s)", common.Hash{0x01, 0x22}, emptyBlobHash),
+			err: fmt.Sprintf(
+				"blob hash verification failed (have=%s, want=%s)", common.Hash{0x01, 0x22}, emptyBlobHash,
+			),
 		},
 		{
 			name: "TestGenerateBlobProofs",
@@ -1271,34 +1345,36 @@ func TestFillBlobTransaction(t *testing.T) {
 		},
 	}
 	for _, tc := range suite {
-		t.Run(tc.name, func(t *testing.T) {
-			res, err := api.FillTransaction(context.Background(), tc.args)
-			if len(tc.err) > 0 {
-				if err == nil {
-					t.Fatalf("missing error. want: %s", tc.err)
-				} else if err.Error() != tc.err {
-					t.Fatalf("error mismatch. want: %s, have: %s", tc.err, err.Error())
+		t.Run(
+			tc.name, func(t *testing.T) {
+				res, err := api.FillTransaction(context.Background(), tc.args)
+				if len(tc.err) > 0 {
+					if err == nil {
+						t.Fatalf("missing error. want: %s", tc.err)
+					} else if err.Error() != tc.err {
+						t.Fatalf("error mismatch. want: %s, have: %s", tc.err, err.Error())
+					}
+					return
 				}
-				return
-			}
-			if err != nil && len(tc.err) == 0 {
-				t.Fatalf("expected no error. have: %s", err)
-			}
-			if res == nil {
-				t.Fatal("result missing")
-			}
-			want, err := json.Marshal(tc.want)
-			if err != nil {
-				t.Fatalf("failed to encode expected: %v", err)
-			}
-			have, err := json.Marshal(result{Hashes: res.Tx.BlobHashes(), Sidecar: res.Tx.BlobTxSidecar()})
-			if err != nil {
-				t.Fatalf("failed to encode computed sidecar: %v", err)
-			}
-			if !bytes.Equal(have, want) {
-				t.Errorf("blob sidecar mismatch. Have: %s, want: %s", have, want)
-			}
-		})
+				if err != nil && len(tc.err) == 0 {
+					t.Fatalf("expected no error. have: %s", err)
+				}
+				if res == nil {
+					t.Fatal("result missing")
+				}
+				want, err := json.Marshal(tc.want)
+				if err != nil {
+					t.Fatalf("failed to encode expected: %v", err)
+				}
+				have, err := json.Marshal(result{Hashes: res.Tx.BlobHashes(), Sidecar: res.Tx.BlobTxSidecar()})
+				if err != nil {
+					t.Fatalf("failed to encode computed sidecar: %v", err)
+				}
+				if !bytes.Equal(have, want) {
+					t.Errorf("blob sidecar mismatch. Have: %s, want: %s", have, want)
+				}
+			},
+		)
 	}
 }
 
@@ -1362,28 +1438,34 @@ func TestRPCMarshalBlock(t *testing.T) {
 	for i := uint64(1); i <= 4; i++ {
 		var tx *types.Transaction
 		if i%2 == 0 {
-			tx = types.NewTx(&types.LegacyTx{
-				Nonce:    i,
-				GasPrice: big.NewInt(11111),
-				Gas:      1111,
-				To:       &to,
-				Value:    big.NewInt(111),
-				Data:     []byte{0x11, 0x11, 0x11},
-			})
+			tx = types.NewTx(
+				&types.LegacyTx{
+					Nonce:    i,
+					GasPrice: big.NewInt(11111),
+					Gas:      1111,
+					To:       &to,
+					Value:    big.NewInt(111),
+					Data:     []byte{0x11, 0x11, 0x11},
+				},
+			)
 		} else {
-			tx = types.NewTx(&types.AccessListTx{
-				ChainID:  big.NewInt(1337),
-				Nonce:    i,
-				GasPrice: big.NewInt(11111),
-				Gas:      1111,
-				To:       &to,
-				Value:    big.NewInt(111),
-				Data:     []byte{0x11, 0x11, 0x11},
-			})
+			tx = types.NewTx(
+				&types.AccessListTx{
+					ChainID:  big.NewInt(1337),
+					Nonce:    i,
+					GasPrice: big.NewInt(11111),
+					Gas:      1111,
+					To:       &to,
+					Value:    big.NewInt(111),
+					Data:     []byte{0x11, 0x11, 0x11},
+				},
+			)
 		}
 		txs = append(txs, tx)
 	}
-	block := types.NewBlock(&types.Header{Number: big.NewInt(100)}, &types.Body{Transactions: txs}, nil, blocktest.NewHasher())
+	block := types.NewBlock(
+		&types.Header{Number: big.NewInt(100)}, &types.Body{Transactions: txs}, nil, blocktest.NewHasher(),
+	)
 
 	var testSuite = []struct {
 		inclTx bool
@@ -1580,29 +1662,44 @@ func TestRPCGetBlockOrHeader(t *testing.T) {
 		}
 		genBlocks = 10
 		signer    = types.HomesteadSigner{}
-		tx        = types.NewTx(&types.LegacyTx{
-			Nonce:    11,
-			GasPrice: big.NewInt(11111),
-			Gas:      1111,
-			To:       &acc2Addr,
-			Value:    big.NewInt(111),
-			Data:     []byte{0x11, 0x11, 0x11},
-		})
+		tx        = types.NewTx(
+			&types.LegacyTx{
+				Nonce:    11,
+				GasPrice: big.NewInt(11111),
+				Gas:      1111,
+				To:       &acc2Addr,
+				Value:    big.NewInt(111),
+				Data:     []byte{0x11, 0x11, 0x11},
+			},
+		)
 		withdrawal = &types.Withdrawal{
 			Index:     0,
 			Validator: 1,
 			Address:   common.Address{0x12, 0x34},
 			Amount:    10,
 		}
-		pending = types.NewBlock(&types.Header{Number: big.NewInt(11), Time: 42}, &types.Body{Transactions: types.Transactions{tx}, Withdrawals: types.Withdrawals{withdrawal}}, nil, blocktest.NewHasher())
+		pending = types.NewBlock(
+			&types.Header{Number: big.NewInt(11), Time: 42},
+			&types.Body{Transactions: types.Transactions{tx}, Withdrawals: types.Withdrawals{withdrawal}}, nil,
+			blocktest.NewHasher(),
+		)
 	)
-	backend := newTestBackend(t, genBlocks, genesis, ethash.NewFaker(), func(i int, b *core.BlockGen) {
-		// Transfer from account[0] to account[1]
-		//    value: 1000 wei
-		//    fee:   0 wei
-		tx, _ := types.SignTx(types.NewTx(&types.LegacyTx{Nonce: uint64(i), To: &acc2Addr, Value: big.NewInt(1000), Gas: params.TxGas, GasPrice: b.BaseFee(), Data: nil}), signer, acc1Key)
-		b.AddTx(tx)
-	})
+	backend := newTestBackend(
+		t, genBlocks, genesis, ethash.NewFaker(), func(i int, b *core.BlockGen) {
+			// Transfer from account[0] to account[1]
+			//    value: 1000 wei
+			//    fee:   0 wei
+			tx, _ := types.SignTx(
+				types.NewTx(
+					&types.LegacyTx{
+						Nonce: uint64(i), To: &acc2Addr, Value: big.NewInt(1000), Gas: params.TxGas,
+						GasPrice: b.BaseFee(), Data: nil,
+					},
+				), signer, acc1Key,
+			)
+			b.AddTx(tx)
+		},
+	)
 	backend.setPendingBlock(pending)
 	api := NewBlockChainAPI(backend)
 	blockHashes := make([]common.Hash, genBlocks+1)
@@ -1841,68 +1938,122 @@ func setupReceiptBackend(t *testing.T, genBlocks int) (*testBackend, []common.Ha
 				//         return true;
 				//     }
 				// }
-				contract: {Balance: big.NewInt(params.Ether), Code: common.FromHex("0x608060405234801561001057600080fd5b506004361061002b5760003560e01c8063a9059cbb14610030575b600080fd5b61004a6004803603810190610045919061016a565b610060565b60405161005791906101c5565b60405180910390f35b60008273ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef846040516100bf91906101ef565b60405180910390a36001905092915050565b600080fd5b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b6000610101826100d6565b9050919050565b610111816100f6565b811461011c57600080fd5b50565b60008135905061012e81610108565b92915050565b6000819050919050565b61014781610134565b811461015257600080fd5b50565b6000813590506101648161013e565b92915050565b60008060408385031215610181576101806100d1565b5b600061018f8582860161011f565b92505060206101a085828601610155565b9150509250929050565b60008115159050919050565b6101bf816101aa565b82525050565b60006020820190506101da60008301846101b6565b92915050565b6101e981610134565b82525050565b600060208201905061020460008301846101e0565b9291505056fea2646970667358221220b469033f4b77b9565ee84e0a2f04d496b18160d26034d54f9487e57788fd36d564736f6c63430008120033")},
+				contract: {
+					Balance: big.NewInt(params.Ether),
+					Code:    common.FromHex("0x608060405234801561001057600080fd5b506004361061002b5760003560e01c8063a9059cbb14610030575b600080fd5b61004a6004803603810190610045919061016a565b610060565b60405161005791906101c5565b60405180910390f35b60008273ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef846040516100bf91906101ef565b60405180910390a36001905092915050565b600080fd5b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b6000610101826100d6565b9050919050565b610111816100f6565b811461011c57600080fd5b50565b60008135905061012e81610108565b92915050565b6000819050919050565b61014781610134565b811461015257600080fd5b50565b6000813590506101648161013e565b92915050565b60008060408385031215610181576101806100d1565b5b600061018f8582860161011f565b92505060206101a085828601610155565b9150509250929050565b60008115159050919050565b6101bf816101aa565b82525050565b60006020820190506101da60008301846101b6565b92915050565b6101e981610134565b82525050565b600060208201905061020460008301846101e0565b9291505056fea2646970667358221220b469033f4b77b9565ee84e0a2f04d496b18160d26034d54f9487e57788fd36d564736f6c63430008120033"),
+				},
 			},
 		}
 		signer   = types.LatestSignerForChainID(params.TestChainConfig.ChainID)
 		txHashes = make([]common.Hash, genBlocks)
 	)
 
-	backend := newTestBackend(t, genBlocks, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
-		var (
-			tx  *types.Transaction
-			err error
-		)
-		b.SetPoS()
-		switch i {
-		case 0:
-			// transfer 1000wei
-			tx, err = types.SignTx(types.NewTx(&types.LegacyTx{Nonce: uint64(i), To: &acc2Addr, Value: big.NewInt(1000), Gas: params.TxGas, GasPrice: b.BaseFee(), Data: nil}), types.HomesteadSigner{}, acc1Key)
-		case 1:
-			// create contract
-			tx, err = types.SignTx(types.NewTx(&types.LegacyTx{Nonce: uint64(i), To: nil, Gas: 53100, GasPrice: b.BaseFee(), Data: common.FromHex("0x60806040")}), signer, acc1Key)
-		case 2:
-			// with logs
-			// transfer(address to, uint256 value)
-			data := fmt.Sprintf("0xa9059cbb%s%s", common.HexToHash(common.BigToAddress(big.NewInt(int64(i + 1))).Hex()).String()[2:], common.BytesToHash([]byte{byte(i + 11)}).String()[2:])
-			tx, err = types.SignTx(types.NewTx(&types.LegacyTx{Nonce: uint64(i), To: &contract, Gas: 60000, GasPrice: b.BaseFee(), Data: common.FromHex(data)}), signer, acc1Key)
-		case 3:
-			// dynamic fee with logs
-			// transfer(address to, uint256 value)
-			data := fmt.Sprintf("0xa9059cbb%s%s", common.HexToHash(common.BigToAddress(big.NewInt(int64(i + 1))).Hex()).String()[2:], common.BytesToHash([]byte{byte(i + 11)}).String()[2:])
-			fee := big.NewInt(500)
-			fee.Add(fee, b.BaseFee())
-			tx, err = types.SignTx(types.NewTx(&types.DynamicFeeTx{Nonce: uint64(i), To: &contract, Gas: 60000, Value: big.NewInt(1), GasTipCap: big.NewInt(500), GasFeeCap: fee, Data: common.FromHex(data)}), signer, acc1Key)
-		case 4:
-			// access list with contract create
-			accessList := types.AccessList{{
-				Address:     contract,
-				StorageKeys: []common.Hash{{0}},
-			}}
-			tx, err = types.SignTx(types.NewTx(&types.AccessListTx{Nonce: uint64(i), To: nil, Gas: 58100, GasPrice: b.BaseFee(), Data: common.FromHex("0x60806040"), AccessList: accessList}), signer, acc1Key)
-		case 5:
-			// blob tx
-			fee := big.NewInt(500)
-			fee.Add(fee, b.BaseFee())
-			tx, err = types.SignTx(types.NewTx(&types.BlobTx{
-				Nonce:      uint64(i),
-				GasTipCap:  uint256.NewInt(1),
-				GasFeeCap:  uint256.MustFromBig(fee),
-				Gas:        params.TxGas,
-				To:         acc2Addr,
-				BlobFeeCap: uint256.NewInt(1),
-				BlobHashes: []common.Hash{{1}},
-				Value:      new(uint256.Int),
-			}), signer, acc1Key)
-		}
-		if err != nil {
-			t.Errorf("failed to sign tx: %v", err)
-		}
-		if tx != nil {
-			b.AddTx(tx)
-			txHashes[i] = tx.Hash()
-		}
-	})
+	backend := newTestBackend(
+		t, genBlocks, genesis, beacon.New(ethash.NewFaker()), func(i int, b *core.BlockGen) {
+			var (
+				tx  *types.Transaction
+				err error
+			)
+			b.SetPoS()
+			switch i {
+			case 0:
+				// transfer 1000wei
+				tx, err = types.SignTx(
+					types.NewTx(
+						&types.LegacyTx{
+							Nonce: uint64(i), To: &acc2Addr, Value: big.NewInt(1000), Gas: params.TxGas,
+							GasPrice: b.BaseFee(), Data: nil,
+						},
+					), types.HomesteadSigner{}, acc1Key,
+				)
+			case 1:
+				// create contract
+				tx, err = types.SignTx(
+					types.NewTx(
+						&types.LegacyTx{
+							Nonce: uint64(i), To: nil, Gas: 53100, GasPrice: b.BaseFee(),
+							Data: common.FromHex("0x60806040"),
+						},
+					), signer, acc1Key,
+				)
+			case 2:
+				// with logs
+				// transfer(address to, uint256 value)
+				data := fmt.Sprintf(
+					"0xa9059cbb%s%s",
+					common.HexToHash(common.BigToAddress(big.NewInt(int64(i + 1))).Hex()).String()[2:],
+					common.BytesToHash([]byte{byte(i + 11)}).String()[2:],
+				)
+				tx, err = types.SignTx(
+					types.NewTx(
+						&types.LegacyTx{
+							Nonce: uint64(i), To: &contract, Gas: 60000, GasPrice: b.BaseFee(),
+							Data: common.FromHex(data),
+						},
+					), signer, acc1Key,
+				)
+			case 3:
+				// dynamic fee with logs
+				// transfer(address to, uint256 value)
+				data := fmt.Sprintf(
+					"0xa9059cbb%s%s",
+					common.HexToHash(common.BigToAddress(big.NewInt(int64(i + 1))).Hex()).String()[2:],
+					common.BytesToHash([]byte{byte(i + 11)}).String()[2:],
+				)
+				fee := big.NewInt(500)
+				fee.Add(fee, b.BaseFee())
+				tx, err = types.SignTx(
+					types.NewTx(
+						&types.DynamicFeeTx{
+							Nonce: uint64(i), To: &contract, Gas: 60000, Value: big.NewInt(1),
+							GasTipCap: big.NewInt(500), GasFeeCap: fee, Data: common.FromHex(data),
+						},
+					), signer, acc1Key,
+				)
+			case 4:
+				// access list with contract create
+				accessList := types.AccessList{
+					{
+						Address:     contract,
+						StorageKeys: []common.Hash{{0}},
+					},
+				}
+				tx, err = types.SignTx(
+					types.NewTx(
+						&types.AccessListTx{
+							Nonce: uint64(i), To: nil, Gas: 58100, GasPrice: b.BaseFee(),
+							Data: common.FromHex("0x60806040"), AccessList: accessList,
+						},
+					), signer, acc1Key,
+				)
+			case 5:
+				// blob tx
+				fee := big.NewInt(500)
+				fee.Add(fee, b.BaseFee())
+				tx, err = types.SignTx(
+					types.NewTx(
+						&types.BlobTx{
+							Nonce:      uint64(i),
+							GasTipCap:  uint256.NewInt(1),
+							GasFeeCap:  uint256.MustFromBig(fee),
+							Gas:        params.TxGas,
+							To:         acc2Addr,
+							BlobFeeCap: uint256.NewInt(1),
+							BlobHashes: []common.Hash{{1}},
+							Value:      new(uint256.Int),
+						},
+					), signer, acc1Key,
+				)
+			}
+			if err != nil {
+				t.Errorf("failed to sign tx: %v", err)
+			}
+			if tx != nil {
+				b.AddTx(tx)
+				txHashes[i] = tx.Hash()
+			}
+		},
+	)
 	return backend, txHashes
 }
 
@@ -2086,5 +2237,7 @@ func testRPCResponseWithFile(t *testing.T, testid int, result interface{}, rpc s
 	if err != nil {
 		t.Fatalf("error reading expected test file: %s output: %v", outputFile, err)
 	}
-	require.JSONEqf(t, string(want), string(data), "test %d: json not match, want: %s, have: %s", testid, string(want), string(data))
+	require.JSONEqf(
+		t, string(want), string(data), "test %d: json not match, want: %s, have: %s", testid, string(want), string(data),
+	)
 }
