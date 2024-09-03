@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/console"
-	"github.com/ethereum/go-ethereum/internal/flags"
+	"github.com/ripoff2/go-ethereum/cmd/utils"
+	"github.com/ripoff2/go-ethereum/console"
+	"github.com/ripoff2/go-ethereum/internal/flags"
 	"github.com/urfave/cli/v2"
 )
 
@@ -154,7 +154,9 @@ func ephemeralConsole(ctx *cli.Context) error {
 	for _, file := range ctx.Args().Slice() {
 		b.Write([]byte(fmt.Sprintf("loadScript('%s');", file)))
 	}
-	utils.Fatalf(`The "js" command is deprecated. Please use the following instead:
-geth --exec "%s" console`, b.String())
+	utils.Fatalf(
+		`The "js" command is deprecated. Please use the following instead:
+geth --exec "%s" console`, b.String(),
+	)
 	return nil
 }

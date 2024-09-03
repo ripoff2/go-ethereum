@@ -23,14 +23,14 @@ import (
 	"fmt"
 	"mime"
 
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/consensus/clique"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/consensus/clique"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/signer/core/apitypes"
 )
 
 // sign receives a request and produces a signature
@@ -53,9 +53,11 @@ func (api *SignerAPI) sign(req *SignDataRequest, legacyV bool) (hexutil.Bytes, e
 	if err != nil {
 		return nil, err
 	}
-	pw, err := api.lookupOrQueryPassword(account.Address,
+	pw, err := api.lookupOrQueryPassword(
+		account.Address,
 		"Password for signing",
-		fmt.Sprintf("Please enter password for signing data with account %s", account.Address.Hex()))
+		fmt.Sprintf("Please enter password for signing data with account %s", account.Address.Hex()),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +76,9 @@ func (api *SignerAPI) sign(req *SignDataRequest, legacyV bool) (hexutil.Bytes, e
 // depending on the content-type specified.
 //
 // Different types of validation occur.
-func (api *SignerAPI) SignData(ctx context.Context, contentType string, addr common.MixedcaseAddress, data interface{}) (hexutil.Bytes, error) {
+func (api *SignerAPI) SignData(
+	ctx context.Context, contentType string, addr common.MixedcaseAddress, data interface{},
+) (hexutil.Bytes, error) {
 	var req, transformV, err = api.determineSignatureFormat(ctx, contentType, addr, data)
 	if err != nil {
 		return nil, err
@@ -93,7 +97,9 @@ func (api *SignerAPI) SignData(ctx context.Context, contentType string, addr com
 // charset, ok := params["charset"]
 // As it is now, we accept any charset and just treat it as 'raw'.
 // This method returns the mimetype for signing along with the request
-func (api *SignerAPI) determineSignatureFormat(ctx context.Context, contentType string, addr common.MixedcaseAddress, data interface{}) (*SignDataRequest, bool, error) {
+func (api *SignerAPI) determineSignatureFormat(
+	ctx context.Context, contentType string, addr common.MixedcaseAddress, data interface{},
+) (*SignDataRequest, bool, error) {
 	var (
 		req          *SignDataRequest
 		useEthereumV = true // Default to use V = 27 or 28, the legacy Ethereum format
@@ -224,15 +230,19 @@ func cliqueHeaderHashAndRlp(header *types.Header) (hash, rlp []byte, err error) 
 // It returns
 // - the signature,
 // - and/or any error
-func (api *SignerAPI) SignTypedData(ctx context.Context, addr common.MixedcaseAddress, typedData apitypes.TypedData) (hexutil.Bytes, error) {
+func (api *SignerAPI) SignTypedData(
+	ctx context.Context, addr common.MixedcaseAddress, typedData apitypes.TypedData,
+) (hexutil.Bytes, error) {
 	signature, _, err := api.signTypedData(ctx, addr, typedData, nil)
 	return signature, err
 }
 
 // signTypedData is identical to the capitalized version, except that it also returns the hash (preimage)
 // - the signature preimage (hash)
-func (api *SignerAPI) signTypedData(ctx context.Context, addr common.MixedcaseAddress,
-	typedData apitypes.TypedData, validationMessages *apitypes.ValidationMessages) (hexutil.Bytes, hexutil.Bytes, error) {
+func (api *SignerAPI) signTypedData(
+	ctx context.Context, addr common.MixedcaseAddress,
+	typedData apitypes.TypedData, validationMessages *apitypes.ValidationMessages,
+) (hexutil.Bytes, hexutil.Bytes, error) {
 	req, err := typedDataRequest(typedData)
 	if err != nil {
 		return nil, nil, err
@@ -286,7 +296,8 @@ func typedDataRequest(data any) (*SignDataRequest, error) {
 		ContentType: apitypes.DataTyped.Mime,
 		Rawdata:     []byte(rawData),
 		Messages:    messages,
-		Hash:        sighash}, nil
+		Hash:        sighash,
+	}, nil
 }
 
 // EcRecover recovers the address associated with the given sig.

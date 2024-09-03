@@ -27,20 +27,22 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/cmd/evm/internal/t8ntool"
-	"github.com/ethereum/go-ethereum/internal/cmdtest"
-	"github.com/ethereum/go-ethereum/internal/reexec"
+	"github.com/ripoff2/go-ethereum/cmd/evm/internal/t8ntool"
+	"github.com/ripoff2/go-ethereum/internal/cmdtest"
+	"github.com/ripoff2/go-ethereum/internal/reexec"
 )
 
 func TestMain(m *testing.M) {
 	// Run the app if we've been exec'd as "ethkey-test" in runEthkey.
-	reexec.Register("evm-test", func() {
-		if err := app.Run(os.Args); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		os.Exit(0)
-	})
+	reexec.Register(
+		"evm-test", func() {
+			if err := app.Run(os.Args); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			os.Exit(0)
+		},
+	)
 	// check if we have been reexec'd
 	if reexec.Init() {
 		return
@@ -119,7 +121,8 @@ func TestT8n(t *testing.T) {
 		expExitCode int
 		expOut      string
 	}{
-		{ // Test exit (3) on bad config
+		{
+			// Test exit (3) on bad config
 			base: "./testdata/1",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "Frontier+1346", "",
@@ -135,7 +138,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{alloc: true, result: true},
 			expOut: "exp.json",
 		},
-		{ // blockhash test
+		{
+			// blockhash test
 			base: "./testdata/3",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "Berlin", "",
@@ -143,7 +147,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{alloc: true, result: true},
 			expOut: "exp.json",
 		},
-		{ // missing blockhash test
+		{
+			// missing blockhash test
 			base: "./testdata/4",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "Berlin", "",
@@ -151,7 +156,8 @@ func TestT8n(t *testing.T) {
 			output:      t8nOutput{alloc: true, result: true},
 			expExitCode: 4,
 		},
-		{ // Uncle test
+		{
+			// Uncle test
 			base: "./testdata/5",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "Byzantium", "0x80",
@@ -159,7 +165,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{alloc: true, result: true},
 			expOut: "exp.json",
 		},
-		{ // Sign json transactions
+		{
+			// Sign json transactions
 			base: "./testdata/13",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "London", "",
@@ -167,7 +174,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{body: true},
 			expOut: "exp.json",
 		},
-		{ // Already signed transactions
+		{
+			// Already signed transactions
 			base: "./testdata/13",
 			input: t8nInput{
 				"alloc.json", "signed_txs.rlp", "env.json", "London", "",
@@ -175,7 +183,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{result: true},
 			expOut: "exp2.json",
 		},
-		{ // Difficulty calculation - no uncles
+		{
+			// Difficulty calculation - no uncles
 			base: "./testdata/14",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "London", "",
@@ -183,7 +192,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{result: true},
 			expOut: "exp.json",
 		},
-		{ // Difficulty calculation - with uncles
+		{
+			// Difficulty calculation - with uncles
 			base: "./testdata/14",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.uncles.json", "London", "",
@@ -191,7 +201,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{result: true},
 			expOut: "exp2.json",
 		},
-		{ // Difficulty calculation - with ommers + Berlin
+		{
+			// Difficulty calculation - with ommers + Berlin
 			base: "./testdata/14",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.uncles.json", "Berlin", "",
@@ -199,7 +210,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{result: true},
 			expOut: "exp_berlin.json",
 		},
-		{ // Difficulty calculation on arrow glacier
+		{
+			// Difficulty calculation on arrow glacier
 			base: "./testdata/19",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "London", "",
@@ -207,7 +219,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{result: true},
 			expOut: "exp_london.json",
 		},
-		{ // Difficulty calculation on arrow glacier
+		{
+			// Difficulty calculation on arrow glacier
 			base: "./testdata/19",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "ArrowGlacier", "",
@@ -215,7 +228,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{result: true},
 			expOut: "exp_arrowglacier.json",
 		},
-		{ // Difficulty calculation on gray glacier
+		{
+			// Difficulty calculation on gray glacier
 			base: "./testdata/19",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "GrayGlacier", "",
@@ -223,7 +237,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{result: true},
 			expOut: "exp_grayglacier.json",
 		},
-		{ // Sign unprotected (pre-EIP155) transaction
+		{
+			// Sign unprotected (pre-EIP155) transaction
 			base: "./testdata/23",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "Berlin", "",
@@ -231,7 +246,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{result: true},
 			expOut: "exp.json",
 		},
-		{ // Test post-merge transition
+		{
+			// Test post-merge transition
 			base: "./testdata/24",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "Paris", "",
@@ -239,7 +255,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{alloc: true, result: true},
 			expOut: "exp.json",
 		},
-		{ // Test post-merge transition where input is missing random
+		{
+			// Test post-merge transition where input is missing random
 			base: "./testdata/24",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env-missingrandom.json", "Paris", "",
@@ -247,7 +264,8 @@ func TestT8n(t *testing.T) {
 			output:      t8nOutput{alloc: false, result: false},
 			expExitCode: 3,
 		},
-		{ // Test base fee calculation
+		{
+			// Test base fee calculation
 			base: "./testdata/25",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "Paris", "",
@@ -255,7 +273,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{alloc: true, result: true},
 			expOut: "exp.json",
 		},
-		{ // Test withdrawals transition
+		{
+			// Test withdrawals transition
 			base: "./testdata/26",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "Shanghai", "",
@@ -263,7 +282,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{alloc: true, result: true},
 			expOut: "exp.json",
 		},
-		{ // Cancun tests
+		{
+			// Cancun tests
 			base: "./testdata/28",
 			input: t8nInput{
 				"alloc.json", "txs.rlp", "env.json", "Cancun", "",
@@ -271,7 +291,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{alloc: true, result: true},
 			expOut: "exp.json",
 		},
-		{ // More cancun tests
+		{
+			// More cancun tests
 			base: "./testdata/29",
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "Cancun", "",
@@ -279,7 +300,8 @@ func TestT8n(t *testing.T) {
 			output: t8nOutput{alloc: true, result: true},
 			expOut: "exp.json",
 		},
-		{ // More cancun test, plus example of rlp-transaction that cannot be decoded properly
+		{
+			// More cancun test, plus example of rlp-transaction that cannot be decoded properly
 			base: "./testdata/30",
 			input: t8nInput{
 				"alloc.json", "txs_more.rlp", "env.json", "Cancun", "",
@@ -366,13 +388,15 @@ func TestT8nTracing(t *testing.T) {
 			input: t8nInput{
 				"alloc.json", "txs.json", "env.json", "Cancun", "",
 			},
-			extraArgs: []string{"--trace.tracer", `
+			extraArgs: []string{
+				"--trace.tracer", `
 { 
 	result: function(){ 
 		return "hello world"
 	}, 
 	fault: function(){} 
-}`},
+}`,
+			},
 			expectedTraces: []string{"trace-0-0x88f5fbd1524731a81e49f637aa847543268a5aaf2a6b32a69d2c6d978c45dcfb.json"},
 		},
 		{
@@ -412,8 +436,10 @@ func TestT8nTracing(t *testing.T) {
 				want, wErr := wantFn()
 				have, hErr := haveFn()
 				if want != have {
-					t.Fatalf("test %d, trace %v, line %d\nwant: %v\nhave: %v\n",
-						i, traceFile, line, want, have)
+					t.Fatalf(
+						"test %d, trace %v, line %d\nwant: %v\nhave: %v\n",
+						i, traceFile, line, want, have,
+					)
 				}
 				if wErr != nil && hErr != nil {
 					break
@@ -460,7 +486,8 @@ func TestT9n(t *testing.T) {
 		expExitCode int
 		expOut      string
 	}{
-		{ // London txs on homestead
+		{
+			// London txs on homestead
 			base: "./testdata/15",
 			input: t9nInput{
 				inTxs:  "signed_txs.rlp",
@@ -468,7 +495,8 @@ func TestT9n(t *testing.T) {
 			},
 			expOut: "exp.json",
 		},
-		{ // London txs on London
+		{
+			// London txs on London
 			base: "./testdata/15",
 			input: t9nInput{
 				inTxs:  "signed_txs.rlp",
@@ -476,7 +504,8 @@ func TestT9n(t *testing.T) {
 			},
 			expOut: "exp2.json",
 		},
-		{ // An RLP list (a blockheader really)
+		{
+			// An RLP list (a blockheader really)
 			base: "./testdata/15",
 			input: t9nInput{
 				inTxs:  "blockheader.rlp",
@@ -484,7 +513,8 @@ func TestT9n(t *testing.T) {
 			},
 			expOut: "exp3.json",
 		},
-		{ // Transactions with too low gas
+		{
+			// Transactions with too low gas
 			base: "./testdata/16",
 			input: t9nInput{
 				inTxs:  "signed_txs.rlp",
@@ -492,7 +522,8 @@ func TestT9n(t *testing.T) {
 			},
 			expOut: "exp.json",
 		},
-		{ // Transactions with value exceeding 256 bits
+		{
+			// Transactions with value exceeding 256 bits
 			base: "./testdata/17",
 			input: t9nInput{
 				inTxs:  "signed_txs.rlp",
@@ -500,7 +531,8 @@ func TestT9n(t *testing.T) {
 			},
 			expOut: "exp.json",
 		},
-		{ // Invalid RLP
+		{
+			// Invalid RLP
 			base: "./testdata/18",
 			input: t9nInput{
 				inTxs:  "invalid.rlp",
@@ -596,7 +628,8 @@ func TestB11r(t *testing.T) {
 		expExitCode int
 		expOut      string
 	}{
-		{ // unsealed block
+		{
+			// unsealed block
 			base: "./testdata/20",
 			input: b11rInput{
 				inEnv:       "header.json",
@@ -605,7 +638,8 @@ func TestB11r(t *testing.T) {
 			},
 			expOut: "exp.json",
 		},
-		{ // ethash test seal
+		{
+			// ethash test seal
 			base: "./testdata/21",
 			input: b11rInput{
 				inEnv:       "header.json",
@@ -614,7 +648,8 @@ func TestB11r(t *testing.T) {
 			},
 			expOut: "exp.json",
 		},
-		{ // clique test seal
+		{
+			// clique test seal
 			base: "./testdata/21",
 			input: b11rInput{
 				inEnv:       "header.json",
@@ -624,7 +659,8 @@ func TestB11r(t *testing.T) {
 			},
 			expOut: "exp-clique.json",
 		},
-		{ // block with ommers
+		{
+			// block with ommers
 			base: "./testdata/22",
 			input: b11rInput{
 				inEnv:       "header.json",
@@ -633,7 +669,8 @@ func TestB11r(t *testing.T) {
 			},
 			expOut: "exp.json",
 		},
-		{ // block with withdrawals
+		{
+			// block with withdrawals
 			base: "./testdata/27",
 			input: b11rInput{
 				inEnv:         "header.json",

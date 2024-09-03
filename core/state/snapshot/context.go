@@ -22,12 +22,12 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/ethdb/memorydb"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/ethdb/memorydb"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 const (
@@ -58,28 +58,34 @@ func (gs *generatorStats) Log(msg string, root common.Hash, marker []byte) {
 	case common.HashLength:
 		ctx = append(ctx, []interface{}{"at", common.BytesToHash(marker)}...)
 	case 2 * common.HashLength:
-		ctx = append(ctx, []interface{}{
-			"in", common.BytesToHash(marker[:common.HashLength]),
-			"at", common.BytesToHash(marker[common.HashLength:]),
-		}...)
+		ctx = append(
+			ctx, []interface{}{
+				"in", common.BytesToHash(marker[:common.HashLength]),
+				"at", common.BytesToHash(marker[common.HashLength:]),
+			}...,
+		)
 	}
 	// Add the usual measurements
-	ctx = append(ctx, []interface{}{
-		"accounts", gs.accounts,
-		"slots", gs.slots,
-		"storage", gs.storage,
-		"dangling", gs.dangling,
-		"elapsed", common.PrettyDuration(time.Since(gs.start)),
-	}...)
+	ctx = append(
+		ctx, []interface{}{
+			"accounts", gs.accounts,
+			"slots", gs.slots,
+			"storage", gs.storage,
+			"dangling", gs.dangling,
+			"elapsed", common.PrettyDuration(time.Since(gs.start)),
+		}...,
+	)
 	// Calculate the estimated indexing time based on current stats
 	if len(marker) > 0 {
 		if done := binary.BigEndian.Uint64(marker[:8]) - gs.origin; done > 0 {
 			left := math.MaxUint64 - binary.BigEndian.Uint64(marker[:8])
 
 			speed := done/uint64(time.Since(gs.start)/time.Millisecond+1) + 1 // +1s to avoid division by zero
-			ctx = append(ctx, []interface{}{
-				"eta", common.PrettyDuration(time.Duration(left/speed) * time.Millisecond),
-			}...)
+			ctx = append(
+				ctx, []interface{}{
+					"eta", common.PrettyDuration(time.Duration(left/speed) * time.Millisecond),
+				}...,
+			)
 		}
 	}
 	log.Info(msg, ctx...)
@@ -96,7 +102,9 @@ type generatorContext struct {
 }
 
 // newGeneratorContext initializes the context for generation.
-func newGeneratorContext(stats *generatorStats, db ethdb.KeyValueStore, accMarker []byte, storageMarker []byte) *generatorContext {
+func newGeneratorContext(
+	stats *generatorStats, db ethdb.KeyValueStore, accMarker []byte, storageMarker []byte,
+) *generatorContext {
 	ctx := &generatorContext{
 		stats:  stats,
 		db:     db,

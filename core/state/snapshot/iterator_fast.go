@@ -22,7 +22,7 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 // weightedIterator is an iterator with an assigned weight. It is used to prioritise
@@ -72,7 +72,9 @@ type fastIterator struct {
 // newFastIterator creates a new hierarchical account or storage iterator with one
 // element per diff layer. The returned combo iterator can be used to walk over
 // the entire snapshot diff stack simultaneously.
-func newFastIterator(tree *Tree, root common.Hash, account common.Hash, seek common.Hash, accountIterator bool) (*fastIterator, error) {
+func newFastIterator(
+	tree *Tree, root common.Hash, account common.Hash, seek common.Hash, accountIterator bool,
+) (*fastIterator, error) {
 	snap := tree.Snapshot(root)
 	if snap == nil {
 		return nil, fmt.Errorf("unknown snapshot: %x", root)
@@ -85,20 +87,24 @@ func newFastIterator(tree *Tree, root common.Hash, account common.Hash, seek com
 	current := snap.(snapshot)
 	for depth := 0; current != nil; depth++ {
 		if accountIterator {
-			fi.iterators = append(fi.iterators, &weightedIterator{
-				it:       current.AccountIterator(seek),
-				priority: depth,
-			})
+			fi.iterators = append(
+				fi.iterators, &weightedIterator{
+					it:       current.AccountIterator(seek),
+					priority: depth,
+				},
+			)
 		} else {
 			// If the whole storage is destructed in this layer, don't
 			// bother deeper layer anymore. But we should still keep
 			// the iterator for this layer, since the iterator can contain
 			// some valid slots which belongs to the re-created account.
 			it, destructed := current.StorageIterator(account, seek)
-			fi.iterators = append(fi.iterators, &weightedIterator{
-				it:       it,
-				priority: depth,
-			})
+			fi.iterators = append(
+				fi.iterators, &weightedIterator{
+					it:       it,
+					priority: depth,
+				},
+			)
 			if destructed {
 				break
 			}
@@ -252,29 +258,31 @@ func (fi *fastIterator) next(idx int) bool {
 	// At this point, the iterator is in the wrong location, but the remaining
 	// list is sorted. Find out where to move the item.
 	clash := -1
-	index := sort.Search(len(fi.iterators), func(n int) bool {
-		// The iterator always advances forward, so anything before the old slot
-		// is known to be behind us, so just skip them altogether. This actually
-		// is an important clause since the sort order got invalidated.
-		if n < idx {
-			return false
-		}
-		if n == len(fi.iterators)-1 {
-			// Can always place an elem last
-			return true
-		}
-		nextHash := fi.iterators[n+1].it.Hash()
-		if diff := bytes.Compare(curHash[:], nextHash[:]); diff < 0 {
-			return true
-		} else if diff > 0 {
-			return false
-		}
-		// The elem we're placing it next to has the same value,
-		// so whichever winds up on n+1 will need further iteration
-		clash = n + 1
+	index := sort.Search(
+		len(fi.iterators), func(n int) bool {
+			// The iterator always advances forward, so anything before the old slot
+			// is known to be behind us, so just skip them altogether. This actually
+			// is an important clause since the sort order got invalidated.
+			if n < idx {
+				return false
+			}
+			if n == len(fi.iterators)-1 {
+				// Can always place an elem last
+				return true
+			}
+			nextHash := fi.iterators[n+1].it.Hash()
+			if diff := bytes.Compare(curHash[:], nextHash[:]); diff < 0 {
+				return true
+			} else if diff > 0 {
+				return false
+			}
+			// The elem we're placing it next to has the same value,
+			// so whichever winds up on n+1 will need further iteration
+			clash = n + 1
 
-		return cur.priority < fi.iterators[n+1].priority
-	})
+			return cur.priority < fi.iterators[n+1].priority
+		},
+	)
 	fi.move(idx, index)
 	if clash != -1 {
 		fi.next(clash)
@@ -339,6 +347,8 @@ func newFastAccountIterator(tree *Tree, root common.Hash, seek common.Hash) (Acc
 // newFastStorageIterator creates a new hierarchical storage iterator with one
 // element per diff layer. The returned combo iterator can be used to walk over
 // the entire snapshot diff stack simultaneously.
-func newFastStorageIterator(tree *Tree, root common.Hash, account common.Hash, seek common.Hash) (StorageIterator, error) {
+func newFastStorageIterator(tree *Tree, root common.Hash, account common.Hash, seek common.Hash) (
+	StorageIterator, error,
+) {
 	return newFastIterator(tree, root, account, seek, false)
 }

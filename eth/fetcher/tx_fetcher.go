@@ -25,13 +25,13 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/lru"
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/core/txpool"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/lru"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/core/txpool"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
 )
 
 const (
@@ -202,15 +202,20 @@ type TxFetcher struct {
 
 // NewTxFetcher creates a transaction fetcher to retrieve transaction
 // based on hash announcements.
-func NewTxFetcher(hasTx func(common.Hash) bool, addTxs func([]*types.Transaction) []error, fetchTxs func(string, []common.Hash) error, dropPeer func(string)) *TxFetcher {
+func NewTxFetcher(
+	hasTx func(common.Hash) bool, addTxs func([]*types.Transaction) []error, fetchTxs func(string, []common.Hash) error,
+	dropPeer func(string),
+) *TxFetcher {
 	return NewTxFetcherForTests(hasTx, addTxs, fetchTxs, dropPeer, mclock.System{}, nil)
 }
 
 // NewTxFetcherForTests is a testing method to mock out the realtime clock with
 // a simulated version and the internal randomness with a deterministic one.
 func NewTxFetcherForTests(
-	hasTx func(common.Hash) bool, addTxs func([]*types.Transaction) []error, fetchTxs func(string, []common.Hash) error, dropPeer func(string),
-	clock mclock.Clock, rand *mrand.Rand) *TxFetcher {
+	hasTx func(common.Hash) bool, addTxs func([]*types.Transaction) []error, fetchTxs func(string, []common.Hash) error,
+	dropPeer func(string),
+	clock mclock.Clock, rand *mrand.Rand,
+) *TxFetcher {
 	return &TxFetcher{
 		notify:      make(chan *txAnnounce),
 		cleanup:     make(chan *txDelivery),
@@ -353,10 +358,12 @@ func (f *TxFetcher) Enqueue(peer string, txs []*types.Transaction, direct bool) 
 				otherreject++
 			}
 			added = append(added, batch[j].Hash())
-			metas = append(metas, txMetadata{
-				kind: batch[j].Type(),
-				size: uint32(batch[j].Size()),
-			})
+			metas = append(
+				metas, txMetadata{
+					kind: batch[j].Type(),
+					size: uint32(batch[j].Size()),
+				},
+			)
 		}
 		knownMeter.Mark(duplicate)
 		underpricedMeter.Mark(underpriced)
@@ -592,11 +599,17 @@ func (f *TxFetcher) loop() {
 					for peer, txset := range f.waitslots {
 						if meta := txset[hash]; meta != nil {
 							if delivery.metas[i].kind != meta.kind {
-								log.Warn("Announced transaction type mismatch", "peer", peer, "tx", hash, "type", delivery.metas[i].kind, "ann", meta.kind)
+								log.Warn(
+									"Announced transaction type mismatch", "peer", peer, "tx", hash, "type",
+									delivery.metas[i].kind, "ann", meta.kind,
+								)
 								f.dropPeer(peer)
 							} else if delivery.metas[i].size != meta.size {
 								if math.Abs(float64(delivery.metas[i].size)-float64(meta.size)) > 8 {
-									log.Warn("Announced transaction size mismatch", "peer", peer, "tx", hash, "size", delivery.metas[i].size, "ann", meta.size)
+									log.Warn(
+										"Announced transaction size mismatch", "peer", peer, "tx", hash, "size",
+										delivery.metas[i].size, "ann", meta.size,
+									)
 
 									// Normally we should drop a peer considering this is a protocol violation.
 									// However, due to the RLP vs consensus format messyness, allow a few bytes
@@ -618,11 +631,17 @@ func (f *TxFetcher) loop() {
 					for peer, txset := range f.announces {
 						if meta := txset[hash]; meta != nil {
 							if delivery.metas[i].kind != meta.kind {
-								log.Warn("Announced transaction type mismatch", "peer", peer, "tx", hash, "type", delivery.metas[i].kind, "ann", meta.kind)
+								log.Warn(
+									"Announced transaction type mismatch", "peer", peer, "tx", hash, "type",
+									delivery.metas[i].kind, "ann", meta.kind,
+								)
 								f.dropPeer(peer)
 							} else if delivery.metas[i].size != meta.size {
 								if math.Abs(float64(delivery.metas[i].size)-float64(meta.size)) > 8 {
-									log.Warn("Announced transaction size mismatch", "peer", peer, "tx", hash, "size", delivery.metas[i].size, "ann", meta.size)
+									log.Warn(
+										"Announced transaction size mismatch", "peer", peer, "tx", hash, "size",
+										delivery.metas[i].size, "ann", meta.size,
+									)
 
 									// Normally we should drop a peer considering this is a protocol violation.
 									// However, due to the RLP vs consensus format messyness, allow a few bytes
@@ -699,7 +718,11 @@ func (f *TxFetcher) loop() {
 						}
 						if len(f.alternates[hash]) > 0 {
 							if _, ok := f.announced[hash]; ok {
-								panic(fmt.Sprintf("announced tracker already contains alternate item: %v", f.announced[hash]))
+								panic(
+									fmt.Sprintf(
+										"announced tracker already contains alternate item: %v", f.announced[hash],
+									),
+								)
 							}
 							f.announced[hash] = f.alternates[hash]
 						}
@@ -708,7 +731,9 @@ func (f *TxFetcher) loop() {
 					delete(f.fetching, hash)
 				}
 				// Something was delivered, try to reschedule requests
-				f.scheduleFetches(timeoutTimer, timeoutTrigger, nil) // Partial delivery may enable others to deliver too
+				f.scheduleFetches(
+					timeoutTimer, timeoutTrigger, nil,
+				) // Partial delivery may enable others to deliver too
 			}
 
 		case drop := <-f.drop:
@@ -803,9 +828,11 @@ func (f *TxFetcher) rescheduleWait(timer *mclock.Timer, trigger chan struct{}) {
 			}
 		}
 	}
-	*timer = f.clock.AfterFunc(txArriveTimeout-time.Duration(now-earliest), func() {
-		trigger <- struct{}{}
-	})
+	*timer = f.clock.AfterFunc(
+		txArriveTimeout-time.Duration(now-earliest), func() {
+			trigger <- struct{}{}
+		},
+	)
 }
 
 // rescheduleTimeout iterates over all the transactions currently in flight and
@@ -841,9 +868,11 @@ func (f *TxFetcher) rescheduleTimeout(timer *mclock.Timer, trigger chan struct{}
 			}
 		}
 	}
-	*timer = f.clock.AfterFunc(txFetchTimeout-time.Duration(now-earliest), func() {
-		trigger <- struct{}{}
-	})
+	*timer = f.clock.AfterFunc(
+		txFetchTimeout-time.Duration(now-earliest), func() {
+			trigger <- struct{}{}
+		},
+	)
 }
 
 // scheduleFetches starts a batch of retrievals for all available idle peers.
@@ -862,54 +891,58 @@ func (f *TxFetcher) scheduleFetches(timer *mclock.Timer, timeout chan struct{}, 
 	// For each active peer, try to schedule some transaction fetches
 	idle := len(f.requests) == 0
 
-	f.forEachPeer(actives, func(peer string) {
-		if f.requests[peer] != nil {
-			return // continue in the for-each
-		}
-		if len(f.announces[peer]) == 0 {
-			return // continue in the for-each
-		}
-		var (
-			hashes = make([]common.Hash, 0, maxTxRetrievals)
-			bytes  uint64
-		)
-		f.forEachAnnounce(f.announces[peer], func(hash common.Hash, meta *txMetadata) bool {
-			// If the transaction is already fetching, skip to the next one
-			if _, ok := f.fetching[hash]; ok {
-				return true
+	f.forEachPeer(
+		actives, func(peer string) {
+			if f.requests[peer] != nil {
+				return // continue in the for-each
 			}
-			// Mark the hash as fetching and stash away possible alternates
-			f.fetching[hash] = peer
-
-			if _, ok := f.alternates[hash]; ok {
-				panic(fmt.Sprintf("alternate tracker already contains fetching item: %v", f.alternates[hash]))
+			if len(f.announces[peer]) == 0 {
+				return // continue in the for-each
 			}
-			f.alternates[hash] = f.announced[hash]
-			delete(f.announced, hash)
+			var (
+				hashes = make([]common.Hash, 0, maxTxRetrievals)
+				bytes  uint64
+			)
+			f.forEachAnnounce(
+				f.announces[peer], func(hash common.Hash, meta *txMetadata) bool {
+					// If the transaction is already fetching, skip to the next one
+					if _, ok := f.fetching[hash]; ok {
+						return true
+					}
+					// Mark the hash as fetching and stash away possible alternates
+					f.fetching[hash] = peer
 
-			// Accumulate the hash and stop if the limit was reached
-			hashes = append(hashes, hash)
-			if len(hashes) >= maxTxRetrievals {
-				return false // break in the for-each
+					if _, ok := f.alternates[hash]; ok {
+						panic(fmt.Sprintf("alternate tracker already contains fetching item: %v", f.alternates[hash]))
+					}
+					f.alternates[hash] = f.announced[hash]
+					delete(f.announced, hash)
+
+					// Accumulate the hash and stop if the limit was reached
+					hashes = append(hashes, hash)
+					if len(hashes) >= maxTxRetrievals {
+						return false // break in the for-each
+					}
+					bytes += uint64(meta.size)
+					return bytes < maxTxRetrievalSize
+				},
+			)
+			// If any hashes were allocated, request them from the peer
+			if len(hashes) > 0 {
+				f.requests[peer] = &txRequest{hashes: hashes, time: f.clock.Now()}
+				txRequestOutMeter.Mark(int64(len(hashes)))
+
+				go func(peer string, hashes []common.Hash) {
+					// Try to fetch the transactions, but in case of a request
+					// failure (e.g. peer disconnected), reschedule the hashes.
+					if err := f.fetchTxs(peer, hashes); err != nil {
+						txRequestFailMeter.Mark(int64(len(hashes)))
+						f.Drop(peer)
+					}
+				}(peer, hashes)
 			}
-			bytes += uint64(meta.size)
-			return bytes < maxTxRetrievalSize
-		})
-		// If any hashes were allocated, request them from the peer
-		if len(hashes) > 0 {
-			f.requests[peer] = &txRequest{hashes: hashes, time: f.clock.Now()}
-			txRequestOutMeter.Mark(int64(len(hashes)))
-
-			go func(peer string, hashes []common.Hash) {
-				// Try to fetch the transactions, but in case of a request
-				// failure (e.g. peer disconnected), reschedule the hashes.
-				if err := f.fetchTxs(peer, hashes); err != nil {
-					txRequestFailMeter.Mark(int64(len(hashes)))
-					f.Drop(peer)
-				}
-			}(peer, hashes)
-		}
-	})
+		},
+	)
 	// If a new request was fired, schedule a timeout timer
 	if idle && len(f.requests) > 0 {
 		f.rescheduleTimeout(timer, timeout)
@@ -941,7 +974,9 @@ func (f *TxFetcher) forEachPeer(peers map[string]struct{}, do func(peer string))
 // forEachAnnounce does a range loop over a map of announcements in production,
 // but during testing it does a deterministic sorted random to allow reproducing
 // issues.
-func (f *TxFetcher) forEachAnnounce(announces map[common.Hash]*txMetadata, do func(hash common.Hash, meta *txMetadata) bool) {
+func (f *TxFetcher) forEachAnnounce(
+	announces map[common.Hash]*txMetadata, do func(hash common.Hash, meta *txMetadata) bool,
+) {
 	// If we're running production, use whatever Go's map gives us
 	if f.rand == nil {
 		for hash, meta := range announces {

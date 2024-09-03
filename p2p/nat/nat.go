@@ -25,8 +25,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
 	natpmp "github.com/jackpal/go-nat-pmp"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // Interface An implementation of nat.Interface can map local ports to ports
@@ -148,17 +148,19 @@ func (ExtIP) DeleteMapping(string, int, int) error { return nil }
 func Any() Interface {
 	// TODO: attempt to discover whether the local machine has an
 	// Internet-class address. Return ExtIP in this case.
-	return startautodisc("UPnP or NAT-PMP", func() Interface {
-		found := make(chan Interface, 2)
-		go func() { found <- discoverUPnP() }()
-		go func() { found <- discoverPMP() }()
-		for i := 0; i < cap(found); i++ {
-			if c := <-found; c != nil {
-				return c
+	return startautodisc(
+		"UPnP or NAT-PMP", func() Interface {
+			found := make(chan Interface, 2)
+			go func() { found <- discoverUPnP() }()
+			go func() { found <- discoverPMP() }()
+			for i := 0; i < cap(found); i++ {
+				if c := <-found; c != nil {
+					return c
+				}
 			}
-		}
-		return nil
-	})
+			return nil
+		},
+	)
 }
 
 // UPnP returns a port mapper that uses UPnP. It will attempt to
@@ -198,7 +200,9 @@ func startautodisc(what string, doit func() Interface) Interface {
 	return &autodisc{what: what, doit: doit}
 }
 
-func (n *autodisc) AddMapping(protocol string, extport, intport int, name string, lifetime time.Duration) (uint16, error) {
+func (n *autodisc) AddMapping(protocol string, extport, intport int, name string, lifetime time.Duration) (
+	uint16, error,
+) {
 	if err := n.wait(); err != nil {
 		return 0, err
 	}
@@ -230,11 +234,13 @@ func (n *autodisc) String() string {
 
 // wait blocks until auto-discovery has been performed.
 func (n *autodisc) wait() error {
-	n.once.Do(func() {
-		n.mu.Lock()
-		n.found = n.doit()
-		n.mu.Unlock()
-	})
+	n.once.Do(
+		func() {
+			n.mu.Lock()
+			n.found = n.doit()
+			n.mu.Unlock()
+		},
+	)
 	if n.found == nil {
 		return fmt.Errorf("no %s router discovered", n.what)
 	}

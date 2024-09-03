@@ -19,9 +19,9 @@ package downloader
 import (
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/eth/protocols/eth"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // receiptQueue implements typedQueue and is a type adapter between the generic
@@ -73,7 +73,9 @@ func (q *receiptQueue) unreserve(peer string) int {
 
 // request is responsible for converting a generic fetch request into a receipt
 // one and sending it to the remote peer for fulfillment.
-func (q *receiptQueue) request(peer *peerConnection, req *fetchRequest, resCh chan *eth.Response) (*eth.Request, error) {
+func (q *receiptQueue) request(peer *peerConnection, req *fetchRequest, resCh chan *eth.Response) (
+	*eth.Request, error,
+) {
 	peer.log.Trace("Requesting new batch of receipts", "count", len(req.Headers), "from", req.Headers[0].Number)
 	if q.receiptFetchHook != nil {
 		q.receiptFetchHook(req.Headers)

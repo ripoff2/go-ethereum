@@ -45,17 +45,21 @@ func TestTreeKey(t *testing.T) {
 	if !bytes.Equal(CodeChunkKey(address, largeIndex), CodeChunkKeyWithEvaluatedAddress(addressEval, largeIndex)) {
 		t.Fatal("Unmatched code chunk key")
 	}
-	if !bytes.Equal(StorageSlotKey(address, smallStorage), StorageSlotKeyWithEvaluatedAddress(addressEval, smallStorage)) {
+	if !bytes.Equal(
+		StorageSlotKey(address, smallStorage), StorageSlotKeyWithEvaluatedAddress(addressEval, smallStorage),
+	) {
 		t.Fatal("Unmatched storage slot key")
 	}
-	if !bytes.Equal(StorageSlotKey(address, largeStorage), StorageSlotKeyWithEvaluatedAddress(addressEval, largeStorage)) {
+	if !bytes.Equal(
+		StorageSlotKey(address, largeStorage), StorageSlotKeyWithEvaluatedAddress(addressEval, largeStorage),
+	) {
 		t.Fatal("Unmatched storage slot key")
 	}
 }
 
 // goos: darwin
 // goarch: amd64
-// pkg: github.com/ethereum/go-ethereum/trie/utils
+// pkg: github.com/ripoff2/go-ethereum/trie/utils
 // cpu: VirtualApple @ 2.50GHz
 // BenchmarkTreeKey
 // BenchmarkTreeKey-8   	  398731	      2961 ns/op	      32 B/op	       1 allocs/op
@@ -73,7 +77,7 @@ func BenchmarkTreeKey(b *testing.B) {
 
 // goos: darwin
 // goarch: amd64
-// pkg: github.com/ethereum/go-ethereum/trie/utils
+// pkg: github.com/ripoff2/go-ethereum/trie/utils
 // cpu: VirtualApple @ 2.50GHz
 // BenchmarkTreeKeyWithEvaluation
 // BenchmarkTreeKeyWithEvaluation-8   	  513855	      2324 ns/op	      32 B/op	       1 allocs/op
@@ -93,7 +97,7 @@ func BenchmarkTreeKeyWithEvaluation(b *testing.B) {
 
 // goos: darwin
 // goarch: amd64
-// pkg: github.com/ethereum/go-ethereum/trie/utils
+// pkg: github.com/ripoff2/go-ethereum/trie/utils
 // cpu: VirtualApple @ 2.50GHz
 // BenchmarkStorageKey
 // BenchmarkStorageKey-8   	  230516	      4584 ns/op	      96 B/op	       3 allocs/op
@@ -111,7 +115,7 @@ func BenchmarkStorageKey(b *testing.B) {
 
 // goos: darwin
 // goarch: amd64
-// pkg: github.com/ethereum/go-ethereum/trie/utils
+// pkg: github.com/ripoff2/go-ethereum/trie/utils
 // cpu: VirtualApple @ 2.50GHz
 // BenchmarkStorageKeyWithEvaluation
 // BenchmarkStorageKeyWithEvaluation-8   	  320125	      3753 ns/op	      96 B/op	       3 allocs/op

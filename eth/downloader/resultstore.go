@@ -21,7 +21,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/types"
 )
 
 // resultStore implements a structure for maintaining fetchResults, tracking their
@@ -76,7 +76,9 @@ func (r *resultStore) SetThrottleThreshold(threshold uint64) uint64 {
 //	throttled - if true, the store is at capacity, this particular header is not prio now
 //	item      - the result to store data into
 //	err       - any error that occurred
-func (r *resultStore) AddFetch(header *types.Header, fastSync bool) (stale, throttled bool, item *fetchResult, err error) {
+func (r *resultStore) AddFetch(header *types.Header, fastSync bool) (
+	stale, throttled bool, item *fetchResult, err error,
+) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -106,15 +108,19 @@ func (r *resultStore) GetDeliverySlot(headerNumber uint64) (*fetchResult, bool, 
 
 // getFetchResult returns the fetchResult corresponding to the given item, and
 // the index where the result is stored.
-func (r *resultStore) getFetchResult(headerNumber uint64) (item *fetchResult, index int, stale, throttle bool, err error) {
+func (r *resultStore) getFetchResult(headerNumber uint64) (
+	item *fetchResult, index int, stale, throttle bool, err error,
+) {
 	index = int(int64(headerNumber) - int64(r.resultOffset))
 	throttle = index >= int(r.throttleThreshold)
 	stale = index < 0
 
 	if index >= len(r.items) {
-		err = fmt.Errorf("%w: index allocation went beyond available resultStore space "+
-			"(index [%d] = header [%d] - resultOffset [%d], len(resultStore) = %d", errInvalidChain,
-			index, headerNumber, r.resultOffset, len(r.items))
+		err = fmt.Errorf(
+			"%w: index allocation went beyond available resultStore space "+
+				"(index [%d] = header [%d] - resultOffset [%d], len(resultStore) = %d", errInvalidChain,
+			index, headerNumber, r.resultOffset, len(r.items),
+		)
 		return nil, index, stale, throttle, err
 	}
 	if stale {

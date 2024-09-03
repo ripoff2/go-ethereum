@@ -23,16 +23,16 @@ import (
 	"time"
 
 	"github.com/VictoriaMetrics/fastcache"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/trie/trienode"
-	"github.com/ethereum/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
+	"github.com/ripoff2/go-ethereum/triedb"
 )
 
 var (
@@ -160,7 +160,10 @@ func (result *proofResult) forEach(callback func(key []byte, val []byte) error) 
 //
 // The proof result will be returned if the range proving is finished, otherwise
 // the error will be returned to abort the entire procedure.
-func (dl *diskLayer) proveRange(ctx *generatorContext, trieId *trie.ID, prefix []byte, kind string, origin []byte, max int, valueConvertFn func([]byte) ([]byte, error)) (*proofResult, error) {
+func (dl *diskLayer) proveRange(
+	ctx *generatorContext, trieId *trie.ID, prefix []byte, kind string, origin []byte, max int,
+	valueConvertFn func([]byte) ([]byte, error),
+) (*proofResult, error) {
 	var (
 		keys     [][]byte
 		vals     [][]byte
@@ -285,7 +288,8 @@ func (dl *diskLayer) proveRange(ctx *generatorContext, trieId *trie.ID, prefix [
 			diskMore: diskMore,
 			trieMore: cont,
 			proofErr: err,
-			tr:       tr},
+			tr:       tr,
+		},
 		nil
 }
 
@@ -305,7 +309,10 @@ type onStateCallback func(key []byte, val []byte, write bool, delete bool) error
 // generateRange generates the state segment with particular prefix. Generation can
 // either verify the correctness of existing state through range-proof and skip
 // generation, or iterate trie to regenerate state on demand.
-func (dl *diskLayer) generateRange(ctx *generatorContext, trieId *trie.ID, prefix []byte, kind string, origin []byte, max int, onState onStateCallback, valueConvertFn func([]byte) ([]byte, error)) (bool, []byte, error) {
+func (dl *diskLayer) generateRange(
+	ctx *generatorContext, trieId *trie.ID, prefix []byte, kind string, origin []byte, max int, onState onStateCallback,
+	valueConvertFn func([]byte) ([]byte, error),
+) (bool, []byte, error) {
 	// Use range prover to check the validity of the flat state in the range
 	result, err := dl.proveRange(ctx, trieId, prefix, kind, origin, max, valueConvertFn)
 	if err != nil {
@@ -328,7 +335,13 @@ func (dl *diskLayer) generateRange(ctx *generatorContext, trieId *trie.ID, prefi
 		// The verification is passed, process each state with the given
 		// callback function. If this state represents a contract, the
 		// corresponding storage check will be performed in the callback
-		if err := result.forEach(func(key []byte, val []byte) error { return onState(key, val, false, false) }); err != nil {
+		if err := result.forEach(
+			func(key []byte, val []byte) error {
+				return onState(
+					key, val, false, false,
+				)
+			},
+		); err != nil {
 			return false, nil, err
 		}
 		// Only abort the iteration when both database and trie are exhausted
@@ -463,8 +476,10 @@ func (dl *diskLayer) generateRange(ctx *generatorContext, trieId *trie.ID, prefi
 	} else {
 		snapAccountTrieReadCounter.Inc((time.Since(start) - internal).Nanoseconds())
 	}
-	logger.Debug("Regenerated state range", "root", trieId.Root, "last", hexutil.Encode(last),
-		"count", count, "created", created, "updated", updated, "untouched", untouched, "deleted", deleted)
+	logger.Debug(
+		"Regenerated state range", "root", trieId.Root, "last", hexutil.Encode(last),
+		"count", count, "created", created, "updated", updated, "untouched", untouched, "deleted", deleted,
+	)
 
 	// If there are either more trie items, or there are more snap items
 	// (in the next segment), then we need to keep working
@@ -481,7 +496,10 @@ func (dl *diskLayer) checkAndFlush(ctx *generatorContext, current []byte) error 
 	}
 	if ctx.batch.ValueSize() > ethdb.IdealBatchSize || abort != nil {
 		if bytes.Compare(current, dl.genMarker) < 0 {
-			log.Error("Snapshot generator went backwards", "current", fmt.Sprintf("%x", current), "genMarker", fmt.Sprintf("%x", dl.genMarker))
+			log.Error(
+				"Snapshot generator went backwards", "current", fmt.Sprintf("%x", current), "genMarker",
+				fmt.Sprintf("%x", dl.genMarker),
+			)
 		}
 		// Flush out the batch anyway no matter it's empty or not.
 		// It's possible that all the states are recovered and the
@@ -514,7 +532,10 @@ func (dl *diskLayer) checkAndFlush(ctx *generatorContext, current []byte) error 
 
 // generateStorages generates the missing storage slots of the specific contract.
 // It's supposed to restart the generation from the given origin position.
-func generateStorages(ctx *generatorContext, dl *diskLayer, stateRoot common.Hash, account common.Hash, storageRoot common.Hash, storeMarker []byte) error {
+func generateStorages(
+	ctx *generatorContext, dl *diskLayer, stateRoot common.Hash, account common.Hash, storageRoot common.Hash,
+	storeMarker []byte,
+) error {
 	onStorage := func(key []byte, val []byte, write bool, delete bool) error {
 		defer func(start time.Time) {
 			snapStorageWriteCounter.Inc(time.Since(start).Nanoseconds())
@@ -544,7 +565,10 @@ func generateStorages(ctx *generatorContext, dl *diskLayer, stateRoot common.Has
 	var origin = common.CopyBytes(storeMarker)
 	for {
 		id := trie.StorageTrieID(stateRoot, account, storageRoot)
-		exhausted, last, err := dl.generateRange(ctx, id, append(rawdb.SnapshotStoragePrefix, account.Bytes()...), snapStorage, origin, storageCheckRange, onStorage, nil)
+		exhausted, last, err := dl.generateRange(
+			ctx, id, append(rawdb.SnapshotStoragePrefix, account.Bytes()...), snapStorage, origin, storageCheckRange,
+			onStorage, nil,
+		)
 		if err != nil {
 			return err // The procedure it aborted, either by external signal or internal error.
 		}
@@ -640,7 +664,9 @@ func generateAccounts(ctx *generatorContext, dl *diskLayer, accMarker []byte) er
 	origin := common.CopyBytes(accMarker)
 	for {
 		id := trie.StateTrieID(dl.root)
-		exhausted, last, err := dl.generateRange(ctx, id, rawdb.SnapshotAccountPrefix, snapAccount, origin, accountRange, onAccount, types.FullAccountRLP)
+		exhausted, last, err := dl.generateRange(
+			ctx, id, rawdb.SnapshotAccountPrefix, snapAccount, origin, accountRange, onAccount, types.FullAccountRLP,
+		)
 		if err != nil {
 			return err // The procedure it aborted, either by external signal or internal error.
 		}
@@ -707,8 +733,10 @@ func (dl *diskLayer) generate(stats *generatorStats) {
 	}
 	ctx.batch.Reset()
 
-	log.Info("Generated state snapshot", "accounts", stats.accounts, "slots", stats.slots,
-		"storage", stats.storage, "dangling", stats.dangling, "elapsed", common.PrettyDuration(time.Since(stats.start)))
+	log.Info(
+		"Generated state snapshot", "accounts", stats.accounts, "slots", stats.slots,
+		"storage", stats.storage, "dangling", stats.dangling, "elapsed", common.PrettyDuration(time.Since(stats.start)),
+	)
 
 	dl.lock.Lock()
 	dl.genMarker = nil

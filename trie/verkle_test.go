@@ -21,12 +21,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/trie/utils"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/trie/utils"
 )
 
 var (
@@ -137,7 +137,10 @@ func TestVerkleRollBack(t *testing.T) {
 	}
 
 	// ensure there is some code in the 2nd group
-	keyOf2ndGroup := []byte{141, 124, 185, 236, 50, 22, 185, 39, 244, 47, 97, 209, 96, 235, 22, 13, 205, 38, 18, 201, 128, 223, 0, 59, 146, 199, 222, 119, 133, 13, 91, 0}
+	keyOf2ndGroup := []byte{
+		141, 124, 185, 236, 50, 22, 185, 39, 244, 47, 97, 209, 96, 235, 22, 13, 205, 38, 18, 201, 128, 223, 0, 59, 146,
+		199, 222, 119, 133, 13, 91, 0,
+	}
 	chunk, err := tr.root.Get(keyOf2ndGroup, nil)
 	if err != nil {
 		t.Fatalf("Failed to get account, %v", err)

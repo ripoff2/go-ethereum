@@ -24,12 +24,12 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/eth/protocols/eth"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // scratchHeaders is the number of headers to store in a scratch space to allow
@@ -420,7 +420,9 @@ func (s *skeleton) sync(head *types.Header) (*types.Header, error) {
 
 	// Whether sync completed or not, disregard any future packets
 	defer func() {
-		log.Debug("Terminating reverse header sync cycle", "head", head.Number, "hash", head.Hash(), "cont", s.scratchHead)
+		log.Debug(
+			"Terminating reverse header sync cycle", "head", head.Number, "hash", head.Hash(), "cont", s.scratchHead,
+		)
 		s.requests = make(map[uint64]*headerRequest)
 	}()
 
@@ -547,7 +549,10 @@ func (s *skeleton) initSync(head *types.Header) {
 				}
 				// Otherwise truncate the last chain if needed and abort trimming
 				if lastchain.Head >= headchain.Tail {
-					log.Debug("Trimming skeleton subchain", "oldhead", lastchain.Head, "newhead", headchain.Tail-1, "tail", lastchain.Tail)
+					log.Debug(
+						"Trimming skeleton subchain", "oldhead", lastchain.Head, "newhead", headchain.Tail-1, "tail",
+						lastchain.Tail,
+					)
 					lastchain.Head = headchain.Tail - 1
 				}
 				break
@@ -560,7 +565,9 @@ func (s *skeleton) initSync(head *types.Header) {
 				if lastchain.Head == headchain.Tail-1 {
 					lasthead := rawdb.ReadSkeletonHeader(s.db, lastchain.Head)
 					if lasthead.Hash() == head.ParentHash {
-						log.Debug("Extended skeleton subchain with new head", "head", headchain.Tail, "tail", lastchain.Tail)
+						log.Debug(
+							"Extended skeleton subchain with new head", "head", headchain.Tail, "tail", lastchain.Tail,
+						)
 						lastchain.Head = headchain.Tail
 						extended = true
 					}
@@ -647,13 +654,17 @@ func (s *skeleton) processNewHead(head *types.Header, final *types.Header) error
 			}
 		}
 		// Not a noop / double head announce, abort with a reorg
-		return fmt.Errorf("%w, tail: %d, head: %d, newHead: %d", errChainReorged, lastchain.Tail, lastchain.Head, number)
+		return fmt.Errorf(
+			"%w, tail: %d, head: %d, newHead: %d", errChainReorged, lastchain.Tail, lastchain.Head, number,
+		)
 	}
 	if lastchain.Head+1 < number {
 		return fmt.Errorf("%w, head: %d, newHead: %d", errChainGapped, lastchain.Head, number)
 	}
 	if parent := rawdb.ReadSkeletonHeader(s.db, number-1); parent.Hash() != head.ParentHash {
-		return fmt.Errorf("%w, ancestor: %d, hash: %s, want: %s", errChainForked, number-1, parent.Hash(), head.ParentHash)
+		return fmt.Errorf(
+			"%w, ancestor: %d, hash: %s, want: %s", errChainForked, number-1, parent.Hash(), head.ParentHash,
+		)
 	}
 	// New header seems to be in the last subchain range. Unwind any extra headers
 	// from the chain tip and insert the new head. We won't delete any trimmed
@@ -833,7 +844,10 @@ func (s *skeleton) executeTask(peer *peerConnection, req *headerRequest) {
 			// is correct too, deliver for storage
 			for i := 0; i < len(headers)-1; i++ {
 				if headers[i].ParentHash != headers[i+1].Hash() {
-					peer.log.Debug("Invalid hash progression", "index", i, "wantparenthash", headers[i].ParentHash, "haveparenthash", headers[i+1].Hash())
+					peer.log.Debug(
+						"Invalid hash progression", "index", i, "wantparenthash", headers[i].ParentHash,
+						"haveparenthash", headers[i+1].Hash(),
+					)
 					res.Done <- errors.New("invalid hash progression")
 					s.scheduleRevertRequest(req)
 					return
@@ -910,7 +924,10 @@ func (s *skeleton) revertRequest(req *headerRequest) {
 }
 
 func (s *skeleton) processResponse(res *headerResponse) (linked bool, merged bool) {
-	res.peer.log.Trace("Processing header response", "head", res.headers[0].Number, "hash", res.headers[0].Hash(), "count", len(res.headers))
+	res.peer.log.Trace(
+		"Processing header response", "head", res.headers[0].Number, "hash", res.headers[0].Hash(), "count",
+		len(res.headers),
+	)
 
 	// Whether the response is valid, we can mark the peer as idle and notify
 	// the scheduler to assign a new task. If the response is invalid, we'll
@@ -947,7 +964,9 @@ func (s *skeleton) processResponse(res *headerResponse) (linked bool, merged boo
 			want := s.progress.Subchains[0].Next
 			have := s.scratchSpace[0].Hash()
 
-			log.Warn("Invalid skeleton headers", "peer", s.scratchOwners[0], "number", tail-1, "want", want, "have", have)
+			log.Warn(
+				"Invalid skeleton headers", "peer", s.scratchOwners[0], "number", tail-1, "want", want, "have", have,
+			)
 
 			// The peer delivered junk, or at least not the subchain we are
 			// syncing to. Free up the scratch space and assignment, reassign
@@ -1136,10 +1155,15 @@ func (s *skeleton) cleanStales(filled *types.Header) error {
 	// was interrupted before it got to do any meaningful work, no cleanup
 	header := rawdb.ReadSkeletonHeader(s.db, filled.Number.Uint64())
 	if header == nil {
-		log.Debug("Filled header outside of skeleton range", "number", number, "head", s.progress.Subchains[0].Head, "tail", s.progress.Subchains[0].Tail)
+		log.Debug(
+			"Filled header outside of skeleton range", "number", number, "head", s.progress.Subchains[0].Head, "tail",
+			s.progress.Subchains[0].Tail,
+		)
 		return nil
 	} else if header.Hash() != filled.Hash() {
-		log.Debug("Filled header on different sidechain", "number", number, "filled", filled.Hash(), "skeleton", header.Hash())
+		log.Debug(
+			"Filled header on different sidechain", "number", number, "filled", filled.Hash(), "skeleton", header.Hash(),
+		)
 		return nil
 	}
 	var (
@@ -1151,7 +1175,9 @@ func (s *skeleton) cleanStales(filled *types.Header) error {
 		// The skeleton chain is partially consumed, set the new tail as filled+1.
 		tail := rawdb.ReadSkeletonHeader(s.db, number+1)
 		if tail.ParentHash != filled.Hash() {
-			return fmt.Errorf("filled header is discontinuous with subchain: %d %s, please file an issue", number, filled.Hash())
+			return fmt.Errorf(
+				"filled header is discontinuous with subchain: %d %s, please file an issue", number, filled.Hash(),
+			)
 		}
 		start, end = s.progress.Subchains[0].Tail, number+1 // remove headers in [tail, filled]
 		s.progress.Subchains[0].Tail = tail.Number.Uint64()

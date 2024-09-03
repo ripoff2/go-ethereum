@@ -27,12 +27,12 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/accounts/usbwallet/trezor"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/accounts/usbwallet/trezor"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/log"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -77,7 +77,9 @@ func (w *trezorDriver) Status() (string, error) {
 		return "Closed", w.failure
 	}
 	if w.pinwait {
-		return fmt.Sprintf("Trezor v%d.%d.%d '%s' waiting for PIN", w.version[0], w.version[1], w.version[2], w.label), w.failure
+		return fmt.Sprintf(
+			"Trezor v%d.%d.%d '%s' waiting for PIN", w.version[0], w.version[1], w.version[2], w.label,
+		), w.failure
 	}
 	return fmt.Sprintf("Trezor v%d.%d.%d '%s' online", w.version[0], w.version[1], w.version[2], w.label), w.failure
 }
@@ -113,7 +115,10 @@ func (w *trezorDriver) Open(device io.ReadWriter, passphrase string) error {
 		// Do a manual ping, forcing the device to ask for its PIN and Passphrase
 		askPin := true
 		askPassphrase := true
-		res, err := w.trezorExchange(&trezor.Ping{PinProtection: &askPin, PassphraseProtection: &askPassphrase}, new(trezor.PinMatrixRequest), new(trezor.PassphraseRequest), new(trezor.Success))
+		res, err := w.trezorExchange(
+			&trezor.Ping{PinProtection: &askPin, PassphraseProtection: &askPassphrase}, new(trezor.PinMatrixRequest),
+			new(trezor.PassphraseRequest), new(trezor.Success),
+		)
 		if err != nil {
 			return err
 		}
@@ -133,7 +138,9 @@ func (w *trezorDriver) Open(device io.ReadWriter, passphrase string) error {
 	// Phase 2 requested with actual PIN entry
 	if w.pinwait {
 		w.pinwait = false
-		res, err := w.trezorExchange(&trezor.PinMatrixAck{Pin: &passphrase}, new(trezor.Success), new(trezor.PassphraseRequest))
+		res, err := w.trezorExchange(
+			&trezor.PinMatrixAck{Pin: &passphrase}, new(trezor.Success), new(trezor.PassphraseRequest),
+		)
 		if err != nil {
 			w.failure = err
 			return err
@@ -178,14 +185,18 @@ func (w *trezorDriver) Derive(path accounts.DerivationPath) (common.Address, err
 
 // SignTx implements usbwallet.driver, sending the transaction to the Trezor and
 // waiting for the user to confirm or deny the transaction.
-func (w *trezorDriver) SignTx(path accounts.DerivationPath, tx *types.Transaction, chainID *big.Int) (common.Address, *types.Transaction, error) {
+func (w *trezorDriver) SignTx(path accounts.DerivationPath, tx *types.Transaction, chainID *big.Int) (
+	common.Address, *types.Transaction, error,
+) {
 	if w.device == nil {
 		return common.Address{}, nil, accounts.ErrWalletClosed
 	}
 	return w.trezorSign(path, tx, chainID)
 }
 
-func (w *trezorDriver) SignTypedMessage(path accounts.DerivationPath, domainHash []byte, messageHash []byte) ([]byte, error) {
+func (w *trezorDriver) SignTypedMessage(path accounts.DerivationPath, domainHash []byte, messageHash []byte) (
+	[]byte, error,
+) {
 	return nil, accounts.ErrNotSupported
 }
 
@@ -207,7 +218,9 @@ func (w *trezorDriver) trezorDerive(derivationPath []uint32) (common.Address, er
 
 // trezorSign sends the transaction to the Trezor wallet, and waits for the user
 // to confirm or deny the transaction.
-func (w *trezorDriver) trezorSign(derivationPath []uint32, tx *types.Transaction, chainID *big.Int) (common.Address, *types.Transaction, error) {
+func (w *trezorDriver) trezorSign(derivationPath []uint32, tx *types.Transaction, chainID *big.Int) (
+	common.Address, *types.Transaction, error,
+) {
 	// Create the transaction initiation message
 	data := tx.Data()
 	length := uint32(len(data))

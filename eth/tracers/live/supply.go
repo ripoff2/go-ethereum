@@ -7,14 +7,14 @@ import (
 	"math/big"
 	"path/filepath"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/consensus/misc/eip4844"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/consensus/misc/eip4844"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/log"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -174,7 +174,9 @@ func (s *supply) OnGenesisBlock(b *types.Block, alloc types.GenesisAlloc) {
 	s.write(s.delta)
 }
 
-func (s *supply) OnBalanceChange(a common.Address, prevBalance, newBalance *big.Int, reason tracing.BalanceChangeReason) {
+func (s *supply) OnBalanceChange(
+	a common.Address, prevBalance, newBalance *big.Int, reason tracing.BalanceChangeReason,
+) {
 	diff := new(big.Int).Sub(newBalance, prevBalance)
 
 	// NOTE: don't handle "BalanceIncreaseGenesisBalance" because it is handled in OnGenesisBlock
@@ -211,7 +213,9 @@ func (s *supply) internalTxsHandler(call *supplyTxCallstack) {
 	}
 }
 
-func (s *supply) OnEnter(depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int) {
+func (s *supply) OnEnter(
+	depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int,
+) {
 	call := supplyTxCallstack{
 		calls: make([]supplyTxCallstack, 0),
 	}

@@ -24,11 +24,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/core/txpool"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/core/txpool"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 var (
@@ -90,395 +90,465 @@ type txFetcherTest struct {
 // to cover the metadata checks without bloating up the basic behavioral tests
 // with all the useless extra fields.
 func TestTransactionFetcherWaiting(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				nil,
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Initial announcement to get something into the waitlist
-			doTxNotify{peer: "A", hashes: []common.Hash{{0x01}, {0x02}}, types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{111, 222}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
-					{common.Hash{0x02}, types.LegacyTxType, 222},
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					nil,
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Initial announcement to get something into the waitlist
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{{0x01}, {0x02}},
+					types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{111, 222},
 				},
-			}),
-			// Announce from a new peer to check that no overwrite happens
-			doTxNotify{peer: "B", hashes: []common.Hash{{0x03}, {0x04}}, types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{333, 444}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
-					{common.Hash{0x02}, types.LegacyTxType, 222},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+				),
+				// Announce from a new peer to check that no overwrite happens
+				doTxNotify{
+					peer: "B", hashes: []common.Hash{{0x03}, {0x04}},
+					types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{333, 444},
 				},
-				"B": {
-					{common.Hash{0x03}, types.LegacyTxType, 333},
-					{common.Hash{0x04}, types.LegacyTxType, 444},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+						"B": {
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+					},
+				),
+				// Announce clashing hashes but unique new peer
+				doTxNotify{
+					peer: "C", hashes: []common.Hash{{0x01}, {0x04}},
+					types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{111, 444},
 				},
-			}),
-			// Announce clashing hashes but unique new peer
-			doTxNotify{peer: "C", hashes: []common.Hash{{0x01}, {0x04}}, types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{111, 444}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
-					{common.Hash{0x02}, types.LegacyTxType, 222},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+						"B": {
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+						"C": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+					},
+				),
+				// Announce existing and clashing hashes from existing peer. Clashes
+				// should not overwrite previous announcements.
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{{0x01}, {0x03}, {0x05}},
+					types: []byte{types.LegacyTxType, types.LegacyTxType, types.LegacyTxType},
+					sizes: []uint32{999, 333, 555},
 				},
-				"B": {
-					{common.Hash{0x03}, types.LegacyTxType, 333},
-					{common.Hash{0x04}, types.LegacyTxType, 444},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x05}, types.LegacyTxType, 555},
+						},
+						"B": {
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+						"C": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+					},
+				),
+				// Announce clashing hashes with conflicting metadata. Somebody will
+				// be in the wrong, but we don't know yet who.
+				doTxNotify{
+					peer: "D", hashes: []common.Hash{{0x01}, {0x02}},
+					types: []byte{types.LegacyTxType, types.BlobTxType}, sizes: []uint32{999, 222},
 				},
-				"C": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
-					{common.Hash{0x04}, types.LegacyTxType, 444},
-				},
-			}),
-			// Announce existing and clashing hashes from existing peer. Clashes
-			// should not overwrite previous announcements.
-			doTxNotify{peer: "A", hashes: []common.Hash{{0x01}, {0x03}, {0x05}}, types: []byte{types.LegacyTxType, types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{999, 333, 555}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
-					{common.Hash{0x02}, types.LegacyTxType, 222},
-					{common.Hash{0x03}, types.LegacyTxType, 333},
-					{common.Hash{0x05}, types.LegacyTxType, 555},
-				},
-				"B": {
-					{common.Hash{0x03}, types.LegacyTxType, 333},
-					{common.Hash{0x04}, types.LegacyTxType, 444},
-				},
-				"C": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
-					{common.Hash{0x04}, types.LegacyTxType, 444},
-				},
-			}),
-			// Announce clashing hashes with conflicting metadata. Somebody will
-			// be in the wrong, but we don't know yet who.
-			doTxNotify{peer: "D", hashes: []common.Hash{{0x01}, {0x02}}, types: []byte{types.LegacyTxType, types.BlobTxType}, sizes: []uint32{999, 222}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
-					{common.Hash{0x02}, types.LegacyTxType, 222},
-					{common.Hash{0x03}, types.LegacyTxType, 333},
-					{common.Hash{0x05}, types.LegacyTxType, 555},
-				},
-				"B": {
-					{common.Hash{0x03}, types.LegacyTxType, 333},
-					{common.Hash{0x04}, types.LegacyTxType, 444},
-				},
-				"C": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
-					{common.Hash{0x04}, types.LegacyTxType, 444},
-				},
-				"D": {
-					{common.Hash{0x01}, types.LegacyTxType, 999},
-					{common.Hash{0x02}, types.BlobTxType, 222},
-				},
-			}),
-			isScheduled{tracking: nil, fetching: nil},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x05}, types.LegacyTxType, 555},
+						},
+						"B": {
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+						"C": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+						"D": {
+							{common.Hash{0x01}, types.LegacyTxType, 999},
+							{common.Hash{0x02}, types.BlobTxType, 222},
+						},
+					},
+				),
+				isScheduled{tracking: nil, fetching: nil},
 
-			// Wait for the arrival timeout which should move all expired items
-			// from the wait list to the scheduler
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
-						{common.Hash{0x03}, types.LegacyTxType, 333},
-						{common.Hash{0x05}, types.LegacyTxType, 555},
+				// Wait for the arrival timeout which should move all expired items
+				// from the wait list to the scheduler
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x05}, types.LegacyTxType, 555},
+						},
+						"B": {
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+						"C": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+						"D": {
+							{common.Hash{0x01}, types.LegacyTxType, 999},
+							{common.Hash{0x02}, types.BlobTxType, 222},
+						},
 					},
-					"B": {
-						{common.Hash{0x03}, types.LegacyTxType, 333},
-						{common.Hash{0x04}, types.LegacyTxType, 444},
-					},
-					"C": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x04}, types.LegacyTxType, 444},
-					},
-					"D": {
-						{common.Hash{0x01}, types.LegacyTxType, 999},
-						{common.Hash{0x02}, types.BlobTxType, 222},
-					},
-				},
-				fetching: map[string][]common.Hash{ // Depends on deterministic test randomizer
-					"A": {{0x03}, {0x05}},
-					"C": {{0x01}, {0x04}},
-					"D": {{0x02}},
-				},
-			},
-			// Queue up a non-fetchable transaction and then trigger it with a new
-			// peer (weird case to test 1 line in the fetcher)
-			doTxNotify{peer: "C", hashes: []common.Hash{{0x06}, {0x07}}, types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{666, 777}},
-			isWaiting(map[string][]announce{
-				"C": {
-					{common.Hash{0x06}, types.LegacyTxType, 666},
-					{common.Hash{0x07}, types.LegacyTxType, 777},
-				},
-			}),
-			doWait{time: txArriveTimeout, step: true},
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
-						{common.Hash{0x03}, types.LegacyTxType, 333},
-						{common.Hash{0x05}, types.LegacyTxType, 555},
-					},
-					"B": {
-						{common.Hash{0x03}, types.LegacyTxType, 333},
-						{common.Hash{0x04}, types.LegacyTxType, 444},
-					},
-					"C": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x04}, types.LegacyTxType, 444},
-						{common.Hash{0x06}, types.LegacyTxType, 666},
-						{common.Hash{0x07}, types.LegacyTxType, 777},
-					},
-					"D": {
-						{common.Hash{0x01}, types.LegacyTxType, 999},
-						{common.Hash{0x02}, types.BlobTxType, 222},
+					fetching: map[string][]common.Hash{
+						// Depends on deterministic test randomizer
+						"A": {{0x03}, {0x05}},
+						"C": {{0x01}, {0x04}},
+						"D": {{0x02}},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x03}, {0x05}},
-					"C": {{0x01}, {0x04}},
-					"D": {{0x02}},
+				// Queue up a non-fetchable transaction and then trigger it with a new
+				// peer (weird case to test 1 line in the fetcher)
+				doTxNotify{
+					peer: "C", hashes: []common.Hash{{0x06}, {0x07}},
+					types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{666, 777},
 				},
-			},
-			doTxNotify{peer: "E", hashes: []common.Hash{{0x06}, {0x07}}, types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{666, 777}},
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
-						{common.Hash{0x03}, types.LegacyTxType, 333},
-						{common.Hash{0x05}, types.LegacyTxType, 555},
+				isWaiting(
+					map[string][]announce{
+						"C": {
+							{common.Hash{0x06}, types.LegacyTxType, 666},
+							{common.Hash{0x07}, types.LegacyTxType, 777},
+						},
 					},
-					"B": {
-						{common.Hash{0x03}, types.LegacyTxType, 333},
-						{common.Hash{0x04}, types.LegacyTxType, 444},
+				),
+				doWait{time: txArriveTimeout, step: true},
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x05}, types.LegacyTxType, 555},
+						},
+						"B": {
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+						"C": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+							{common.Hash{0x06}, types.LegacyTxType, 666},
+							{common.Hash{0x07}, types.LegacyTxType, 777},
+						},
+						"D": {
+							{common.Hash{0x01}, types.LegacyTxType, 999},
+							{common.Hash{0x02}, types.BlobTxType, 222},
+						},
 					},
-					"C": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x04}, types.LegacyTxType, 444},
-						{common.Hash{0x06}, types.LegacyTxType, 666},
-						{common.Hash{0x07}, types.LegacyTxType, 777},
-					},
-					"D": {
-						{common.Hash{0x01}, types.LegacyTxType, 999},
-						{common.Hash{0x02}, types.BlobTxType, 222},
-					},
-					"E": {
-						{common.Hash{0x06}, types.LegacyTxType, 666},
-						{common.Hash{0x07}, types.LegacyTxType, 777},
+					fetching: map[string][]common.Hash{
+						"A": {{0x03}, {0x05}},
+						"C": {{0x01}, {0x04}},
+						"D": {{0x02}},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x03}, {0x05}},
-					"C": {{0x01}, {0x04}},
-					"D": {{0x02}},
-					"E": {{0x06}, {0x07}},
+				doTxNotify{
+					peer: "E", hashes: []common.Hash{{0x06}, {0x07}},
+					types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{666, 777},
+				},
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x05}, types.LegacyTxType, 555},
+						},
+						"B": {
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+						"C": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+							{common.Hash{0x06}, types.LegacyTxType, 666},
+							{common.Hash{0x07}, types.LegacyTxType, 777},
+						},
+						"D": {
+							{common.Hash{0x01}, types.LegacyTxType, 999},
+							{common.Hash{0x02}, types.BlobTxType, 222},
+						},
+						"E": {
+							{common.Hash{0x06}, types.LegacyTxType, 666},
+							{common.Hash{0x07}, types.LegacyTxType, 777},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {{0x03}, {0x05}},
+						"C": {{0x01}, {0x04}},
+						"D": {{0x02}},
+						"E": {{0x06}, {0x07}},
+					},
 				},
 			},
 		},
-	})
+	)
 }
 
 // Tests that transaction announcements skip the waiting list if they are
 // already scheduled.
 func TestTransactionFetcherSkipWaiting(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				nil,
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Push an initial announcement through to the scheduled stage
-			doTxNotify{
-				peer:   "A",
-				hashes: []common.Hash{{0x01}, {0x02}},
-				types:  []byte{types.LegacyTxType, types.LegacyTxType},
-				sizes:  []uint32{111, 222},
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					nil,
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
 			},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
-					{common.Hash{0x02}, types.LegacyTxType, 222},
+			steps: []interface{}{
+				// Push an initial announcement through to the scheduled stage
+				doTxNotify{
+					peer:   "A",
+					hashes: []common.Hash{{0x01}, {0x02}},
+					types:  []byte{types.LegacyTxType, types.LegacyTxType},
+					sizes:  []uint32{111, 222},
 				},
-			}),
-			isScheduled{tracking: nil, fetching: nil},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+				),
+				isScheduled{tracking: nil, fetching: nil},
 
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}, {0x02}},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}, {0x02}},
+				// Announce overlaps from the same peer, ensure the new ones end up
+				// in stage one, and clashing ones don't get double tracked
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{{0x02}, {0x03}},
+					types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{222, 333},
 				},
-			},
-			// Announce overlaps from the same peer, ensure the new ones end up
-			// in stage one, and clashing ones don't get double tracked
-			doTxNotify{peer: "A", hashes: []common.Hash{{0x02}, {0x03}}, types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{222, 333}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x03}, types.LegacyTxType, 333},
-				},
-			}),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+						},
+					},
+				),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}, {0x02}},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}, {0x02}},
+				// Announce overlaps from a new peer, ensure new transactions end up
+				// in stage one and clashing ones get tracked for the new peer
+				doTxNotify{
+					peer: "B", hashes: []common.Hash{{0x02}, {0x03}, {0x04}},
+					types: []byte{types.LegacyTxType, types.LegacyTxType, types.LegacyTxType},
+					sizes: []uint32{222, 333, 444},
 				},
-			},
-			// Announce overlaps from a new peer, ensure new transactions end up
-			// in stage one and clashing ones get tracked for the new peer
-			doTxNotify{peer: "B", hashes: []common.Hash{{0x02}, {0x03}, {0x04}}, types: []byte{types.LegacyTxType, types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{222, 333, 444}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x03}, types.LegacyTxType, 333},
-				},
-				"B": {
-					{common.Hash{0x03}, types.LegacyTxType, 333},
-					{common.Hash{0x04}, types.LegacyTxType, 444},
-				},
-			}),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+						},
+						"B": {
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
 					},
-					"B": {
-						{common.Hash{0x02}, types.LegacyTxType, 222},
+				),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+						"B": {
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
 					},
-				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}, {0x02}},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}, {0x02}},
+					},
 				},
 			},
 		},
-	})
+	)
 }
 
 // Tests that only a single transaction request gets scheduled to a peer
 // and subsequent announces block or get allotted to someone else.
 func TestTransactionFetcherSingletonRequesting(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				nil,
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Push an initial announcement through to the scheduled stage
-			doTxNotify{peer: "A", hashes: []common.Hash{{0x01}, {0x02}}, types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{111, 222}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
-					{common.Hash{0x02}, types.LegacyTxType, 222},
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					nil,
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Push an initial announcement through to the scheduled stage
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{{0x01}, {0x02}},
+					types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{111, 222},
 				},
-			}),
-			isScheduled{tracking: nil, fetching: nil},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+				),
+				isScheduled{tracking: nil, fetching: nil},
 
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}, {0x02}},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}, {0x02}},
+				// Announce a new set of transactions from the same peer and ensure
+				// they do not start fetching since the peer is already busy
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{{0x03}, {0x04}},
+					types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{333, 444},
 				},
-			},
-			// Announce a new set of transactions from the same peer and ensure
-			// they do not start fetching since the peer is already busy
-			doTxNotify{peer: "A", hashes: []common.Hash{{0x03}, {0x04}}, types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{333, 444}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x03}, types.LegacyTxType, 333},
-					{common.Hash{0x04}, types.LegacyTxType, 444},
-				},
-			}),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+					},
+				),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}, {0x02}},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}, {0x02}},
-				},
-			},
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
-						{common.Hash{0x03}, types.LegacyTxType, 333},
-						{common.Hash{0x04}, types.LegacyTxType, 444},
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}, {0x02}},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}, {0x02}},
+				// Announce a duplicate set of transactions from a new peer and ensure
+				// uniquely new ones start downloading, even if clashing.
+				doTxNotify{
+					peer: "B", hashes: []common.Hash{{0x02}, {0x03}, {0x05}, {0x06}},
+					types: []byte{types.LegacyTxType, types.LegacyTxType, types.LegacyTxType, types.LegacyTxType},
+					sizes: []uint32{222, 333, 555, 666},
 				},
-			},
-			// Announce a duplicate set of transactions from a new peer and ensure
-			// uniquely new ones start downloading, even if clashing.
-			doTxNotify{peer: "B", hashes: []common.Hash{{0x02}, {0x03}, {0x05}, {0x06}}, types: []byte{types.LegacyTxType, types.LegacyTxType, types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{222, 333, 555, 666}},
-			isWaiting(map[string][]announce{
-				"B": {
-					{common.Hash{0x05}, types.LegacyTxType, 555},
-					{common.Hash{0x06}, types.LegacyTxType, 666},
-				},
-			}),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
-						{common.Hash{0x03}, types.LegacyTxType, 333},
-						{common.Hash{0x04}, types.LegacyTxType, 444},
+				isWaiting(
+					map[string][]announce{
+						"B": {
+							{common.Hash{0x05}, types.LegacyTxType, 555},
+							{common.Hash{0x06}, types.LegacyTxType, 666},
+						},
 					},
-					"B": {
-						{common.Hash{0x02}, types.LegacyTxType, 222},
-						{common.Hash{0x03}, types.LegacyTxType, 333},
+				),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+							{common.Hash{0x04}, types.LegacyTxType, 444},
+						},
+						"B": {
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+						},
 					},
-				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}, {0x02}},
-					"B": {{0x03}},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}, {0x02}},
+						"B": {{0x03}},
+					},
 				},
 			},
 		},
-	})
+	)
 }
 
 // Tests that if a transaction retrieval fails, all the transactions get
@@ -487,546 +557,624 @@ func TestTransactionFetcherSingletonRequesting(t *testing.T) {
 func TestTransactionFetcherFailedRescheduling(t *testing.T) {
 	// Create a channel to control when tx requests can fail
 	proceed := make(chan struct{})
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				nil,
-				func(origin string, hashes []common.Hash) error {
-					<-proceed
-					return errors.New("peer disconnected")
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					nil,
+					func(origin string, hashes []common.Hash) error {
+						<-proceed
+						return errors.New("peer disconnected")
+					},
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Push an initial announcement through to the scheduled stage
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{{0x01}, {0x02}},
+					types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{111, 222},
 				},
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Push an initial announcement through to the scheduled stage
-			doTxNotify{peer: "A", hashes: []common.Hash{{0x01}, {0x02}}, types: []byte{types.LegacyTxType, types.LegacyTxType}, sizes: []uint32{111, 222}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
-					{common.Hash{0x02}, types.LegacyTxType, 222},
-				},
-			}),
-			isScheduled{tracking: nil, fetching: nil},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+				),
+				isScheduled{tracking: nil, fetching: nil},
 
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}, {0x02}},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}, {0x02}},
+				// While the original peer is stuck in the request, push in an second
+				// data source.
+				doTxNotify{
+					peer: "B", hashes: []common.Hash{{0x02}}, types: []byte{types.LegacyTxType}, sizes: []uint32{222},
 				},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+						"B": {
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}, {0x02}},
+					},
+				},
+				// Wait until the original request fails and check that transactions
+				// are either rescheduled or dropped
+				doFunc(
+					func() {
+						proceed <- struct{}{} // Allow peer A to return the failure
+					},
+				),
+				doWait{time: 0, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"B": {
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"B": {{0x02}},
+					},
+				},
+				doFunc(
+					func() {
+						proceed <- struct{}{} // Allow peer B to return the failure
+					},
+				),
+				doWait{time: 0, step: true},
+				isWaiting(nil),
+				isScheduled{nil, nil, nil},
 			},
-			// While the original peer is stuck in the request, push in an second
-			// data source.
-			doTxNotify{peer: "B", hashes: []common.Hash{{0x02}}, types: []byte{types.LegacyTxType}, sizes: []uint32{222}},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
-					},
-					"B": {
-						{common.Hash{0x02}, types.LegacyTxType, 222},
-					},
-				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}, {0x02}},
-				},
-			},
-			// Wait until the original request fails and check that transactions
-			// are either rescheduled or dropped
-			doFunc(func() {
-				proceed <- struct{}{} // Allow peer A to return the failure
-			}),
-			doWait{time: 0, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"B": {
-						{common.Hash{0x02}, types.LegacyTxType, 222},
-					},
-				},
-				fetching: map[string][]common.Hash{
-					"B": {{0x02}},
-				},
-			},
-			doFunc(func() {
-				proceed <- struct{}{} // Allow peer B to return the failure
-			}),
-			doWait{time: 0, step: true},
-			isWaiting(nil),
-			isScheduled{nil, nil, nil},
 		},
-	})
+	)
 }
 
 // Tests that if a transaction retrieval succeeds, all alternate origins
 // are cleaned up.
 func TestTransactionFetcherCleanup(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Push an initial announcement through to the scheduled stage
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()},
+					sizes: []uint32{uint32(testTxs[0].Size())},
 				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Push an initial announcement through to the scheduled stage
-			doTxNotify{peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()}, sizes: []uint32{uint32(testTxs[0].Size())}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
-				},
-			}),
-			isScheduled{tracking: nil, fetching: nil},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+						},
+					},
+				),
+				isScheduled{tracking: nil, fetching: nil},
 
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {testTxsHashes[0]},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {testTxsHashes[0]},
-				},
+				// Request should be delivered
+				doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0]}, direct: true},
+				isScheduled{nil, nil, nil},
 			},
-			// Request should be delivered
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0]}, direct: true},
-			isScheduled{nil, nil, nil},
 		},
-	})
+	)
 }
 
 // Tests that if a transaction retrieval succeeds, but the response is empty (no
 // transactions available, then all are nuked instead of being rescheduled (yes,
 // this was a bug)).
 func TestTransactionFetcherCleanupEmpty(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Push an initial announcement through to the scheduled stage
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()},
+					sizes: []uint32{uint32(testTxs[0].Size())},
 				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Push an initial announcement through to the scheduled stage
-			doTxNotify{peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()}, sizes: []uint32{uint32(testTxs[0].Size())}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
-				},
-			}),
-			isScheduled{tracking: nil, fetching: nil},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+						},
+					},
+				),
+				isScheduled{tracking: nil, fetching: nil},
 
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {testTxsHashes[0]},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {testTxsHashes[0]},
-				},
+				// Deliver an empty response and ensure the transaction is cleared, not rescheduled
+				doTxEnqueue{peer: "A", txs: []*types.Transaction{}, direct: true},
+				isScheduled{nil, nil, nil},
 			},
-			// Deliver an empty response and ensure the transaction is cleared, not rescheduled
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{}, direct: true},
-			isScheduled{nil, nil, nil},
 		},
-	})
+	)
 }
 
 // Tests that non-returned transactions are either re-scheduled from a
 // different peer, or self if they are after the cutoff point.
 func TestTransactionFetcherMissingRescheduling(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
-				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Push an initial announcement through to the scheduled stage
-			doTxNotify{peer: "A",
-				hashes: []common.Hash{testTxsHashes[0], testTxsHashes[1], testTxsHashes[2]},
-				types:  []byte{testTxs[0].Type(), testTxs[1].Type(), testTxs[2].Type()},
-				sizes:  []uint32{uint32(testTxs[0].Size()), uint32(testTxs[1].Size()), uint32(testTxs[2].Size())},
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
 			},
-			isWaiting(map[string][]announce{
-				"A": {
-					{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
-					{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
-					{testTxsHashes[2], testTxs[2].Type(), uint32(testTxs[2].Size())},
+			steps: []interface{}{
+				// Push an initial announcement through to the scheduled stage
+				doTxNotify{
+					peer:   "A",
+					hashes: []common.Hash{testTxsHashes[0], testTxsHashes[1], testTxsHashes[2]},
+					types:  []byte{testTxs[0].Type(), testTxs[1].Type(), testTxs[2].Type()},
+					sizes:  []uint32{uint32(testTxs[0].Size()), uint32(testTxs[1].Size()), uint32(testTxs[2].Size())},
 				},
-			}),
-			isScheduled{tracking: nil, fetching: nil},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+							{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
+							{testTxsHashes[2], testTxs[2].Type(), uint32(testTxs[2].Size())},
+						},
+					},
+				),
+				isScheduled{tracking: nil, fetching: nil},
 
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
-						{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
-						{testTxsHashes[2], testTxs[2].Type(), uint32(testTxs[2].Size())},
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+							{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
+							{testTxsHashes[2], testTxs[2].Type(), uint32(testTxs[2].Size())},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {testTxsHashes[0], testTxsHashes[1], testTxsHashes[2]},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {testTxsHashes[0], testTxsHashes[1], testTxsHashes[2]},
-				},
-			},
-			// Deliver the middle transaction requested, the one before which
-			// should be dropped and the one after re-requested.
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0]}, direct: true}, // This depends on the deterministic random
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{testTxsHashes[2], testTxs[2].Type(), uint32(testTxs[2].Size())},
+				// Deliver the middle transaction requested, the one before which
+				// should be dropped and the one after re-requested.
+				doTxEnqueue{
+					peer: "A", txs: []*types.Transaction{testTxs[0]}, direct: true,
+				}, // This depends on the deterministic random
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{testTxsHashes[2], testTxs[2].Type(), uint32(testTxs[2].Size())},
+						},
 					},
-				},
-				fetching: map[string][]common.Hash{
-					"A": {testTxsHashes[2]},
+					fetching: map[string][]common.Hash{
+						"A": {testTxsHashes[2]},
+					},
 				},
 			},
 		},
-	})
+	)
 }
 
 // Tests that out of two transactions, if one is missing and the last is
 // delivered, the peer gets properly cleaned out from the internal state.
 func TestTransactionFetcherMissingCleanup(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
-				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Push an initial announcement through to the scheduled stage
-			doTxNotify{peer: "A",
-				hashes: []common.Hash{testTxsHashes[0], testTxsHashes[1]},
-				types:  []byte{testTxs[0].Type(), testTxs[1].Type()},
-				sizes:  []uint32{uint32(testTxs[0].Size()), uint32(testTxs[1].Size())},
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
 			},
-			isWaiting(map[string][]announce{
-				"A": {
-					{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
-					{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
+			steps: []interface{}{
+				// Push an initial announcement through to the scheduled stage
+				doTxNotify{
+					peer:   "A",
+					hashes: []common.Hash{testTxsHashes[0], testTxsHashes[1]},
+					types:  []byte{testTxs[0].Type(), testTxs[1].Type()},
+					sizes:  []uint32{uint32(testTxs[0].Size()), uint32(testTxs[1].Size())},
 				},
-			}),
-			isScheduled{tracking: nil, fetching: nil},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+							{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
+						},
+					},
+				),
+				isScheduled{tracking: nil, fetching: nil},
 
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
-						{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+							{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {testTxsHashes[0], testTxsHashes[1]},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {testTxsHashes[0], testTxsHashes[1]},
-				},
+				// Deliver the middle transaction requested, the one before which
+				// should be dropped and the one after re-requested.
+				doTxEnqueue{
+					peer: "A", txs: []*types.Transaction{testTxs[1]}, direct: true,
+				}, // This depends on the deterministic random
+				isScheduled{nil, nil, nil},
 			},
-			// Deliver the middle transaction requested, the one before which
-			// should be dropped and the one after re-requested.
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[1]}, direct: true}, // This depends on the deterministic random
-			isScheduled{nil, nil, nil},
 		},
-	})
+	)
 }
 
 // Tests that transaction broadcasts properly clean up announcements.
 func TestTransactionFetcherBroadcasts(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Set up three transactions to be in different stats, waiting, queued and fetching
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()},
+					sizes: []uint32{uint32(testTxs[0].Size())},
 				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Set up three transactions to be in different stats, waiting, queued and fetching
-			doTxNotify{peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()}, sizes: []uint32{uint32(testTxs[0].Size())}},
-			doWait{time: txArriveTimeout, step: true},
-			doTxNotify{peer: "A", hashes: []common.Hash{testTxsHashes[1]}, types: []byte{testTxs[1].Type()}, sizes: []uint32{uint32(testTxs[1].Size())}},
-			doWait{time: txArriveTimeout, step: true},
-			doTxNotify{peer: "A", hashes: []common.Hash{testTxsHashes[2]}, types: []byte{testTxs[2].Type()}, sizes: []uint32{uint32(testTxs[2].Size())}},
+				doWait{time: txArriveTimeout, step: true},
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{testTxsHashes[1]}, types: []byte{testTxs[1].Type()},
+					sizes: []uint32{uint32(testTxs[1].Size())},
+				},
+				doWait{time: txArriveTimeout, step: true},
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{testTxsHashes[2]}, types: []byte{testTxs[2].Type()},
+					sizes: []uint32{uint32(testTxs[2].Size())},
+				},
 
-			isWaiting(map[string][]announce{
-				"A": {
-					{testTxsHashes[2], testTxs[2].Type(), uint32(testTxs[2].Size())},
-				},
-			}),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
-						{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{testTxsHashes[2], testTxs[2].Type(), uint32(testTxs[2].Size())},
+						},
+					},
+				),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+							{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {testTxsHashes[0]},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {testTxsHashes[0]},
+				// Broadcast all the transactions and ensure everything gets cleaned
+				// up, but the dangling request is left alone to avoid doing multiple
+				// concurrent requests.
+				doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0], testTxs[1], testTxs[2]}, direct: false},
+				isWaiting(nil),
+				isScheduled{
+					tracking: nil,
+					fetching: nil,
+					dangling: map[string][]common.Hash{
+						"A": {testTxsHashes[0]},
+					},
 				},
+				// Deliver the requested hashes
+				doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0], testTxs[1], testTxs[2]}, direct: true},
+				isScheduled{nil, nil, nil},
 			},
-			// Broadcast all the transactions and ensure everything gets cleaned
-			// up, but the dangling request is left alone to avoid doing multiple
-			// concurrent requests.
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0], testTxs[1], testTxs[2]}, direct: false},
-			isWaiting(nil),
-			isScheduled{
-				tracking: nil,
-				fetching: nil,
-				dangling: map[string][]common.Hash{
-					"A": {testTxsHashes[0]},
-				},
-			},
-			// Deliver the requested hashes
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0], testTxs[1], testTxs[2]}, direct: true},
-			isScheduled{nil, nil, nil},
 		},
-	})
+	)
 }
 
 // Tests that the waiting list timers properly reset and reschedule.
 func TestTransactionFetcherWaitTimerResets(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				nil,
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			doTxNotify{peer: "A", hashes: []common.Hash{{0x01}}, types: []byte{types.LegacyTxType}, sizes: []uint32{111}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					nil,
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{{0x01}}, types: []byte{types.LegacyTxType}, sizes: []uint32{111},
 				},
-			}),
-			isScheduled{nil, nil, nil},
-			doWait{time: txArriveTimeout / 2, step: false},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
-				},
-			}),
-			isScheduled{nil, nil, nil},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+						},
+					},
+				),
+				isScheduled{nil, nil, nil},
+				doWait{time: txArriveTimeout / 2, step: false},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+						},
+					},
+				),
+				isScheduled{nil, nil, nil},
 
-			doTxNotify{peer: "A", hashes: []common.Hash{{0x02}}, types: []byte{types.LegacyTxType}, sizes: []uint32{222}},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x01}, types.LegacyTxType, 111},
-					{common.Hash{0x02}, types.LegacyTxType, 222},
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{{0x02}}, types: []byte{types.LegacyTxType}, sizes: []uint32{222},
 				},
-			}),
-			isScheduled{nil, nil, nil},
-			doWait{time: txArriveTimeout / 2, step: true},
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x02}, types.LegacyTxType, 222},
-				},
-			}),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+				),
+				isScheduled{nil, nil, nil},
+				doWait{time: txArriveTimeout / 2, step: true},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+				),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}},
-				},
-			},
 
-			doWait{time: txArriveTimeout / 2, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
+				doWait{time: txArriveTimeout / 2, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
 					},
-				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}},
+					},
 				},
 			},
 		},
-	})
+	)
 }
 
 // Tests that if a transaction request is not replied to, it will time
 // out and be re-scheduled for someone else.
 func TestTransactionFetcherTimeoutRescheduling(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
-				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Push an initial announcement through to the scheduled stage
-			doTxNotify{
-				peer:   "A",
-				hashes: []common.Hash{testTxsHashes[0]},
-				types:  []byte{testTxs[0].Type()},
-				sizes:  []uint32{uint32(testTxs[0].Size())},
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
 			},
-			isWaiting(map[string][]announce{
-				"A": {{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())}},
-			}),
-			isScheduled{tracking: nil, fetching: nil},
+			steps: []interface{}{
+				// Push an initial announcement through to the scheduled stage
+				doTxNotify{
+					peer:   "A",
+					hashes: []common.Hash{testTxsHashes[0]},
+					types:  []byte{testTxs[0].Type()},
+					sizes:  []uint32{uint32(testTxs[0].Size())},
+				},
+				isWaiting(
+					map[string][]announce{
+						"A": {{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())}},
+					},
+				),
+				isScheduled{tracking: nil, fetching: nil},
 
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())}},
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())}},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {testTxsHashes[0]},
+					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {testTxsHashes[0]},
+				// Wait until the delivery times out, everything should be cleaned up
+				doWait{time: txFetchTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: nil,
+					fetching: nil,
+					dangling: map[string][]common.Hash{
+						"A": {},
+					},
 				},
-			},
-			// Wait until the delivery times out, everything should be cleaned up
-			doWait{time: txFetchTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: nil,
-				fetching: nil,
-				dangling: map[string][]common.Hash{
-					"A": {},
+				// Ensure that followup announcements don't get scheduled
+				doTxNotify{
+					peer:   "A",
+					hashes: []common.Hash{testTxsHashes[1]},
+					types:  []byte{testTxs[1].Type()},
+					sizes:  []uint32{uint32(testTxs[1].Size())},
 				},
-			},
-			// Ensure that followup announcements don't get scheduled
-			doTxNotify{
-				peer:   "A",
-				hashes: []common.Hash{testTxsHashes[1]},
-				types:  []byte{testTxs[1].Type()},
-				sizes:  []uint32{uint32(testTxs[1].Size())},
-			},
-			doWait{time: txArriveTimeout, step: true},
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())}},
+				doWait{time: txArriveTimeout, step: true},
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())}},
+					},
+					fetching: nil,
+					dangling: map[string][]common.Hash{
+						"A": {},
+					},
 				},
-				fetching: nil,
-				dangling: map[string][]common.Hash{
-					"A": {},
-				},
-			},
-			// If the dangling request arrives a bit later, do not choke
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0]}, direct: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())}},
-				},
-				fetching: map[string][]common.Hash{
-					"A": {testTxsHashes[1]},
+				// If the dangling request arrives a bit later, do not choke
+				doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0]}, direct: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())}},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {testTxsHashes[1]},
+					},
 				},
 			},
 		},
-	})
+	)
 }
 
 // Tests that the fetching timeout timers properly reset and reschedule.
 func TestTransactionFetcherTimeoutTimerResets(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				nil,
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			doTxNotify{peer: "A", hashes: []common.Hash{{0x01}}, types: []byte{types.LegacyTxType}, sizes: []uint32{111}},
-			doWait{time: txArriveTimeout, step: true},
-			doTxNotify{peer: "B", hashes: []common.Hash{{0x02}}, types: []byte{types.LegacyTxType}, sizes: []uint32{222}},
-			doWait{time: txArriveTimeout, step: true},
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					nil,
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{{0x01}}, types: []byte{types.LegacyTxType}, sizes: []uint32{111},
+				},
+				doWait{time: txArriveTimeout, step: true},
+				doTxNotify{
+					peer: "B", hashes: []common.Hash{{0x02}}, types: []byte{types.LegacyTxType}, sizes: []uint32{222},
+				},
+				doWait{time: txArriveTimeout, step: true},
 
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+						},
+						"B": {
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
 					},
-					"B": {
-						{common.Hash{0x02}, types.LegacyTxType, 222},
-					},
-				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}},
-					"B": {{0x02}},
-				},
-			},
-			doWait{time: txFetchTimeout - txArriveTimeout, step: true},
-			isScheduled{
-				tracking: map[string][]announce{
-					"B": {
-						{common.Hash{0x02}, types.LegacyTxType, 222},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}},
+						"B": {{0x02}},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"B": {{0x02}},
+				doWait{time: txFetchTimeout - txArriveTimeout, step: true},
+				isScheduled{
+					tracking: map[string][]announce{
+						"B": {
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"B": {{0x02}},
+					},
+					dangling: map[string][]common.Hash{
+						"A": {},
+					},
 				},
-				dangling: map[string][]common.Hash{
-					"A": {},
-				},
-			},
-			doWait{time: txArriveTimeout, step: true},
-			isScheduled{
-				tracking: nil,
-				fetching: nil,
-				dangling: map[string][]common.Hash{
-					"A": {},
-					"B": {},
+				doWait{time: txArriveTimeout, step: true},
+				isScheduled{
+					tracking: nil,
+					fetching: nil,
+					dangling: map[string][]common.Hash{
+						"A": {},
+						"B": {},
+					},
 				},
 			},
 		},
-	})
+	)
 }
 
 // Tests that if thousands of transactions are announced, only a small
@@ -1044,99 +1192,108 @@ func TestTransactionFetcherRateLimiting(t *testing.T) {
 		hashes = append(hashes, hash)
 		ts = append(ts, types.LegacyTxType)
 		sizes = append(sizes, 111)
-		announces = append(announces, announce{
-			hash: hash,
-			kind: types.LegacyTxType,
-			size: 111,
-		})
+		announces = append(
+			announces, announce{
+				hash: hash,
+				kind: types.LegacyTxType,
+				size: 111,
+			},
+		)
 	}
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				nil,
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Announce all the transactions, wait a bit and ensure only a small
-			// percentage gets requested
-			doTxNotify{peer: "A", hashes: hashes, types: ts, sizes: sizes},
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": announces,
-				},
-				fetching: map[string][]common.Hash{
-					"A": hashes[1643 : 1643+maxTxRetrievals],
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					nil,
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Announce all the transactions, wait a bit and ensure only a small
+				// percentage gets requested
+				doTxNotify{peer: "A", hashes: hashes, types: ts, sizes: sizes},
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": announces,
+					},
+					fetching: map[string][]common.Hash{
+						"A": hashes[1643 : 1643+maxTxRetrievals],
+					},
 				},
 			},
 		},
-	})
+	)
 }
 
 // Tests that if huge transactions are announced, only a small number of them will
 // be requested at a time, to keep the responses below a reasonable level.
 func TestTransactionFetcherBandwidthLimiting(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				nil,
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Announce mid size transactions from A to verify that multiple
-			// ones can be piled into a single request.
-			doTxNotify{peer: "A",
-				hashes: []common.Hash{{0x01}, {0x02}, {0x03}, {0x04}},
-				types:  []byte{types.LegacyTxType, types.LegacyTxType, types.LegacyTxType, types.LegacyTxType},
-				sizes:  []uint32{48 * 1024, 48 * 1024, 48 * 1024, 48 * 1024},
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					nil,
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
 			},
-			// Announce exactly on the limit transactions to see that only one
-			// gets requested
-			doTxNotify{peer: "B",
-				hashes: []common.Hash{{0x05}, {0x06}},
-				types:  []byte{types.LegacyTxType, types.LegacyTxType},
-				sizes:  []uint32{maxTxRetrievalSize, maxTxRetrievalSize},
-			},
-			// Announce oversized blob transactions to see that overflows are ok
-			doTxNotify{peer: "C",
-				hashes: []common.Hash{{0x07}, {0x08}},
-				types:  []byte{types.BlobTxType, types.BlobTxType},
-				sizes:  []uint32{params.MaxBlobGasPerBlock, params.MaxBlobGasPerBlock},
-			},
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 48 * 1024},
-						{common.Hash{0x02}, types.LegacyTxType, 48 * 1024},
-						{common.Hash{0x03}, types.LegacyTxType, 48 * 1024},
-						{common.Hash{0x04}, types.LegacyTxType, 48 * 1024},
+			steps: []interface{}{
+				// Announce mid size transactions from A to verify that multiple
+				// ones can be piled into a single request.
+				doTxNotify{
+					peer:   "A",
+					hashes: []common.Hash{{0x01}, {0x02}, {0x03}, {0x04}},
+					types:  []byte{types.LegacyTxType, types.LegacyTxType, types.LegacyTxType, types.LegacyTxType},
+					sizes:  []uint32{48 * 1024, 48 * 1024, 48 * 1024, 48 * 1024},
+				},
+				// Announce exactly on the limit transactions to see that only one
+				// gets requested
+				doTxNotify{
+					peer:   "B",
+					hashes: []common.Hash{{0x05}, {0x06}},
+					types:  []byte{types.LegacyTxType, types.LegacyTxType},
+					sizes:  []uint32{maxTxRetrievalSize, maxTxRetrievalSize},
+				},
+				// Announce oversized blob transactions to see that overflows are ok
+				doTxNotify{
+					peer:   "C",
+					hashes: []common.Hash{{0x07}, {0x08}},
+					types:  []byte{types.BlobTxType, types.BlobTxType},
+					sizes:  []uint32{params.MaxBlobGasPerBlock, params.MaxBlobGasPerBlock},
+				},
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 48 * 1024},
+							{common.Hash{0x02}, types.LegacyTxType, 48 * 1024},
+							{common.Hash{0x03}, types.LegacyTxType, 48 * 1024},
+							{common.Hash{0x04}, types.LegacyTxType, 48 * 1024},
+						},
+						"B": {
+							{common.Hash{0x05}, types.LegacyTxType, maxTxRetrievalSize},
+							{common.Hash{0x06}, types.LegacyTxType, maxTxRetrievalSize},
+						},
+						"C": {
+							{common.Hash{0x07}, types.BlobTxType, params.MaxBlobGasPerBlock},
+							{common.Hash{0x08}, types.BlobTxType, params.MaxBlobGasPerBlock},
+						},
 					},
-					"B": {
-						{common.Hash{0x05}, types.LegacyTxType, maxTxRetrievalSize},
-						{common.Hash{0x06}, types.LegacyTxType, maxTxRetrievalSize},
-					},
-					"C": {
-						{common.Hash{0x07}, types.BlobTxType, params.MaxBlobGasPerBlock},
-						{common.Hash{0x08}, types.BlobTxType, params.MaxBlobGasPerBlock},
+					fetching: map[string][]common.Hash{
+						"A": {{0x02}, {0x03}, {0x04}},
+						"B": {{0x06}},
+						"C": {{0x08}},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x02}, {0x03}, {0x04}},
-					"B": {{0x06}},
-					"C": {{0x08}},
-				},
 			},
 		},
-	})
+	)
 }
 
 // Tests that then number of transactions a peer is allowed to announce and/or
@@ -1155,11 +1312,13 @@ func TestTransactionFetcherDoSProtection(t *testing.T) {
 		typesA = append(typesA, types.LegacyTxType)
 		sizesA = append(sizesA, 111)
 
-		announceA = append(announceA, announce{
-			hash: hash,
-			kind: types.LegacyTxType,
-			size: 111,
-		})
+		announceA = append(
+			announceA, announce{
+				hash: hash,
+				kind: types.LegacyTxType,
+				size: 111,
+			},
+		)
 	}
 	var (
 		hashesB   []common.Hash
@@ -1173,112 +1332,152 @@ func TestTransactionFetcherDoSProtection(t *testing.T) {
 		typesB = append(typesB, types.LegacyTxType)
 		sizesB = append(sizesB, 111)
 
-		announceB = append(announceB, announce{
-			hash: hash,
-			kind: types.LegacyTxType,
-			size: 111,
-		})
+		announceB = append(
+			announceB, announce{
+				hash: hash,
+				kind: types.LegacyTxType,
+				size: 111,
+			},
+		)
 	}
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				nil,
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Announce half of the transaction and wait for them to be scheduled
-			doTxNotify{peer: "A", hashes: hashesA[:maxTxAnnounces/2], types: typesA[:maxTxAnnounces/2], sizes: sizesA[:maxTxAnnounces/2]},
-			doTxNotify{peer: "B", hashes: hashesB[:maxTxAnnounces/2-1], types: typesB[:maxTxAnnounces/2-1], sizes: sizesB[:maxTxAnnounces/2-1]},
-			doWait{time: txArriveTimeout, step: true},
-
-			// Announce the second half and keep them in the wait list
-			doTxNotify{peer: "A", hashes: hashesA[maxTxAnnounces/2 : maxTxAnnounces], types: typesA[maxTxAnnounces/2 : maxTxAnnounces], sizes: sizesA[maxTxAnnounces/2 : maxTxAnnounces]},
-			doTxNotify{peer: "B", hashes: hashesB[maxTxAnnounces/2-1 : maxTxAnnounces-1], types: typesB[maxTxAnnounces/2-1 : maxTxAnnounces-1], sizes: sizesB[maxTxAnnounces/2-1 : maxTxAnnounces-1]},
-
-			// Ensure the hashes are split half and half
-			isWaiting(map[string][]announce{
-				"A": announceA[maxTxAnnounces/2 : maxTxAnnounces],
-				"B": announceB[maxTxAnnounces/2-1 : maxTxAnnounces-1],
-			}),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": announceA[:maxTxAnnounces/2],
-					"B": announceB[:maxTxAnnounces/2-1],
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					nil,
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Announce half of the transaction and wait for them to be scheduled
+				doTxNotify{
+					peer: "A", hashes: hashesA[:maxTxAnnounces/2], types: typesA[:maxTxAnnounces/2],
+					sizes: sizesA[:maxTxAnnounces/2],
 				},
-				fetching: map[string][]common.Hash{
-					"A": hashesA[1643 : 1643+maxTxRetrievals],
-					"B": append(append([]common.Hash{}, hashesB[maxTxAnnounces/2-3:maxTxAnnounces/2-1]...), hashesB[:maxTxRetrievals-2]...),
+				doTxNotify{
+					peer: "B", hashes: hashesB[:maxTxAnnounces/2-1], types: typesB[:maxTxAnnounces/2-1],
+					sizes: sizesB[:maxTxAnnounces/2-1],
+				},
+				doWait{time: txArriveTimeout, step: true},
+
+				// Announce the second half and keep them in the wait list
+				doTxNotify{
+					peer: "A", hashes: hashesA[maxTxAnnounces/2 : maxTxAnnounces],
+					types: typesA[maxTxAnnounces/2 : maxTxAnnounces], sizes: sizesA[maxTxAnnounces/2 : maxTxAnnounces],
+				},
+				doTxNotify{
+					peer: "B", hashes: hashesB[maxTxAnnounces/2-1 : maxTxAnnounces-1],
+					types: typesB[maxTxAnnounces/2-1 : maxTxAnnounces-1],
+					sizes: sizesB[maxTxAnnounces/2-1 : maxTxAnnounces-1],
+				},
+
+				// Ensure the hashes are split half and half
+				isWaiting(
+					map[string][]announce{
+						"A": announceA[maxTxAnnounces/2 : maxTxAnnounces],
+						"B": announceB[maxTxAnnounces/2-1 : maxTxAnnounces-1],
+					},
+				),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": announceA[:maxTxAnnounces/2],
+						"B": announceB[:maxTxAnnounces/2-1],
+					},
+					fetching: map[string][]common.Hash{
+						"A": hashesA[1643 : 1643+maxTxRetrievals],
+						"B": append(
+							append([]common.Hash{}, hashesB[maxTxAnnounces/2-3:maxTxAnnounces/2-1]...),
+							hashesB[:maxTxRetrievals-2]...,
+						),
+					},
+				},
+				// Ensure that adding even one more hash results in dropping the hash
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{hashesA[maxTxAnnounces]}, types: []byte{typesA[maxTxAnnounces]},
+					sizes: []uint32{sizesA[maxTxAnnounces]},
+				},
+				doTxNotify{
+					peer: "B", hashes: hashesB[maxTxAnnounces-1 : maxTxAnnounces+1],
+					types: typesB[maxTxAnnounces-1 : maxTxAnnounces+1],
+					sizes: sizesB[maxTxAnnounces-1 : maxTxAnnounces+1],
+				},
+
+				isWaiting(
+					map[string][]announce{
+						"A": announceA[maxTxAnnounces/2 : maxTxAnnounces],
+						"B": announceB[maxTxAnnounces/2-1 : maxTxAnnounces],
+					},
+				),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": announceA[:maxTxAnnounces/2],
+						"B": announceB[:maxTxAnnounces/2-1],
+					},
+					fetching: map[string][]common.Hash{
+						"A": hashesA[1643 : 1643+maxTxRetrievals],
+						"B": append(
+							append([]common.Hash{}, hashesB[maxTxAnnounces/2-3:maxTxAnnounces/2-1]...),
+							hashesB[:maxTxRetrievals-2]...,
+						),
+					},
 				},
 			},
-			// Ensure that adding even one more hash results in dropping the hash
-			doTxNotify{peer: "A", hashes: []common.Hash{hashesA[maxTxAnnounces]}, types: []byte{typesA[maxTxAnnounces]}, sizes: []uint32{sizesA[maxTxAnnounces]}},
-			doTxNotify{peer: "B", hashes: hashesB[maxTxAnnounces-1 : maxTxAnnounces+1], types: typesB[maxTxAnnounces-1 : maxTxAnnounces+1], sizes: sizesB[maxTxAnnounces-1 : maxTxAnnounces+1]},
-
-			isWaiting(map[string][]announce{
-				"A": announceA[maxTxAnnounces/2 : maxTxAnnounces],
-				"B": announceB[maxTxAnnounces/2-1 : maxTxAnnounces],
-			}),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": announceA[:maxTxAnnounces/2],
-					"B": announceB[:maxTxAnnounces/2-1],
-				},
-				fetching: map[string][]common.Hash{
-					"A": hashesA[1643 : 1643+maxTxRetrievals],
-					"B": append(append([]common.Hash{}, hashesB[maxTxAnnounces/2-3:maxTxAnnounces/2-1]...), hashesB[:maxTxRetrievals-2]...),
-				},
-			},
 		},
-	})
+	)
 }
 
 // Tests that underpriced transactions don't get rescheduled after being rejected.
 func TestTransactionFetcherUnderpricedDedup(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					errs := make([]error, len(txs))
-					for i := 0; i < len(errs); i++ {
-						if i%2 == 0 {
-							errs[i] = txpool.ErrUnderpriced
-						} else {
-							errs[i] = txpool.ErrReplaceUnderpriced
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						errs := make([]error, len(txs))
+						for i := 0; i < len(errs); i++ {
+							if i%2 == 0 {
+								errs[i] = txpool.ErrUnderpriced
+							} else {
+								errs[i] = txpool.ErrReplaceUnderpriced
+							}
 						}
-					}
-					return errs
-				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Deliver a transaction through the fetcher, but reject as underpriced
-			doTxNotify{peer: "A",
-				hashes: []common.Hash{testTxsHashes[0], testTxsHashes[1]},
-				types:  []byte{testTxs[0].Type(), testTxs[1].Type()},
-				sizes:  []uint32{uint32(testTxs[0].Size()), uint32(testTxs[1].Size())},
+						return errs
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
 			},
-			doWait{time: txArriveTimeout, step: true},
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0], testTxs[1]}, direct: true},
-			isScheduled{nil, nil, nil},
+			steps: []interface{}{
+				// Deliver a transaction through the fetcher, but reject as underpriced
+				doTxNotify{
+					peer:   "A",
+					hashes: []common.Hash{testTxsHashes[0], testTxsHashes[1]},
+					types:  []byte{testTxs[0].Type(), testTxs[1].Type()},
+					sizes:  []uint32{uint32(testTxs[0].Size()), uint32(testTxs[1].Size())},
+				},
+				doWait{time: txArriveTimeout, step: true},
+				doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0], testTxs[1]}, direct: true},
+				isScheduled{nil, nil, nil},
 
-			// Try to announce the transaction again, ensure it's not scheduled back
-			doTxNotify{peer: "A",
-				hashes: []common.Hash{testTxsHashes[0], testTxsHashes[1], testTxsHashes[2]},
-				types:  []byte{testTxs[0].Type(), testTxs[1].Type(), testTxs[2].Type()},
-				sizes:  []uint32{uint32(testTxs[0].Size()), uint32(testTxs[1].Size()), uint32(testTxs[2].Size())},
-			}, // [2] is needed to force a step in the fetcher
-			isWaiting(map[string][]announce{
-				"A": {{testTxsHashes[2], testTxs[2].Type(), uint32(testTxs[2].Size())}},
-			}),
-			isScheduled{nil, nil, nil},
+				// Try to announce the transaction again, ensure it's not scheduled back
+				doTxNotify{
+					peer:   "A",
+					hashes: []common.Hash{testTxsHashes[0], testTxsHashes[1], testTxsHashes[2]},
+					types:  []byte{testTxs[0].Type(), testTxs[1].Type(), testTxs[2].Type()},
+					sizes:  []uint32{uint32(testTxs[0].Size()), uint32(testTxs[1].Size()), uint32(testTxs[2].Size())},
+				}, // [2] is needed to force a step in the fetcher
+				isWaiting(
+					map[string][]announce{
+						"A": {{testTxsHashes[2], testTxs[2].Type(), uint32(testTxs[2].Size())}},
+					},
+				),
+				isScheduled{nil, nil, nil},
+			},
 		},
-	})
+	)
 }
 
 // Tests that underpriced transactions don't get rescheduled after being rejected,
@@ -1292,7 +1491,11 @@ func TestTransactionFetcherUnderpricedDoSProtection(t *testing.T) {
 	// Create a slew of transactions to max out the underpriced set
 	var txs []*types.Transaction
 	for i := 0; i < maxTxUnderpricedSetSize+1; i++ {
-		txs = append(txs, types.NewTransaction(rand.Uint64(), common.Address{byte(rand.Intn(256))}, new(big.Int), 0, new(big.Int), nil))
+		txs = append(
+			txs, types.NewTransaction(
+				rand.Uint64(), common.Address{byte(rand.Intn(256))}, new(big.Int), 0, new(big.Int), nil,
+			),
+		)
 	}
 	var (
 		hashes []common.Hash
@@ -1304,420 +1507,495 @@ func TestTransactionFetcherUnderpricedDoSProtection(t *testing.T) {
 		hashes = append(hashes, tx.Hash())
 		ts = append(ts, tx.Type())
 		sizes = append(sizes, uint32(tx.Size()))
-		annos = append(annos, announce{
-			hash: tx.Hash(),
-			kind: tx.Type(),
-			size: uint32(tx.Size()),
-		})
+		annos = append(
+			annos, announce{
+				hash: tx.Hash(),
+				kind: tx.Type(),
+				size: uint32(tx.Size()),
+			},
+		)
 	}
 	// Generate a set of steps to announce and deliver the entire set of transactions
 	var steps []interface{}
 	for i := 0; i < maxTxUnderpricedSetSize/maxTxRetrievals; i++ {
-		steps = append(steps, doTxNotify{
-			peer:   "A",
-			hashes: hashes[i*maxTxRetrievals : (i+1)*maxTxRetrievals],
-			types:  ts[i*maxTxRetrievals : (i+1)*maxTxRetrievals],
-			sizes:  sizes[i*maxTxRetrievals : (i+1)*maxTxRetrievals],
-		})
-		steps = append(steps, isWaiting(map[string][]announce{
-			"A": annos[i*maxTxRetrievals : (i+1)*maxTxRetrievals],
-		}))
+		steps = append(
+			steps, doTxNotify{
+				peer:   "A",
+				hashes: hashes[i*maxTxRetrievals : (i+1)*maxTxRetrievals],
+				types:  ts[i*maxTxRetrievals : (i+1)*maxTxRetrievals],
+				sizes:  sizes[i*maxTxRetrievals : (i+1)*maxTxRetrievals],
+			},
+		)
+		steps = append(
+			steps, isWaiting(
+				map[string][]announce{
+					"A": annos[i*maxTxRetrievals : (i+1)*maxTxRetrievals],
+				},
+			),
+		)
 		steps = append(steps, doWait{time: txArriveTimeout, step: true})
-		steps = append(steps, isScheduled{
-			tracking: map[string][]announce{
-				"A": annos[i*maxTxRetrievals : (i+1)*maxTxRetrievals],
+		steps = append(
+			steps, isScheduled{
+				tracking: map[string][]announce{
+					"A": annos[i*maxTxRetrievals : (i+1)*maxTxRetrievals],
+				},
+				fetching: map[string][]common.Hash{
+					"A": hashes[i*maxTxRetrievals : (i+1)*maxTxRetrievals],
+				},
 			},
-			fetching: map[string][]common.Hash{
-				"A": hashes[i*maxTxRetrievals : (i+1)*maxTxRetrievals],
-			},
-		})
+		)
 		steps = append(steps, doTxEnqueue{peer: "A", txs: txs[i*maxTxRetrievals : (i+1)*maxTxRetrievals], direct: true})
 		steps = append(steps, isWaiting(nil))
 		steps = append(steps, isScheduled{nil, nil, nil})
 		steps = append(steps, isUnderpriced((i+1)*maxTxRetrievals))
 	}
-	testTransactionFetcher(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					errs := make([]error, len(txs))
-					for i := 0; i < len(errs); i++ {
-						errs[i] = txpool.ErrUnderpriced
-					}
-					return errs
-				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: append(steps, []interface{}{
-			// The preparation of the test has already been done in `steps`, add the last check
-			doTxNotify{
-				peer:   "A",
-				hashes: []common.Hash{hashes[maxTxUnderpricedSetSize]},
-				types:  []byte{ts[maxTxUnderpricedSetSize]},
-				sizes:  []uint32{sizes[maxTxUnderpricedSetSize]},
+	testTransactionFetcher(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						errs := make([]error, len(txs))
+						for i := 0; i < len(errs); i++ {
+							errs[i] = txpool.ErrUnderpriced
+						}
+						return errs
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
 			},
-			doWait{time: txArriveTimeout, step: true},
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{txs[maxTxUnderpricedSetSize]}, direct: true},
-			isUnderpriced(maxTxUnderpricedSetSize),
-		}...),
-	})
+			steps: append(
+				steps, []interface{}{
+					// The preparation of the test has already been done in `steps`, add the last check
+					doTxNotify{
+						peer:   "A",
+						hashes: []common.Hash{hashes[maxTxUnderpricedSetSize]},
+						types:  []byte{ts[maxTxUnderpricedSetSize]},
+						sizes:  []uint32{sizes[maxTxUnderpricedSetSize]},
+					},
+					doWait{time: txArriveTimeout, step: true},
+					doTxEnqueue{peer: "A", txs: []*types.Transaction{txs[maxTxUnderpricedSetSize]}, direct: true},
+					isUnderpriced(maxTxUnderpricedSetSize),
+				}...,
+			),
+		},
+	)
 }
 
 // Tests that unexpected deliveries don't corrupt the internal state.
 func TestTransactionFetcherOutOfBoundDeliveries(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
-				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Deliver something out of the blue
-			isWaiting(nil),
-			isScheduled{nil, nil, nil},
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0]}, direct: false},
-			isWaiting(nil),
-			isScheduled{nil, nil, nil},
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Deliver something out of the blue
+				isWaiting(nil),
+				isScheduled{nil, nil, nil},
+				doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0]}, direct: false},
+				isWaiting(nil),
+				isScheduled{nil, nil, nil},
 
-			// Set up a few hashes into various stages
-			doTxNotify{peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()}, sizes: []uint32{uint32(testTxs[0].Size())}},
-			doWait{time: txArriveTimeout, step: true},
-			doTxNotify{peer: "A", hashes: []common.Hash{testTxsHashes[1]}, types: []byte{testTxs[1].Type()}, sizes: []uint32{uint32(testTxs[1].Size())}},
-			doWait{time: txArriveTimeout, step: true},
-			doTxNotify{peer: "A", hashes: []common.Hash{testTxsHashes[2]}, types: []byte{testTxs[2].Type()}, sizes: []uint32{uint32(testTxs[2].Size())}},
-
-			isWaiting(map[string][]announce{
-				"A": {
-					{testTxsHashes[2], testTxs[2].Type(), uint32(testTxs[2].Size())},
+				// Set up a few hashes into various stages
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()},
+					sizes: []uint32{uint32(testTxs[0].Size())},
 				},
-			}),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
-						{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
+				doWait{time: txArriveTimeout, step: true},
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{testTxsHashes[1]}, types: []byte{testTxs[1].Type()},
+					sizes: []uint32{uint32(testTxs[1].Size())},
+				},
+				doWait{time: txArriveTimeout, step: true},
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{testTxsHashes[2]}, types: []byte{testTxs[2].Type()},
+					sizes: []uint32{uint32(testTxs[2].Size())},
+				},
+
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{testTxsHashes[2], testTxs[2].Type(), uint32(testTxs[2].Size())},
+						},
+					},
+				),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+							{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {testTxsHashes[0]},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {testTxsHashes[0]},
+				// Deliver everything and more out of the blue
+				doTxEnqueue{
+					peer: "B", txs: []*types.Transaction{testTxs[0], testTxs[1], testTxs[2], testTxs[3]}, direct: true,
 				},
-			},
-			// Deliver everything and more out of the blue
-			doTxEnqueue{peer: "B", txs: []*types.Transaction{testTxs[0], testTxs[1], testTxs[2], testTxs[3]}, direct: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: nil,
-				fetching: nil,
-				dangling: map[string][]common.Hash{
-					"A": {testTxsHashes[0]},
+				isWaiting(nil),
+				isScheduled{
+					tracking: nil,
+					fetching: nil,
+					dangling: map[string][]common.Hash{
+						"A": {testTxsHashes[0]},
+					},
 				},
 			},
 		},
-	})
+	)
 }
 
 // Tests that dropping a peer cleans out all internal data structures in all the
 // live or dangling stages.
 func TestTransactionFetcherDrop(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Set up a few hashes into various stages
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{{0x01}}, types: []byte{types.LegacyTxType}, sizes: []uint32{111},
 				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Set up a few hashes into various stages
-			doTxNotify{peer: "A", hashes: []common.Hash{{0x01}}, types: []byte{types.LegacyTxType}, sizes: []uint32{111}},
-			doWait{time: txArriveTimeout, step: true},
-			doTxNotify{peer: "A", hashes: []common.Hash{{0x02}}, types: []byte{types.LegacyTxType}, sizes: []uint32{222}},
-			doWait{time: txArriveTimeout, step: true},
-			doTxNotify{peer: "A", hashes: []common.Hash{{0x03}}, types: []byte{types.LegacyTxType}, sizes: []uint32{333}},
+				doWait{time: txArriveTimeout, step: true},
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{{0x02}}, types: []byte{types.LegacyTxType}, sizes: []uint32{222},
+				},
+				doWait{time: txArriveTimeout, step: true},
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{{0x03}}, types: []byte{types.LegacyTxType}, sizes: []uint32{333},
+				},
 
-			isWaiting(map[string][]announce{
-				"A": {
-					{common.Hash{0x03}, types.LegacyTxType, 333},
-				},
-			}),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{common.Hash{0x01}, types.LegacyTxType, 111},
-						{common.Hash{0x02}, types.LegacyTxType, 222},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{common.Hash{0x03}, types.LegacyTxType, 333},
+						},
+					},
+				),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{common.Hash{0x01}, types.LegacyTxType, 111},
+							{common.Hash{0x02}, types.LegacyTxType, 222},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}},
-				},
-			},
-			// Drop the peer and ensure everything's cleaned out
-			doDrop("A"),
-			isWaiting(nil),
-			isScheduled{nil, nil, nil},
+				// Drop the peer and ensure everything's cleaned out
+				doDrop("A"),
+				isWaiting(nil),
+				isScheduled{nil, nil, nil},
 
-			// Push the node into a dangling (timeout) state
-			doTxNotify{peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()}, sizes: []uint32{uint32(testTxs[0].Size())}},
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+				// Push the node into a dangling (timeout) state
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()},
+					sizes: []uint32{uint32(testTxs[0].Size())},
+				},
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {testTxsHashes[0]},
 					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {testTxsHashes[0]},
+				doWait{time: txFetchTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: nil,
+					fetching: nil,
+					dangling: map[string][]common.Hash{
+						"A": {},
+					},
 				},
+				// Drop the peer and ensure everything's cleaned out
+				doDrop("A"),
+				isWaiting(nil),
+				isScheduled{nil, nil, nil},
 			},
-			doWait{time: txFetchTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: nil,
-				fetching: nil,
-				dangling: map[string][]common.Hash{
-					"A": {},
-				},
-			},
-			// Drop the peer and ensure everything's cleaned out
-			doDrop("A"),
-			isWaiting(nil),
-			isScheduled{nil, nil, nil},
 		},
-	})
+	)
 }
 
 // Tests that dropping a peer instantly reschedules failed announcements to any
 // available peer.
 func TestTransactionFetcherDropRescheduling(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Set up a few hashes into various stages
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{{0x01}}, types: []byte{types.LegacyTxType}, sizes: []uint32{111},
 				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Set up a few hashes into various stages
-			doTxNotify{peer: "A", hashes: []common.Hash{{0x01}}, types: []byte{types.LegacyTxType}, sizes: []uint32{111}},
-			doWait{time: txArriveTimeout, step: true},
-			doTxNotify{peer: "B", hashes: []common.Hash{{0x01}}, types: []byte{types.LegacyTxType}, sizes: []uint32{111}},
+				doWait{time: txArriveTimeout, step: true},
+				doTxNotify{
+					peer: "B", hashes: []common.Hash{{0x01}}, types: []byte{types.LegacyTxType}, sizes: []uint32{111},
+				},
 
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {{common.Hash{0x01}, types.LegacyTxType, 111}},
-					"B": {{common.Hash{0x01}, types.LegacyTxType, 111}},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {{common.Hash{0x01}, types.LegacyTxType, 111}},
+						"B": {{common.Hash{0x01}, types.LegacyTxType, 111}},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {{0x01}},
+					},
 				},
-				fetching: map[string][]common.Hash{
-					"A": {{0x01}},
-				},
-			},
-			// Drop the peer and ensure everything's cleaned out
-			doDrop("A"),
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"B": {{common.Hash{0x01}, types.LegacyTxType, 111}},
-				},
-				fetching: map[string][]common.Hash{
-					"B": {{0x01}},
+				// Drop the peer and ensure everything's cleaned out
+				doDrop("A"),
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"B": {{common.Hash{0x01}, types.LegacyTxType, 111}},
+					},
+					fetching: map[string][]common.Hash{
+						"B": {{0x01}},
+					},
 				},
 			},
 		},
-	})
+	)
 }
 
 // Tests that announced transactions with the wrong transaction type or size will
 // result in a dropped peer.
 func TestInvalidAnnounceMetadata(t *testing.T) {
 	drop := make(chan string, 2)
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error { return nil },
+					func(peer string) { drop <- peer },
+				)
+			},
+			steps: []interface{}{
+				// Initial announcement to get something into the waitlist
+				doTxNotify{
+					peer:   "A",
+					hashes: []common.Hash{testTxsHashes[0], testTxsHashes[1]},
+					types:  []byte{testTxs[0].Type(), testTxs[1].Type()},
+					sizes:  []uint32{uint32(testTxs[0].Size()), uint32(testTxs[1].Size())},
 				},
-				func(string, []common.Hash) error { return nil },
-				func(peer string) { drop <- peer },
-			)
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+							{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
+						},
+					},
+				),
+				// Announce from new peers conflicting transactions
+				doTxNotify{
+					peer:   "B",
+					hashes: []common.Hash{testTxsHashes[0]},
+					types:  []byte{testTxs[0].Type()},
+					sizes:  []uint32{1024 + uint32(testTxs[0].Size())},
+				},
+				doTxNotify{
+					peer:   "C",
+					hashes: []common.Hash{testTxsHashes[1]},
+					types:  []byte{1 + testTxs[1].Type()},
+					sizes:  []uint32{uint32(testTxs[1].Size())},
+				},
+				isWaiting(
+					map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+							{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
+						},
+						"B": {
+							{testTxsHashes[0], testTxs[0].Type(), 1024 + uint32(testTxs[0].Size())},
+						},
+						"C": {
+							{testTxsHashes[1], 1 + testTxs[1].Type(), uint32(testTxs[1].Size())},
+						},
+					},
+				),
+				// Schedule all the transactions for retrieval
+				doWait{time: txArriveTimeout, step: true},
+				isWaiting(nil),
+				isScheduled{
+					tracking: map[string][]announce{
+						"A": {
+							{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
+							{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
+						},
+						"B": {
+							{testTxsHashes[0], testTxs[0].Type(), 1024 + uint32(testTxs[0].Size())},
+						},
+						"C": {
+							{testTxsHashes[1], 1 + testTxs[1].Type(), uint32(testTxs[1].Size())},
+						},
+					},
+					fetching: map[string][]common.Hash{
+						"A": {testTxsHashes[0]},
+						"C": {testTxsHashes[1]},
+					},
+				},
+				// Deliver the transactions and wait for B to be dropped
+				doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0], testTxs[1]}},
+				doFunc(func() { <-drop }),
+				doFunc(func() { <-drop }),
+			},
 		},
-		steps: []interface{}{
-			// Initial announcement to get something into the waitlist
-			doTxNotify{
-				peer:   "A",
-				hashes: []common.Hash{testTxsHashes[0], testTxsHashes[1]},
-				types:  []byte{testTxs[0].Type(), testTxs[1].Type()},
-				sizes:  []uint32{uint32(testTxs[0].Size()), uint32(testTxs[1].Size())},
-			},
-			isWaiting(map[string][]announce{
-				"A": {
-					{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
-					{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
-				},
-			}),
-			// Announce from new peers conflicting transactions
-			doTxNotify{
-				peer:   "B",
-				hashes: []common.Hash{testTxsHashes[0]},
-				types:  []byte{testTxs[0].Type()},
-				sizes:  []uint32{1024 + uint32(testTxs[0].Size())},
-			},
-			doTxNotify{
-				peer:   "C",
-				hashes: []common.Hash{testTxsHashes[1]},
-				types:  []byte{1 + testTxs[1].Type()},
-				sizes:  []uint32{uint32(testTxs[1].Size())},
-			},
-			isWaiting(map[string][]announce{
-				"A": {
-					{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
-					{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
-				},
-				"B": {
-					{testTxsHashes[0], testTxs[0].Type(), 1024 + uint32(testTxs[0].Size())},
-				},
-				"C": {
-					{testTxsHashes[1], 1 + testTxs[1].Type(), uint32(testTxs[1].Size())},
-				},
-			}),
-			// Schedule all the transactions for retrieval
-			doWait{time: txArriveTimeout, step: true},
-			isWaiting(nil),
-			isScheduled{
-				tracking: map[string][]announce{
-					"A": {
-						{testTxsHashes[0], testTxs[0].Type(), uint32(testTxs[0].Size())},
-						{testTxsHashes[1], testTxs[1].Type(), uint32(testTxs[1].Size())},
-					},
-					"B": {
-						{testTxsHashes[0], testTxs[0].Type(), 1024 + uint32(testTxs[0].Size())},
-					},
-					"C": {
-						{testTxsHashes[1], 1 + testTxs[1].Type(), uint32(testTxs[1].Size())},
-					},
-				},
-				fetching: map[string][]common.Hash{
-					"A": {testTxsHashes[0]},
-					"C": {testTxsHashes[1]},
-				},
-			},
-			// Deliver the transactions and wait for B to be dropped
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0], testTxs[1]}},
-			doFunc(func() { <-drop }),
-			doFunc(func() { <-drop }),
-		},
-	})
+	)
 }
 
 // This test reproduces a crash caught by the fuzzer. The root cause was a
 // dangling transaction timing out and clashing on re-add with a concurrently
 // announced one.
 func TestTransactionFetcherFuzzCrash01(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Get a transaction into fetching mode and make it dangling with a broadcast
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()},
+					sizes: []uint32{uint32(testTxs[0].Size())},
 				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Get a transaction into fetching mode and make it dangling with a broadcast
-			doTxNotify{peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()}, sizes: []uint32{uint32(testTxs[0].Size())}},
-			doWait{time: txArriveTimeout, step: true},
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0]}},
+				doWait{time: txArriveTimeout, step: true},
+				doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0]}},
 
-			// Notify the dangling transaction once more and crash via a timeout
-			doTxNotify{peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()}, sizes: []uint32{uint32(testTxs[0].Size())}},
-			doWait{time: txFetchTimeout, step: true},
+				// Notify the dangling transaction once more and crash via a timeout
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()},
+					sizes: []uint32{uint32(testTxs[0].Size())},
+				},
+				doWait{time: txFetchTimeout, step: true},
+			},
 		},
-	})
+	)
 }
 
 // This test reproduces a crash caught by the fuzzer. The root cause was a
 // dangling transaction getting peer-dropped and clashing on re-add with a
 // concurrently announced one.
 func TestTransactionFetcherFuzzCrash02(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Get a transaction into fetching mode and make it dangling with a broadcast
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()},
+					sizes: []uint32{uint32(testTxs[0].Size())},
 				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Get a transaction into fetching mode and make it dangling with a broadcast
-			doTxNotify{peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()}, sizes: []uint32{uint32(testTxs[0].Size())}},
-			doWait{time: txArriveTimeout, step: true},
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0]}},
+				doWait{time: txArriveTimeout, step: true},
+				doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0]}},
 
-			// Notify the dangling transaction once more, re-fetch, and crash via a drop and timeout
-			doTxNotify{peer: "B", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()}, sizes: []uint32{uint32(testTxs[0].Size())}},
-			doWait{time: txArriveTimeout, step: true},
-			doDrop("A"),
-			doWait{time: txFetchTimeout, step: true},
+				// Notify the dangling transaction once more, re-fetch, and crash via a drop and timeout
+				doTxNotify{
+					peer: "B", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()},
+					sizes: []uint32{uint32(testTxs[0].Size())},
+				},
+				doWait{time: txArriveTimeout, step: true},
+				doDrop("A"),
+				doWait{time: txFetchTimeout, step: true},
+			},
 		},
-	})
+	)
 }
 
 // This test reproduces a crash caught by the fuzzer. The root cause was a
 // dangling transaction getting rescheduled via a partial delivery, clashing
 // with a concurrent notify.
 func TestTransactionFetcherFuzzCrash03(t *testing.T) {
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
-				},
-				func(string, []common.Hash) error { return nil },
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Get a transaction into fetching mode and make it dangling with a broadcast
-			doTxNotify{
-				peer:   "A",
-				hashes: []common.Hash{testTxsHashes[0], testTxsHashes[1]},
-				types:  []byte{testTxs[0].Type(), testTxs[1].Type()},
-				sizes:  []uint32{uint32(testTxs[0].Size()), uint32(testTxs[1].Size())},
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error { return nil },
+					nil,
+				)
 			},
-			doWait{time: txFetchTimeout, step: true},
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0], testTxs[1]}},
+			steps: []interface{}{
+				// Get a transaction into fetching mode and make it dangling with a broadcast
+				doTxNotify{
+					peer:   "A",
+					hashes: []common.Hash{testTxsHashes[0], testTxsHashes[1]},
+					types:  []byte{testTxs[0].Type(), testTxs[1].Type()},
+					sizes:  []uint32{uint32(testTxs[0].Size()), uint32(testTxs[1].Size())},
+				},
+				doWait{time: txFetchTimeout, step: true},
+				doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0], testTxs[1]}},
 
-			// Notify the dangling transaction once more, partially deliver, clash&crash with a timeout
-			doTxNotify{peer: "B", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()}, sizes: []uint32{uint32(testTxs[0].Size())}},
-			doWait{time: txArriveTimeout, step: true},
+				// Notify the dangling transaction once more, partially deliver, clash&crash with a timeout
+				doTxNotify{
+					peer: "B", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()},
+					sizes: []uint32{uint32(testTxs[0].Size())},
+				},
+				doWait{time: txArriveTimeout, step: true},
 
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[1]}, direct: true},
-			doWait{time: txFetchTimeout, step: true},
+				doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[1]}, direct: true},
+				doWait{time: txFetchTimeout, step: true},
+			},
 		},
-	})
+	)
 }
 
 // This test reproduces a crash caught by the fuzzer. The root cause was a
@@ -1727,36 +2005,46 @@ func TestTransactionFetcherFuzzCrash04(t *testing.T) {
 	// Create a channel to control when tx requests can fail
 	proceed := make(chan struct{})
 
-	testTransactionFetcherParallel(t, txFetcherTest{
-		init: func() *TxFetcher {
-			return NewTxFetcher(
-				func(common.Hash) bool { return false },
-				func(txs []*types.Transaction) []error {
-					return make([]error, len(txs))
+	testTransactionFetcherParallel(
+		t, txFetcherTest{
+			init: func() *TxFetcher {
+				return NewTxFetcher(
+					func(common.Hash) bool { return false },
+					func(txs []*types.Transaction) []error {
+						return make([]error, len(txs))
+					},
+					func(string, []common.Hash) error {
+						<-proceed
+						return errors.New("peer disconnected")
+					},
+					nil,
+				)
+			},
+			steps: []interface{}{
+				// Get a transaction into fetching mode and make it dangling with a broadcast
+				doTxNotify{
+					peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()},
+					sizes: []uint32{uint32(testTxs[0].Size())},
 				},
-				func(string, []common.Hash) error {
-					<-proceed
-					return errors.New("peer disconnected")
-				},
-				nil,
-			)
-		},
-		steps: []interface{}{
-			// Get a transaction into fetching mode and make it dangling with a broadcast
-			doTxNotify{peer: "A", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()}, sizes: []uint32{uint32(testTxs[0].Size())}},
-			doWait{time: txArriveTimeout, step: true},
-			doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0]}},
+				doWait{time: txArriveTimeout, step: true},
+				doTxEnqueue{peer: "A", txs: []*types.Transaction{testTxs[0]}},
 
-			// Notify the dangling transaction once more, re-fetch, and crash via an in-flight disconnect
-			doTxNotify{peer: "B", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()}, sizes: []uint32{uint32(testTxs[0].Size())}},
-			doWait{time: txArriveTimeout, step: true},
-			doFunc(func() {
-				proceed <- struct{}{} // Allow peer A to return the failure
-			}),
-			doWait{time: 0, step: true},
-			doWait{time: txFetchTimeout, step: true},
+				// Notify the dangling transaction once more, re-fetch, and crash via an in-flight disconnect
+				doTxNotify{
+					peer: "B", hashes: []common.Hash{testTxsHashes[0]}, types: []byte{testTxs[0].Type()},
+					sizes: []uint32{uint32(testTxs[0].Size())},
+				},
+				doWait{time: txArriveTimeout, step: true},
+				doFunc(
+					func() {
+						proceed <- struct{}{} // Allow peer A to return the failure
+					},
+				),
+				doWait{time: 0, step: true},
+				doWait{time: txFetchTimeout, step: true},
+			},
 		},
-	})
+	)
 }
 
 func testTransactionFetcherParallel(t *testing.T, tt txFetcherTest) {
@@ -1838,7 +2126,10 @@ func testTransactionFetcher(t *testing.T, tt txFetcherTest) {
 						t.Errorf("step %d, peer %s: hash %x missing from waitslots", i, peer, ann.hash)
 					} else {
 						if meta.kind != ann.kind || meta.size != ann.size {
-							t.Errorf("step %d, peer %s, hash %x: waitslot metadata mismatch: want %v, have %v/%v", i, peer, ann.hash, meta, ann.kind, ann.size)
+							t.Errorf(
+								"step %d, peer %s, hash %x: waitslot metadata mismatch: want %v, have %v/%v", i, peer,
+								ann.hash, meta, ann.kind, ann.size,
+							)
 						}
 					}
 				}
@@ -1902,7 +2193,10 @@ func testTransactionFetcher(t *testing.T, tt txFetcherTest) {
 						t.Errorf("step %d, peer %s: hash %x missing from announces", i, peer, ann.hash)
 					} else {
 						if meta.kind != ann.kind || meta.size != ann.size {
-							t.Errorf("step %d, peer %s, hash %x: announce metadata mismatch: want %v, have %v/%v", i, peer, ann.hash, meta, ann.kind, ann.size)
+							t.Errorf(
+								"step %d, peer %s, hash %x: announce metadata mismatch: want %v, have %v/%v", i, peer,
+								ann.hash, meta, ann.kind, ann.size,
+							)
 						}
 					}
 				}

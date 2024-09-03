@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // HistoryStats wraps the history inspection statistics.
@@ -60,7 +60,9 @@ func sanitizeRange(start, end uint64, freezer ethdb.AncientReader) (uint64, uint
 	return first, last, nil
 }
 
-func inspectHistory(freezer ethdb.AncientReader, start, end uint64, onHistory func(*history, *HistoryStats)) (*HistoryStats, error) {
+func inspectHistory(
+	freezer ethdb.AncientReader, start, end uint64, onHistory func(*history, *HistoryStats),
+) (*HistoryStats, error) {
 	var (
 		stats  = &HistoryStats{}
 		init   = time.Now()
@@ -88,7 +90,10 @@ func inspectHistory(freezer ethdb.AncientReader, start, end uint64, onHistory fu
 		if time.Since(logged) > time.Second*8 {
 			logged = time.Now()
 			eta := float64(time.Since(init)) / float64(id-start+1) * float64(end-id)
-			log.Info("Inspecting state history", "checked", id-start+1, "left", end-id, "elapsed", common.PrettyDuration(time.Since(init)), "eta", common.PrettyDuration(eta))
+			log.Info(
+				"Inspecting state history", "checked", id-start+1, "left", end-id, "elapsed",
+				common.PrettyDuration(time.Since(init)), "eta", common.PrettyDuration(eta),
+			)
 		}
 	}
 	log.Info("Inspected state history", "total", end-start+1, "elapsed", common.PrettyDuration(time.Since(init)))
@@ -97,30 +102,36 @@ func inspectHistory(freezer ethdb.AncientReader, start, end uint64, onHistory fu
 
 // accountHistory inspects the account history within the range.
 func accountHistory(freezer ethdb.AncientReader, address common.Address, start, end uint64) (*HistoryStats, error) {
-	return inspectHistory(freezer, start, end, func(h *history, stats *HistoryStats) {
-		blob, exists := h.accounts[address]
-		if !exists {
-			return
-		}
-		stats.Blocks = append(stats.Blocks, h.meta.block)
-		stats.Origins = append(stats.Origins, blob)
-	})
+	return inspectHistory(
+		freezer, start, end, func(h *history, stats *HistoryStats) {
+			blob, exists := h.accounts[address]
+			if !exists {
+				return
+			}
+			stats.Blocks = append(stats.Blocks, h.meta.block)
+			stats.Origins = append(stats.Origins, blob)
+		},
+	)
 }
 
 // storageHistory inspects the storage history within the range.
-func storageHistory(freezer ethdb.AncientReader, address common.Address, slot common.Hash, start uint64, end uint64) (*HistoryStats, error) {
-	return inspectHistory(freezer, start, end, func(h *history, stats *HistoryStats) {
-		slots, exists := h.storages[address]
-		if !exists {
-			return
-		}
-		blob, exists := slots[slot]
-		if !exists {
-			return
-		}
-		stats.Blocks = append(stats.Blocks, h.meta.block)
-		stats.Origins = append(stats.Origins, blob)
-	})
+func storageHistory(
+	freezer ethdb.AncientReader, address common.Address, slot common.Hash, start uint64, end uint64,
+) (*HistoryStats, error) {
+	return inspectHistory(
+		freezer, start, end, func(h *history, stats *HistoryStats) {
+			slots, exists := h.storages[address]
+			if !exists {
+				return
+			}
+			blob, exists := slots[slot]
+			if !exists {
+				return
+			}
+			stats.Blocks = append(stats.Blocks, h.meta.block)
+			stats.Origins = append(stats.Origins, blob)
+		},
+	)
 }
 
 // historyRange returns the block number range of local state histories.

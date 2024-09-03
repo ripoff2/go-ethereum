@@ -23,10 +23,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/internal/utesting"
-	"github.com/ethereum/go-ethereum/p2p/discover/v5wire"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/netutil"
+	"github.com/ripoff2/go-ethereum/internal/utesting"
+	"github.com/ripoff2/go-ethereum/p2p/discover/v5wire"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/netutil"
 )
 
 // Suite is the discv5 test suite.
@@ -338,21 +338,25 @@ func (bn *bystander) loop() {
 	for {
 		// Ping the remote node.
 		if !wasAdded && time.Since(lastPing) > 10*time.Second {
-			bn.conn.reqresp(bn.l, &v5wire.Ping{
-				ReqID:  bn.conn.nextReqID(),
-				ENRSeq: bn.dest.Seq(),
-			})
+			bn.conn.reqresp(
+				bn.l, &v5wire.Ping{
+					ReqID:  bn.conn.nextReqID(),
+					ENRSeq: bn.dest.Seq(),
+				},
+			)
 			lastPing = time.Now()
 		}
 		// Answer packets.
 		switch p := bn.conn.read(bn.l).(type) {
 		case *v5wire.Ping:
-			bn.conn.write(bn.l, &v5wire.Pong{
-				ReqID:  p.ReqID,
-				ENRSeq: bn.conn.localNode.Seq(),
-				ToIP:   bn.dest.IP(),
-				ToPort: uint16(bn.dest.UDP()),
-			}, nil)
+			bn.conn.write(
+				bn.l, &v5wire.Pong{
+					ReqID:  p.ReqID,
+					ENRSeq: bn.conn.localNode.Seq(),
+					ToIP:   bn.dest.IP(),
+					ToPort: uint16(bn.dest.UDP()),
+				}, nil,
+			)
 			wasAdded = true
 			bn.notifyAdded()
 		case *v5wire.Findnode:

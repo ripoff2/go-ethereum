@@ -27,20 +27,20 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/consensus/beacon"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/consensus/beacon"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/params"
 
 	// Force-load live packages, to trigger registration
-	_ "github.com/ethereum/go-ethereum/eth/tracers/live"
+	_ "github.com/ripoff2/go-ethereum/eth/tracers/live"
 )
 
 type supplyInfoIssuance struct {
@@ -77,9 +77,11 @@ func TestSupplyOmittedFields(t *testing.T) {
 
 	gspec.Config.TerminalTotalDifficulty = big.NewInt(0)
 
-	out, _, err := testSupplyTracer(t, gspec, func(b *core.BlockGen) {
-		b.SetPoS()
-	})
+	out, _, err := testSupplyTracer(
+		t, gspec, func(b *core.BlockGen) {
+			b.SetPoS()
+		},
+	)
 	if err != nil {
 		t.Fatalf("failed to test supply tracer: %v", err)
 	}
@@ -233,11 +235,13 @@ func TestSupplyWithdrawals(t *testing.T) {
 	withdrawalsBlockGenerationFunc := func(b *core.BlockGen) {
 		b.SetPoS()
 
-		b.AddWithdrawal(&types.Withdrawal{
-			Validator: 42,
-			Address:   common.Address{0xee},
-			Amount:    1337,
-		})
+		b.AddWithdrawal(
+			&types.Withdrawal{
+				Validator: 42,
+				Address:   common.Address{0xee},
+				Amount:    1337,
+			},
+		)
 	}
 
 	out, chain, err := testSupplyTracer(t, gspec, withdrawalsBlockGenerationFunc)
@@ -543,7 +547,9 @@ func TestSupplySelfdestructItselfAndRevert(t *testing.T) {
 	compareAsJSON(t, expected, actual)
 }
 
-func testSupplyTracer(t *testing.T, genesis *core.Genesis, gen func(*core.BlockGen)) ([]supplyInfo, *core.BlockChain, error) {
+func testSupplyTracer(t *testing.T, genesis *core.Genesis, gen func(*core.BlockGen)) (
+	[]supplyInfo, *core.BlockChain, error,
+) {
 	var (
 		engine = beacon.New(ethash.NewFaker())
 	)
@@ -557,16 +563,21 @@ func testSupplyTracer(t *testing.T, genesis *core.Genesis, gen func(*core.BlockG
 		return nil, nil, fmt.Errorf("failed to create call tracer: %v", err)
 	}
 
-	chain, err := core.NewBlockChain(rawdb.NewMemoryDatabase(), core.DefaultCacheConfigWithScheme(rawdb.PathScheme), genesis, nil, engine, vm.Config{Tracer: tracer}, nil, nil)
+	chain, err := core.NewBlockChain(
+		rawdb.NewMemoryDatabase(), core.DefaultCacheConfigWithScheme(rawdb.PathScheme), genesis, nil, engine,
+		vm.Config{Tracer: tracer}, nil, nil,
+	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create tester chain: %v", err)
 	}
 	defer chain.Stop()
 
-	_, blocks, _ := core.GenerateChainWithGenesis(genesis, engine, 1, func(i int, b *core.BlockGen) {
-		b.SetCoinbase(common.Address{1})
-		gen(b)
-	})
+	_, blocks, _ := core.GenerateChainWithGenesis(
+		genesis, engine, 1, func(i int, b *core.BlockGen) {
+			b.SetCoinbase(common.Address{1})
+			gen(b)
+		},
+	)
 
 	if n, err := chain.InsertChain(blocks); err != nil {
 		return nil, chain, fmt.Errorf("block %d: failed to insert into chain: %v", n, err)

@@ -27,8 +27,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/ethereum/go-ethereum/graphql/internal/graphiql"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/graphql/internal/graphiql"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // GraphiQL is an in-browser IDE for exploring GraphiQL APIs.
@@ -46,9 +46,11 @@ func respOk(w http.ResponseWriter, body []byte, ctype string) {
 func respErr(w http.ResponseWriter, msg string, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	errMsg, _ := json.Marshal(struct {
-		Error string
-	}{Error: msg})
+	errMsg, _ := json.Marshal(
+		struct {
+			Error string
+		}{Error: msg},
+	)
 	w.Write(errMsg)
 }
 

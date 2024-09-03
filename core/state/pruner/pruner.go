@@ -27,15 +27,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state/snapshot"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state/snapshot"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/triedb"
 )
 
 const (
@@ -117,7 +117,10 @@ func NewPruner(db ethdb.Database, config Config) (*Pruner, error) {
 	}, nil
 }
 
-func prune(snaptree *snapshot.Tree, root common.Hash, maindb ethdb.Database, stateBloom *stateBloom, bloomPath string, middleStateRoots map[common.Hash]struct{}, start time.Time) error {
+func prune(
+	snaptree *snapshot.Tree, root common.Hash, maindb ethdb.Database, stateBloom *stateBloom, bloomPath string,
+	middleStateRoots map[common.Hash]struct{}, start time.Time,
+) error {
 	// Delete all stale trie nodes in the disk. With the help of state bloom
 	// the trie nodes(and codes) belong to the active state will be filtered
 	// out. A very small part of stale tries will also be filtered because of
@@ -167,8 +170,10 @@ func prune(snaptree *snapshot.Tree, root common.Hash, maindb ethdb.Database, sta
 				eta = time.Duration(left/speed) * time.Millisecond
 			}
 			if time.Since(logged) > 8*time.Second {
-				log.Info("Pruning state data", "nodes", count, "skipped", skipped, "size", size,
-					"elapsed", common.PrettyDuration(time.Since(pstart)), "eta", common.PrettyDuration(eta))
+				log.Info(
+					"Pruning state data", "nodes", count, "skipped", skipped, "size", size,
+					"elapsed", common.PrettyDuration(time.Since(pstart)), "eta", common.PrettyDuration(eta),
+				)
 				logged = time.Now()
 			}
 			// Recreate the iterator after every batch commit in order
@@ -220,7 +225,10 @@ func prune(snaptree *snapshot.Tree, root common.Hash, maindb ethdb.Database, sta
 			if b == 0xf0 {
 				end = nil
 			}
-			log.Info("Compacting database", "range", fmt.Sprintf("%#x-%#x", start, end), "elapsed", common.PrettyDuration(time.Since(cstart)))
+			log.Info(
+				"Compacting database", "range", fmt.Sprintf("%#x-%#x", start, end), "elapsed",
+				common.PrettyDuration(time.Since(cstart)),
+			)
 			if err := maindb.Compact(start, end); err != nil {
 				log.Error("Database compaction failed", "error", err)
 				return err
@@ -297,7 +305,10 @@ func (p *Pruner) Prune(root common.Hash) error {
 		}
 	} else {
 		if len(layers) > 0 {
-			log.Info("Selecting bottom-most difflayer as the pruning target", "root", root, "height", p.chainHeader.Number.Uint64()-127)
+			log.Info(
+				"Selecting bottom-most difflayer as the pruning target", "root", root, "height",
+				p.chainHeader.Number.Uint64()-127,
+			)
 		} else {
 			log.Info("Selecting user-specified state as the pruning target", "root", root)
 		}
@@ -476,16 +487,18 @@ func findBloomFilter(datadir string) (string, common.Hash, error) {
 		stateBloomPath string
 		stateBloomRoot common.Hash
 	)
-	if err := filepath.Walk(datadir, func(path string, info os.FileInfo, err error) error {
-		if info != nil && !info.IsDir() {
-			ok, root := isBloomFilter(path)
-			if ok {
-				stateBloomPath = path
-				stateBloomRoot = root
+	if err := filepath.Walk(
+		datadir, func(path string, info os.FileInfo, err error) error {
+			if info != nil && !info.IsDir() {
+				ok, root := isBloomFilter(path)
+				if ok {
+					stateBloomPath = path
+					stateBloomRoot = root
+				}
 			}
-		}
-		return nil
-	}); err != nil {
+			return nil
+		},
+	); err != nil {
 		return "", common.Hash{}, err
 	}
 	return stateBloomPath, stateBloomRoot, nil

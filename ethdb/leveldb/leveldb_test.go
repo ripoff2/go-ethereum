@@ -19,34 +19,40 @@ package leveldb
 import (
 	"testing"
 
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/ethdb/dbtest"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/ethdb/dbtest"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/storage"
 )
 
 func TestLevelDB(t *testing.T) {
-	t.Run("DatabaseSuite", func(t *testing.T) {
-		dbtest.TestDatabaseSuite(t, func() ethdb.KeyValueStore {
+	t.Run(
+		"DatabaseSuite", func(t *testing.T) {
+			dbtest.TestDatabaseSuite(
+				t, func() ethdb.KeyValueStore {
+					db, err := leveldb.Open(storage.NewMemStorage(), nil)
+					if err != nil {
+						t.Fatal(err)
+					}
+					return &Database{
+						db: db,
+					}
+				},
+			)
+		},
+	)
+}
+
+func BenchmarkLevelDB(b *testing.B) {
+	dbtest.BenchDatabaseSuite(
+		b, func() ethdb.KeyValueStore {
 			db, err := leveldb.Open(storage.NewMemStorage(), nil)
 			if err != nil {
-				t.Fatal(err)
+				b.Fatal(err)
 			}
 			return &Database{
 				db: db,
 			}
-		})
-	})
-}
-
-func BenchmarkLevelDB(b *testing.B) {
-	dbtest.BenchDatabaseSuite(b, func() ethdb.KeyValueStore {
-		db, err := leveldb.Open(storage.NewMemStorage(), nil)
-		if err != nil {
-			b.Fatal(err)
-		}
-		return &Database{
-			db: db,
-		}
-	})
+		},
+	)
 }

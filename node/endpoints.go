@@ -21,12 +21,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 // StartHTTPEndpoint starts the HTTP RPC endpoint.
-func StartHTTPEndpoint(endpoint string, timeouts rpc.HTTPTimeouts, handler http.Handler) (*http.Server, net.Addr, error) {
+func StartHTTPEndpoint(endpoint string, timeouts rpc.HTTPTimeouts, handler http.Handler) (
+	*http.Server, net.Addr, error,
+) {
 	// start the HTTP listener
 	var (
 		listener net.Listener
@@ -73,19 +75,31 @@ func checkModuleAvailability(modules []string, apis []rpc.API) (bad, available [
 // CheckTimeouts ensures that timeout values are meaningful
 func CheckTimeouts(timeouts *rpc.HTTPTimeouts) {
 	if timeouts.ReadTimeout < time.Second {
-		log.Warn("Sanitizing invalid HTTP read timeout", "provided", timeouts.ReadTimeout, "updated", rpc.DefaultHTTPTimeouts.ReadTimeout)
+		log.Warn(
+			"Sanitizing invalid HTTP read timeout", "provided", timeouts.ReadTimeout, "updated",
+			rpc.DefaultHTTPTimeouts.ReadTimeout,
+		)
 		timeouts.ReadTimeout = rpc.DefaultHTTPTimeouts.ReadTimeout
 	}
 	if timeouts.ReadHeaderTimeout < time.Second {
-		log.Warn("Sanitizing invalid HTTP read header timeout", "provided", timeouts.ReadHeaderTimeout, "updated", rpc.DefaultHTTPTimeouts.ReadHeaderTimeout)
+		log.Warn(
+			"Sanitizing invalid HTTP read header timeout", "provided", timeouts.ReadHeaderTimeout, "updated",
+			rpc.DefaultHTTPTimeouts.ReadHeaderTimeout,
+		)
 		timeouts.ReadHeaderTimeout = rpc.DefaultHTTPTimeouts.ReadHeaderTimeout
 	}
 	if timeouts.WriteTimeout < time.Second {
-		log.Warn("Sanitizing invalid HTTP write timeout", "provided", timeouts.WriteTimeout, "updated", rpc.DefaultHTTPTimeouts.WriteTimeout)
+		log.Warn(
+			"Sanitizing invalid HTTP write timeout", "provided", timeouts.WriteTimeout, "updated",
+			rpc.DefaultHTTPTimeouts.WriteTimeout,
+		)
 		timeouts.WriteTimeout = rpc.DefaultHTTPTimeouts.WriteTimeout
 	}
 	if timeouts.IdleTimeout < time.Second {
-		log.Warn("Sanitizing invalid HTTP idle timeout", "provided", timeouts.IdleTimeout, "updated", rpc.DefaultHTTPTimeouts.IdleTimeout)
+		log.Warn(
+			"Sanitizing invalid HTTP idle timeout", "provided", timeouts.IdleTimeout, "updated",
+			rpc.DefaultHTTPTimeouts.IdleTimeout,
+		)
 		timeouts.IdleTimeout = rpc.DefaultHTTPTimeouts.IdleTimeout
 	}
 }

@@ -17,12 +17,12 @@
 package trie
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/trie/trienode"
-	"github.com/ethereum/go-ethereum/triedb/database"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
+	"github.com/ripoff2/go-ethereum/triedb/database"
 )
 
 // testReader implements database.Reader interface, providing function to
@@ -135,13 +135,17 @@ func (db *testDb) Commit(root common.Hash) error {
 			if owner == (common.Hash{}) {
 				continue
 			}
-			set.ForEachWithOrder(func(path string, n *trienode.Node) {
-				rawdb.WriteTrieNode(db.disk, owner, []byte(path), n.Hash, n.Blob, db.scheme)
-			})
+			set.ForEachWithOrder(
+				func(path string, n *trienode.Node) {
+					rawdb.WriteTrieNode(db.disk, owner, []byte(path), n.Hash, n.Blob, db.scheme)
+				},
+			)
 		}
-		nodes.Sets[common.Hash{}].ForEachWithOrder(func(path string, n *trienode.Node) {
-			rawdb.WriteTrieNode(db.disk, common.Hash{}, []byte(path), n.Hash, n.Blob, db.scheme)
-		})
+		nodes.Sets[common.Hash{}].ForEachWithOrder(
+			func(path string, n *trienode.Node) {
+				rawdb.WriteTrieNode(db.disk, common.Hash{}, []byte(path), n.Hash, n.Blob, db.scheme)
+			},
+		)
 		db.root = roots[i]
 	}
 	for _, root := range roots {

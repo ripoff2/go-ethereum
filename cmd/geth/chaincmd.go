@@ -26,20 +26,20 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/internal/era"
-	"github.com/ethereum/go-ethereum/internal/flags"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/cmd/utils"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/internal/era"
+	"github.com/ripoff2/go-ethereum/internal/flags"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/params"
 	"github.com/urfave/cli/v2"
 )
 
@@ -49,11 +49,13 @@ var (
 		Name:      "init",
 		Usage:     "Bootstrap and initialize a new genesis block",
 		ArgsUsage: "<genesisPath>",
-		Flags: flags.Merge([]cli.Flag{
-			utils.CachePreimagesFlag,
-			utils.OverrideCancun,
-			utils.OverrideVerkle,
-		}, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.CachePreimagesFlag,
+				utils.OverrideCancun,
+				utils.OverrideVerkle,
+			}, utils.DatabaseFlags,
+		),
 		Description: `
 The init command initializes a new genesis block and definition for the network.
 This is a destructive action and changes the network in which you will be
@@ -76,33 +78,35 @@ if one is set.  Otherwise it prints the genesis from the datadir.`,
 		Name:      "import",
 		Usage:     "Import a blockchain file",
 		ArgsUsage: "<filename> (<filename 2> ... <filename N>) ",
-		Flags: flags.Merge([]cli.Flag{
-			utils.CacheFlag,
-			utils.SyncModeFlag,
-			utils.GCModeFlag,
-			utils.SnapshotFlag,
-			utils.CacheDatabaseFlag,
-			utils.CacheGCFlag,
-			utils.MetricsEnabledFlag,
-			utils.MetricsEnabledExpensiveFlag,
-			utils.MetricsHTTPFlag,
-			utils.MetricsPortFlag,
-			utils.MetricsEnableInfluxDBFlag,
-			utils.MetricsEnableInfluxDBV2Flag,
-			utils.MetricsInfluxDBEndpointFlag,
-			utils.MetricsInfluxDBDatabaseFlag,
-			utils.MetricsInfluxDBUsernameFlag,
-			utils.MetricsInfluxDBPasswordFlag,
-			utils.MetricsInfluxDBTagsFlag,
-			utils.MetricsInfluxDBTokenFlag,
-			utils.MetricsInfluxDBBucketFlag,
-			utils.MetricsInfluxDBOrganizationFlag,
-			utils.TxLookupLimitFlag,
-			utils.VMTraceFlag,
-			utils.VMTraceJsonConfigFlag,
-			utils.TransactionHistoryFlag,
-			utils.StateHistoryFlag,
-		}, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.CacheFlag,
+				utils.SyncModeFlag,
+				utils.GCModeFlag,
+				utils.SnapshotFlag,
+				utils.CacheDatabaseFlag,
+				utils.CacheGCFlag,
+				utils.MetricsEnabledFlag,
+				utils.MetricsEnabledExpensiveFlag,
+				utils.MetricsHTTPFlag,
+				utils.MetricsPortFlag,
+				utils.MetricsEnableInfluxDBFlag,
+				utils.MetricsEnableInfluxDBV2Flag,
+				utils.MetricsInfluxDBEndpointFlag,
+				utils.MetricsInfluxDBDatabaseFlag,
+				utils.MetricsInfluxDBUsernameFlag,
+				utils.MetricsInfluxDBPasswordFlag,
+				utils.MetricsInfluxDBTagsFlag,
+				utils.MetricsInfluxDBTokenFlag,
+				utils.MetricsInfluxDBBucketFlag,
+				utils.MetricsInfluxDBOrganizationFlag,
+				utils.TxLookupLimitFlag,
+				utils.VMTraceFlag,
+				utils.VMTraceJsonConfigFlag,
+				utils.TransactionHistoryFlag,
+				utils.StateHistoryFlag,
+			}, utils.DatabaseFlags,
+		),
 		Description: `
 The import command imports blocks from an RLP-encoded form. The form can be one file
 with several RLP-encoded blocks, or several files can be used.
@@ -115,10 +119,12 @@ processing will proceed even if an individual RLP-file import failure occurs.`,
 		Name:      "export",
 		Usage:     "Export blockchain into file",
 		ArgsUsage: "<filename> [<blockNumFirst> <blockNumLast>]",
-		Flags: flags.Merge([]cli.Flag{
-			utils.CacheFlag,
-			utils.SyncModeFlag,
-		}, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.CacheFlag,
+				utils.SyncModeFlag,
+			}, utils.DatabaseFlags,
+		),
 		Description: `
 Requires a first argument of the file to write to.
 Optional second and third arguments control the first and
@@ -131,9 +137,10 @@ be gzipped.`,
 		Name:      "import-history",
 		Usage:     "Import an Era archive",
 		ArgsUsage: "<dir>",
-		Flags: flags.Merge([]cli.Flag{
-			utils.TxLookupLimitFlag,
-		},
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.TxLookupLimitFlag,
+			},
 			utils.DatabaseFlags,
 			utils.NetworkFlags,
 		),
@@ -158,10 +165,12 @@ into Era archives. Eras are typically packaged in steps of 8192 blocks.
 		Name:      "import-preimages",
 		Usage:     "Import the preimage database from an RLP stream",
 		ArgsUsage: "<datafile>",
-		Flags: flags.Merge([]cli.Flag{
-			utils.CacheFlag,
-			utils.SyncModeFlag,
-		}, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.CacheFlag,
+				utils.SyncModeFlag,
+			}, utils.DatabaseFlags,
+		),
 		Description: `
 The import-preimages command imports hash preimages from an RLP encoded stream.
 It's deprecated, please use "geth db import" instead.
@@ -173,15 +182,17 @@ It's deprecated, please use "geth db import" instead.
 		Name:      "dump",
 		Usage:     "Dump a specific block from storage",
 		ArgsUsage: "[? <blockHash> | <blockNum>]",
-		Flags: flags.Merge([]cli.Flag{
-			utils.CacheFlag,
-			utils.IterativeOutputFlag,
-			utils.ExcludeCodeFlag,
-			utils.ExcludeStorageFlag,
-			utils.IncludeIncompletesFlag,
-			utils.StartKeyFlag,
-			utils.DumpLimitFlag,
-		}, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.CacheFlag,
+				utils.IterativeOutputFlag,
+				utils.ExcludeCodeFlag,
+				utils.ExcludeStorageFlag,
+				utils.IncludeIncompletesFlag,
+				utils.StartKeyFlag,
+				utils.DumpLimitFlag,
+			}, utils.DatabaseFlags,
+		),
 		Description: `
 This command dumps out the state for a given block (or latest, if none provided).
 `,
@@ -228,7 +239,9 @@ func initGenesis(ctx *cli.Context) error {
 		}
 		defer chaindb.Close()
 
-		triedb := utils.MakeTrieDatabase(ctx, chaindb, ctx.Bool(utils.CachePreimagesFlag.Name), false, genesis.IsVerkle())
+		triedb := utils.MakeTrieDatabase(
+			ctx, chaindb, ctx.Bool(utils.CachePreimagesFlag.Name), false, genesis.IsVerkle(),
+		)
 		defer triedb.Close()
 
 		_, hash, err := core.SetupGenesisBlockWithOverride(chaindb, triedb, genesis, &overrides)
@@ -342,8 +355,14 @@ func importChain(ctx *cli.Context) error {
 	mem := new(runtime.MemStats)
 	runtime.ReadMemStats(mem)
 
-	fmt.Printf("Object memory: %.3f MB current, %.3f MB peak\n", float64(mem.Alloc)/1024/1024, float64(peakMemAlloc.Load())/1024/1024)
-	fmt.Printf("System memory: %.3f MB current, %.3f MB peak\n", float64(mem.Sys)/1024/1024, float64(peakMemSys.Load())/1024/1024)
+	fmt.Printf(
+		"Object memory: %.3f MB current, %.3f MB peak\n", float64(mem.Alloc)/1024/1024,
+		float64(peakMemAlloc.Load())/1024/1024,
+	)
+	fmt.Printf(
+		"System memory: %.3f MB current, %.3f MB peak\n", float64(mem.Sys)/1024/1024,
+		float64(peakMemSys.Load())/1024/1024,
+	)
 	fmt.Printf("Allocations:   %.3f million\n", float64(mem.Mallocs)/1000000)
 	fmt.Printf("GC pause:      %v\n\n", time.Duration(mem.PauseTotalNs))
 
@@ -390,7 +409,9 @@ func exportChain(ctx *cli.Context) error {
 			utils.Fatalf("Export error: block number must be greater than 0\n")
 		}
 		if head := chain.CurrentSnapBlock(); uint64(last) > head.Number.Uint64() {
-			utils.Fatalf("Export error: block number %d larger than head block %d\n", uint64(last), head.Number.Uint64())
+			utils.Fatalf(
+				"Export error: block number %d larger than head block %d\n", uint64(last), head.Number.Uint64(),
+			)
 		}
 		err = utils.ExportAppendChain(chain, fp, uint64(first), uint64(last))
 	}
@@ -555,7 +576,9 @@ func parseDumpConfig(ctx *cli.Context, db ethdb.Database) (*state.DumpConfig, co
 		start = crypto.Keccak256Hash(startArg)
 		log.Info("Converting start-address to hash", "address", common.BytesToAddress(startArg), "hash", start.Hex())
 	default:
-		return nil, common.Hash{}, fmt.Errorf("invalid start argument: %x. 20 or 32 hex-encoded bytes required", startArg)
+		return nil, common.Hash{}, fmt.Errorf(
+			"invalid start argument: %x. 20 or 32 hex-encoded bytes required", startArg,
+		)
 	}
 	var conf = &state.DumpConfig{
 		SkipCode:          ctx.Bool(utils.ExcludeCodeFlag.Name),
@@ -564,9 +587,11 @@ func parseDumpConfig(ctx *cli.Context, db ethdb.Database) (*state.DumpConfig, co
 		Start:             start.Bytes(),
 		Max:               ctx.Uint64(utils.DumpLimitFlag.Name),
 	}
-	log.Info("State dump configured", "block", header.Number, "hash", header.Hash().Hex(),
+	log.Info(
+		"State dump configured", "block", header.Number, "hash", header.Hash().Hex(),
 		"skipcode", conf.SkipCode, "skipstorage", conf.SkipStorage,
-		"start", hexutil.Encode(conf.Start), "limit", conf.Max)
+		"start", hexutil.Encode(conf.Start), "limit", conf.Max,
+	)
 	return conf, header.Root, nil
 }
 

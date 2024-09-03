@@ -21,10 +21,10 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/prque"
-	"github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/prque"
+	"github.com/ripoff2/go-ethereum/eth/protocols/eth"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // timeoutGracePeriod is the amount of time to allow for a peer to deliver a
@@ -91,9 +91,11 @@ func (d *Downloader) concurrentFetch(queue typedQueue) error {
 		}
 	}()
 	ordering := make(map[*eth.Request]int)
-	timeouts := prque.New[int64, *eth.Request](func(data *eth.Request, index int) {
-		ordering[data] = index
-	})
+	timeouts := prque.New[int64, *eth.Request](
+		func(data *eth.Request, index int) {
+			ordering[data] = index
+		},
+	)
 
 	timeout := time.NewTimer(0)
 	if !timeout.Stop() {

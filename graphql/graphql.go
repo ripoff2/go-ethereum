@@ -27,17 +27,17 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/consensus/misc/eip1559"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth/filters"
-	"github.com/ethereum/go-ethereum/internal/ethapi"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/consensus/misc/eip1559"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/eth/filters"
+	"github.com/ripoff2/go-ethereum/internal/ethapi"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 var (
@@ -556,11 +556,13 @@ func (t *Transaction) getLogs(ctx context.Context, hash common.Hash) (*[]*Log, e
 	// Select tx logs from all block logs
 	ix := sort.Search(len(logs), func(i int) bool { return uint64(logs[i].TxIndex) >= t.index })
 	for ix < len(logs) && uint64(logs[ix].TxIndex) == t.index {
-		ret = append(ret, &Log{
-			r:           t.r,
-			transaction: t,
-			log:         logs[ix],
-		})
+		ret = append(
+			ret, &Log{
+				r:           t.r,
+				transaction: t,
+				log:         logs[ix],
+			},
+		)
 		ix++
 	}
 	return &ret, nil
@@ -580,10 +582,12 @@ func (t *Transaction) AccessList(ctx context.Context) *[]*AccessTuple {
 	accessList := tx.AccessList()
 	ret := make([]*AccessTuple, 0, len(accessList))
 	for _, al := range accessList {
-		ret = append(ret, &AccessTuple{
-			address:     al.Address,
-			storageKeys: al.StorageKeys,
-		})
+		ret = append(
+			ret, &AccessTuple{
+				address:     al.Address,
+				storageKeys: al.StorageKeys,
+			},
+		)
 	}
 	return &ret
 }
@@ -880,12 +884,14 @@ func (b *Block) Ommers(ctx context.Context) (*[]*Block, error) {
 	ret := make([]*Block, 0, len(block.Uncles()))
 	for _, uncle := range block.Uncles() {
 		blockNumberOrHash := rpc.BlockNumberOrHashWithHash(uncle.Hash(), false)
-		ret = append(ret, &Block{
-			r:            b.r,
-			numberOrHash: &blockNumberOrHash,
-			header:       uncle,
-			hash:         uncle.Hash(),
-		})
+		ret = append(
+			ret, &Block{
+				r:            b.r,
+				numberOrHash: &blockNumberOrHash,
+				header:       uncle,
+				hash:         uncle.Hash(),
+			},
+		)
 	}
 	return &ret, nil
 }
@@ -986,13 +992,15 @@ func (b *Block) Transactions(ctx context.Context) (*[]*Transaction, error) {
 	}
 	ret := make([]*Transaction, 0, len(block.Transactions()))
 	for i, tx := range block.Transactions() {
-		ret = append(ret, &Transaction{
-			r:     b.r,
-			hash:  tx.Hash(),
-			tx:    tx,
-			block: b,
-			index: uint64(i),
-		})
+		ret = append(
+			ret, &Transaction{
+				r:     b.r,
+				hash:  tx.Hash(),
+				tx:    tx,
+				block: b,
+				index: uint64(i),
+			},
+		)
 	}
 	return &ret, nil
 }
@@ -1058,12 +1066,14 @@ func (b *Block) Withdrawals(ctx context.Context) (*[]*Withdrawal, error) {
 	}
 	ret := make([]*Withdrawal, 0, len(block.Withdrawals()))
 	for _, w := range block.Withdrawals() {
-		ret = append(ret, &Withdrawal{
-			index:     w.Index,
-			validator: w.Validator,
-			address:   w.Address,
-			amount:    w.Amount,
-		})
+		ret = append(
+			ret, &Withdrawal{
+				index:     w.Index,
+				validator: w.Validator,
+				address:   w.Address,
+				amount:    w.Amount,
+			},
+		)
 	}
 	return &ret, nil
 }
@@ -1120,11 +1130,13 @@ func runFilter(ctx context.Context, r *Resolver, filter *filters.Filter) ([]*Log
 	}
 	ret := make([]*Log, 0, len(logs))
 	for _, log := range logs {
-		ret = append(ret, &Log{
-			r:           r,
-			transaction: &Transaction{r: r, hash: log.TxHash},
-			log:         log,
-		})
+		ret = append(
+			ret, &Log{
+				r:           r,
+				transaction: &Transaction{r: r, hash: log.TxHash},
+				log:         log,
+			},
+		)
 	}
 	return ret, nil
 }
@@ -1149,9 +1161,11 @@ func (b *Block) Logs(ctx context.Context, args struct{ Filter BlockFilterCriteri
 	return runFilter(ctx, b.r, filter)
 }
 
-func (b *Block) Account(ctx context.Context, args struct {
-	Address common.Address
-}) (*Account, error) {
+func (b *Block) Account(
+	ctx context.Context, args struct {
+		Address common.Address
+	},
+) (*Account, error) {
 	return &Account{
 		r:             b.r,
 		address:       args.Address,
@@ -1191,10 +1205,14 @@ func (c *CallResult) Status() hexutil.Uint64 {
 	return c.status
 }
 
-func (b *Block) Call(ctx context.Context, args struct {
-	Data ethapi.TransactionArgs
-}) (*CallResult, error) {
-	result, err := ethapi.DoCall(ctx, b.r.backend, args.Data, *b.numberOrHash, nil, nil, b.r.backend.RPCEVMTimeout(), b.r.backend.RPCGasCap())
+func (b *Block) Call(
+	ctx context.Context, args struct {
+		Data ethapi.TransactionArgs
+	},
+) (*CallResult, error) {
+	result, err := ethapi.DoCall(
+		ctx, b.r.backend, args.Data, *b.numberOrHash, nil, nil, b.r.backend.RPCEVMTimeout(), b.r.backend.RPCGasCap(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -1210,9 +1228,11 @@ func (b *Block) Call(ctx context.Context, args struct {
 	}, nil
 }
 
-func (b *Block) EstimateGas(ctx context.Context, args struct {
-	Data ethapi.TransactionArgs
-}) (hexutil.Uint64, error) {
+func (b *Block) EstimateGas(
+	ctx context.Context, args struct {
+		Data ethapi.TransactionArgs
+	},
+) (hexutil.Uint64, error) {
 	return ethapi.DoEstimateGas(ctx, b.r.backend, args.Data, *b.numberOrHash, nil, b.r.backend.RPCGasCap())
 }
 
@@ -1232,19 +1252,23 @@ func (p *Pending) Transactions(ctx context.Context) (*[]*Transaction, error) {
 	}
 	ret := make([]*Transaction, 0, len(txs))
 	for i, tx := range txs {
-		ret = append(ret, &Transaction{
-			r:     p.r,
-			hash:  tx.Hash(),
-			tx:    tx,
-			index: uint64(i),
-		})
+		ret = append(
+			ret, &Transaction{
+				r:     p.r,
+				hash:  tx.Hash(),
+				tx:    tx,
+				index: uint64(i),
+			},
+		)
 	}
 	return &ret, nil
 }
 
-func (p *Pending) Account(ctx context.Context, args struct {
-	Address common.Address
-}) *Account {
+func (p *Pending) Account(
+	ctx context.Context, args struct {
+		Address common.Address
+	},
+) *Account {
 	pendingBlockNr := rpc.BlockNumberOrHashWithNumber(rpc.PendingBlockNumber)
 	return &Account{
 		r:             p.r,
@@ -1253,11 +1277,15 @@ func (p *Pending) Account(ctx context.Context, args struct {
 	}
 }
 
-func (p *Pending) Call(ctx context.Context, args struct {
-	Data ethapi.TransactionArgs
-}) (*CallResult, error) {
+func (p *Pending) Call(
+	ctx context.Context, args struct {
+		Data ethapi.TransactionArgs
+	},
+) (*CallResult, error) {
 	pendingBlockNr := rpc.BlockNumberOrHashWithNumber(rpc.PendingBlockNumber)
-	result, err := ethapi.DoCall(ctx, p.r.backend, args.Data, pendingBlockNr, nil, nil, p.r.backend.RPCEVMTimeout(), p.r.backend.RPCGasCap())
+	result, err := ethapi.DoCall(
+		ctx, p.r.backend, args.Data, pendingBlockNr, nil, nil, p.r.backend.RPCEVMTimeout(), p.r.backend.RPCGasCap(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -1273,9 +1301,11 @@ func (p *Pending) Call(ctx context.Context, args struct {
 	}, nil
 }
 
-func (p *Pending) EstimateGas(ctx context.Context, args struct {
-	Data ethapi.TransactionArgs
-}) (hexutil.Uint64, error) {
+func (p *Pending) EstimateGas(
+	ctx context.Context, args struct {
+		Data ethapi.TransactionArgs
+	},
+) (hexutil.Uint64, error) {
 	latestBlockNr := rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)
 	return ethapi.DoEstimateGas(ctx, p.r.backend, args.Data, latestBlockNr, nil, p.r.backend.RPCGasCap())
 }
@@ -1286,10 +1316,12 @@ type Resolver struct {
 	filterSystem *filters.FilterSystem
 }
 
-func (r *Resolver) Block(ctx context.Context, args struct {
-	Number *Long
-	Hash   *common.Hash
-}) (*Block, error) {
+func (r *Resolver) Block(
+	ctx context.Context, args struct {
+		Number *Long
+		Hash   *common.Hash
+	},
+) (*Block, error) {
 	if args.Number != nil && args.Hash != nil {
 		return nil, errors.New("only one of number or hash must be specified")
 	}
@@ -1321,10 +1353,12 @@ func (r *Resolver) Block(ctx context.Context, args struct {
 	return block, nil
 }
 
-func (r *Resolver) Blocks(ctx context.Context, args struct {
-	From *Long
-	To   *Long
-}) ([]*Block, error) {
+func (r *Resolver) Blocks(
+	ctx context.Context, args struct {
+		From *Long
+		To   *Long
+	},
+) ([]*Block, error) {
 	if args.From == nil {
 		return nil, errors.New("from block number must be specified")
 	}

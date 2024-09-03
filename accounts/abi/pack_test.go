@@ -27,7 +27,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 // TestPack tests the general pack/unpack tests in packing_test.go
@@ -35,27 +35,29 @@ func TestPack(t *testing.T) {
 	t.Parallel()
 	for i, test := range packUnpackTests {
 		i, test := i, test
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			t.Parallel()
-			encb, err := hex.DecodeString(test.packed)
-			if err != nil {
-				t.Fatalf("invalid hex %s: %v", test.packed, err)
-			}
-			inDef := fmt.Sprintf(`[{ "name" : "method", "type": "function", "inputs": %s}]`, test.def)
-			inAbi, err := JSON(strings.NewReader(inDef))
-			if err != nil {
-				t.Fatalf("invalid ABI definition %s, %v", inDef, err)
-			}
-			var packed []byte
-			packed, err = inAbi.Pack("method", test.unpacked)
+		t.Run(
+			strconv.Itoa(i), func(t *testing.T) {
+				t.Parallel()
+				encb, err := hex.DecodeString(test.packed)
+				if err != nil {
+					t.Fatalf("invalid hex %s: %v", test.packed, err)
+				}
+				inDef := fmt.Sprintf(`[{ "name" : "method", "type": "function", "inputs": %s}]`, test.def)
+				inAbi, err := JSON(strings.NewReader(inDef))
+				if err != nil {
+					t.Fatalf("invalid ABI definition %s, %v", inDef, err)
+				}
+				var packed []byte
+				packed, err = inAbi.Pack("method", test.unpacked)
 
-			if err != nil {
-				t.Fatalf("test %d (%v) failed: %v", i, test.def, err)
-			}
-			if !reflect.DeepEqual(packed[4:], encb) {
-				t.Errorf("test %d (%v) failed: expected %v, got %v", i, test.def, encb, packed[4:])
-			}
-		})
+				if err != nil {
+					t.Fatalf("test %d (%v) failed: %v", i, test.def, err)
+				}
+				if !reflect.DeepEqual(packed[4:], encb) {
+					t.Errorf("test %d (%v) failed: expected %v, got %v", i, test.def, encb, packed[4:])
+				}
+			},
+		)
 	}
 }
 
@@ -192,20 +194,56 @@ func TestPackNumber(t *testing.T) {
 		{reflect.ValueOf(-1), common.Hex2Bytes("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")},
 
 		// Type corner cases
-		{reflect.ValueOf(uint8(math.MaxUint8)), common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000ff")},
-		{reflect.ValueOf(uint16(math.MaxUint16)), common.Hex2Bytes("000000000000000000000000000000000000000000000000000000000000ffff")},
-		{reflect.ValueOf(uint32(math.MaxUint32)), common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000ffffffff")},
-		{reflect.ValueOf(uint64(math.MaxUint64)), common.Hex2Bytes("000000000000000000000000000000000000000000000000ffffffffffffffff")},
+		{
+			reflect.ValueOf(uint8(math.MaxUint8)),
+			common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000000000ff"),
+		},
+		{
+			reflect.ValueOf(uint16(math.MaxUint16)),
+			common.Hex2Bytes("000000000000000000000000000000000000000000000000000000000000ffff"),
+		},
+		{
+			reflect.ValueOf(uint32(math.MaxUint32)),
+			common.Hex2Bytes("00000000000000000000000000000000000000000000000000000000ffffffff"),
+		},
+		{
+			reflect.ValueOf(uint64(math.MaxUint64)),
+			common.Hex2Bytes("000000000000000000000000000000000000000000000000ffffffffffffffff"),
+		},
 
-		{reflect.ValueOf(int8(math.MaxInt8)), common.Hex2Bytes("000000000000000000000000000000000000000000000000000000000000007f")},
-		{reflect.ValueOf(int16(math.MaxInt16)), common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000007fff")},
-		{reflect.ValueOf(int32(math.MaxInt32)), common.Hex2Bytes("000000000000000000000000000000000000000000000000000000007fffffff")},
-		{reflect.ValueOf(int64(math.MaxInt64)), common.Hex2Bytes("0000000000000000000000000000000000000000000000007fffffffffffffff")},
+		{
+			reflect.ValueOf(int8(math.MaxInt8)),
+			common.Hex2Bytes("000000000000000000000000000000000000000000000000000000000000007f"),
+		},
+		{
+			reflect.ValueOf(int16(math.MaxInt16)),
+			common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000007fff"),
+		},
+		{
+			reflect.ValueOf(int32(math.MaxInt32)),
+			common.Hex2Bytes("000000000000000000000000000000000000000000000000000000007fffffff"),
+		},
+		{
+			reflect.ValueOf(int64(math.MaxInt64)),
+			common.Hex2Bytes("0000000000000000000000000000000000000000000000007fffffffffffffff"),
+		},
 
-		{reflect.ValueOf(int8(math.MinInt8)), common.Hex2Bytes("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80")},
-		{reflect.ValueOf(int16(math.MinInt16)), common.Hex2Bytes("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8000")},
-		{reflect.ValueOf(int32(math.MinInt32)), common.Hex2Bytes("ffffffffffffffffffffffffffffffffffffffffffffffffffffffff80000000")},
-		{reflect.ValueOf(int64(math.MinInt64)), common.Hex2Bytes("ffffffffffffffffffffffffffffffffffffffffffffffff8000000000000000")},
+		{
+			reflect.ValueOf(int8(math.MinInt8)),
+			common.Hex2Bytes("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80"),
+		},
+		{
+			reflect.ValueOf(int16(math.MinInt16)),
+			common.Hex2Bytes("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8000"),
+		},
+		{
+			reflect.ValueOf(int32(math.MinInt32)),
+			common.Hex2Bytes("ffffffffffffffffffffffffffffffffffffffffffffffffffffffff80000000"),
+		},
+		{
+			reflect.ValueOf(int64(math.MinInt64)),
+			common.Hex2Bytes("ffffffffffffffffffffffffffffffffffffffffffffffff8000000000000000"),
+		},
 	}
 	for i, tt := range tests {
 		packed := packNum(tt.value)

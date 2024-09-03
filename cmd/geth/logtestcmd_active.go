@@ -25,9 +25,9 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/log"
 	"github.com/urfave/cli/v2"
 )
 
@@ -38,7 +38,8 @@ var logTestCommand = &cli.Command{
 	ArgsUsage: " ",
 	Description: `
 This command is only meant for testing.
-`}
+`,
+}
 
 type customQuotedStringer struct {
 }
@@ -94,7 +95,9 @@ func logTest(ctx *cli.Context) error {
 		log.Info("an error message with quotes", "error", err)
 	}
 	{ // Custom Stringer() - type
-		log.Info("Custom Stringer value", "2562047h47m16.854s", common.PrettyDuration(time.Duration(9223372036854775807)))
+		log.Info(
+			"Custom Stringer value", "2562047h47m16.854s", common.PrettyDuration(time.Duration(9223372036854775807)),
+		)
 		var c customQuotedStringer
 		log.Info("a custom stringer that emits quoted text", "output", c)
 	}
@@ -133,10 +136,22 @@ func logTest(ctx *cli.Context) error {
 	{
 		// This sequence of logs should be output with alignment, so each field becoems a column.
 		log.Info("The following logs should align so that the key-fields make 5 columns")
-		log.Info("Inserted known block", "number", 1_012, "hash", common.HexToHash("0x1234"), "txs", 200, "gas", 1_123_123, "other", "first")
-		log.Info("Inserted new block", "number", 1, "hash", common.HexToHash("0x1235"), "txs", 2, "gas", 1_123, "other", "second")
-		log.Info("Inserted known block", "number", 99, "hash", common.HexToHash("0x12322"), "txs", 10, "gas", 1, "other", "third")
-		log.Warn("Inserted known block", "number", 1_012, "hash", common.HexToHash("0x1234"), "txs", 200, "gas", 99, "other", "fourth")
+		log.Info(
+			"Inserted known block", "number", 1_012, "hash", common.HexToHash("0x1234"), "txs", 200, "gas", 1_123_123,
+			"other", "first",
+		)
+		log.Info(
+			"Inserted new block", "number", 1, "hash", common.HexToHash("0x1235"), "txs", 2, "gas", 1_123, "other",
+			"second",
+		)
+		log.Info(
+			"Inserted known block", "number", 99, "hash", common.HexToHash("0x12322"), "txs", 10, "gas", 1, "other",
+			"third",
+		)
+		log.Warn(
+			"Inserted known block", "number", 1_012, "hash", common.HexToHash("0x1234"), "txs", 200, "gas", 99, "other",
+			"fourth",
+		)
 	}
 	{ // Various types of nil
 		type customStruct struct {
@@ -156,7 +171,10 @@ func logTest(ctx *cli.Context) error {
 		log.Info("(*uint64)(nil)", "res", (*uint64)(nil))
 	}
 	{ // Logging with 'reserved' keys
-		log.Info("Using keys 't', 'lvl', 'time', 'level' and 'msg'", "t", "t", "time", "time", "lvl", "lvl", "level", "level", "msg", "msg")
+		log.Info(
+			"Using keys 't', 'lvl', 'time', 'level' and 'msg'", "t", "t", "time", "time", "lvl", "lvl", "level",
+			"level", "msg", "msg",
+		)
 	}
 	{ // Logging with wrong attr-value pairs
 		log.Info("Odd pair (1 attr)", "key")

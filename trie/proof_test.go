@@ -25,10 +25,10 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb/memorydb"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb/memorydb"
 )
 
 // Prng is a pseudo random number generator seeded by strong randomness.
@@ -55,21 +55,25 @@ func makeProvers(trie *Trie) []func(key []byte) *memorydb.Database {
 	var provers []func(key []byte) *memorydb.Database
 
 	// Create a direct trie based Merkle prover
-	provers = append(provers, func(key []byte) *memorydb.Database {
-		proof := memorydb.New()
-		trie.Prove(key, proof)
-		return proof
-	})
+	provers = append(
+		provers, func(key []byte) *memorydb.Database {
+			proof := memorydb.New()
+			trie.Prove(key, proof)
+			return proof
+		},
+	)
 	// Create a leaf iterator based Merkle prover
-	provers = append(provers, func(key []byte) *memorydb.Database {
-		proof := memorydb.New()
-		if it := NewIterator(trie.MustNodeIterator(key)); it.Next() && bytes.Equal(key, it.Key) {
-			for _, p := range it.Prove() {
-				proof.Put(crypto.Keccak256(p), p)
+	provers = append(
+		provers, func(key []byte) *memorydb.Database {
+			proof := memorydb.New()
+			if it := NewIterator(trie.MustNodeIterator(key)); it.Next() && bytes.Equal(key, it.Key) {
+				for _, p := range it.Prove() {
+					proof.Put(crypto.Keccak256(p), p)
+				}
 			}
-		}
-		return proof
-	})
+			return proof
+		},
+	)
 	return provers
 }
 
@@ -292,7 +296,9 @@ func TestOneElementRangeProof(t *testing.T) {
 	if err := trie.Prove(entries[start].k, proof); err != nil {
 		t.Fatalf("Failed to prove the first node %v", err)
 	}
-	_, err := VerifyRangeProof(trie.Hash(), entries[start].k, [][]byte{entries[start].k}, [][]byte{entries[start].v}, proof)
+	_, err := VerifyRangeProof(
+		trie.Hash(), entries[start].k, [][]byte{entries[start].k}, [][]byte{entries[start].v}, proof,
+	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -322,7 +328,9 @@ func TestOneElementRangeProof(t *testing.T) {
 	if err := trie.Prove(last, proof); err != nil {
 		t.Fatalf("Failed to prove the last node %v", err)
 	}
-	_, err = VerifyRangeProof(trie.Hash(), entries[start].k, [][]byte{entries[start].k}, [][]byte{entries[start].v}, proof)
+	_, err = VerifyRangeProof(
+		trie.Hash(), entries[start].k, [][]byte{entries[start].k}, [][]byte{entries[start].v}, proof,
+	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}

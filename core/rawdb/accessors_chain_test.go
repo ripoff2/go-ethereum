@@ -26,11 +26,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -85,7 +85,11 @@ func TestBodyStorage(t *testing.T) {
 	WriteBody(db, hash, 0, body)
 	if entry := ReadBody(db, hash, 0); entry == nil {
 		t.Fatalf("Stored body not found")
-	} else if types.DeriveSha(types.Transactions(entry.Transactions), newTestHasher()) != types.DeriveSha(types.Transactions(body.Transactions), newTestHasher()) || types.CalcUncleHash(entry.Uncles) != types.CalcUncleHash(body.Uncles) {
+	} else if types.DeriveSha(
+		types.Transactions(entry.Transactions), newTestHasher(),
+	) != types.DeriveSha(
+		types.Transactions(body.Transactions), newTestHasher(),
+	) || types.CalcUncleHash(entry.Uncles) != types.CalcUncleHash(body.Uncles) {
 		t.Fatalf("Retrieved body mismatch: have %v, want %v", entry, body)
 	}
 	if entry := ReadBodyRLP(db, hash, 0); entry == nil {
@@ -110,12 +114,14 @@ func TestBlockStorage(t *testing.T) {
 	db := NewMemoryDatabase()
 
 	// Create a test block to move around the database and make sure it's really new
-	block := types.NewBlockWithHeader(&types.Header{
-		Extra:       []byte("test block"),
-		UncleHash:   types.EmptyUncleHash,
-		TxHash:      types.EmptyTxsHash,
-		ReceiptHash: types.EmptyReceiptsHash,
-	})
+	block := types.NewBlockWithHeader(
+		&types.Header{
+			Extra:       []byte("test block"),
+			UncleHash:   types.EmptyUncleHash,
+			TxHash:      types.EmptyTxsHash,
+			ReceiptHash: types.EmptyReceiptsHash,
+		},
+	)
 	if entry := ReadBlock(db, block.Hash(), block.NumberU64()); entry != nil {
 		t.Fatalf("Non existent block returned: %v", entry)
 	}
@@ -139,7 +145,11 @@ func TestBlockStorage(t *testing.T) {
 	}
 	if entry := ReadBody(db, block.Hash(), block.NumberU64()); entry == nil {
 		t.Fatalf("Stored body not found")
-	} else if types.DeriveSha(types.Transactions(entry.Transactions), newTestHasher()) != types.DeriveSha(block.Transactions(), newTestHasher()) || types.CalcUncleHash(entry.Uncles) != types.CalcUncleHash(block.Uncles()) {
+	} else if types.DeriveSha(
+		types.Transactions(entry.Transactions), newTestHasher(),
+	) != types.DeriveSha(
+		block.Transactions(), newTestHasher(),
+	) || types.CalcUncleHash(entry.Uncles) != types.CalcUncleHash(block.Uncles()) {
 		t.Fatalf("Retrieved body mismatch: have %v, want %v", entry, block.Body())
 	}
 	// Delete the block and verify the execution
@@ -158,12 +168,14 @@ func TestBlockStorage(t *testing.T) {
 // Tests that partial block contents don't get reassembled into full blocks.
 func TestPartialBlockStorage(t *testing.T) {
 	db := NewMemoryDatabase()
-	block := types.NewBlockWithHeader(&types.Header{
-		Extra:       []byte("test block"),
-		UncleHash:   types.EmptyUncleHash,
-		TxHash:      types.EmptyTxsHash,
-		ReceiptHash: types.EmptyReceiptsHash,
-	})
+	block := types.NewBlockWithHeader(
+		&types.Header{
+			Extra:       []byte("test block"),
+			UncleHash:   types.EmptyUncleHash,
+			TxHash:      types.EmptyTxsHash,
+			ReceiptHash: types.EmptyReceiptsHash,
+		},
+	)
 	// Store a header and check that it's not recognized as a block
 	WriteHeader(db, block.Header())
 	if entry := ReadBlock(db, block.Hash(), block.NumberU64()); entry != nil {
@@ -194,13 +206,15 @@ func TestBadBlockStorage(t *testing.T) {
 	db := NewMemoryDatabase()
 
 	// Create a test block to move around the database and make sure it's really new
-	block := types.NewBlockWithHeader(&types.Header{
-		Number:      big.NewInt(1),
-		Extra:       []byte("bad block"),
-		UncleHash:   types.EmptyUncleHash,
-		TxHash:      types.EmptyTxsHash,
-		ReceiptHash: types.EmptyReceiptsHash,
-	})
+	block := types.NewBlockWithHeader(
+		&types.Header{
+			Number:      big.NewInt(1),
+			Extra:       []byte("bad block"),
+			UncleHash:   types.EmptyUncleHash,
+			TxHash:      types.EmptyTxsHash,
+			ReceiptHash: types.EmptyReceiptsHash,
+		},
+	)
 	if entry := ReadBadBlock(db, block.Hash()); entry != nil {
 		t.Fatalf("Non existent block returned: %v", entry)
 	}
@@ -212,13 +226,15 @@ func TestBadBlockStorage(t *testing.T) {
 		t.Fatalf("Retrieved block mismatch: have %v, want %v", entry, block)
 	}
 	// Write one more bad block
-	blockTwo := types.NewBlockWithHeader(&types.Header{
-		Number:      big.NewInt(2),
-		Extra:       []byte("bad block two"),
-		UncleHash:   types.EmptyUncleHash,
-		TxHash:      types.EmptyTxsHash,
-		ReceiptHash: types.EmptyReceiptsHash,
-	})
+	blockTwo := types.NewBlockWithHeader(
+		&types.Header{
+			Number:      big.NewInt(2),
+			Extra:       []byte("bad block two"),
+			UncleHash:   types.EmptyUncleHash,
+			TxHash:      types.EmptyTxsHash,
+			ReceiptHash: types.EmptyReceiptsHash,
+		},
+	)
 	WriteBadBlock(db, blockTwo)
 
 	// Write the block one again, should be filtered out.
@@ -231,13 +247,15 @@ func TestBadBlockStorage(t *testing.T) {
 	// Write a bunch of bad blocks, all the blocks are should sorted
 	// in reverse order. The extra blocks should be truncated.
 	for _, n := range rand.Perm(100) {
-		block := types.NewBlockWithHeader(&types.Header{
-			Number:      big.NewInt(int64(n)),
-			Extra:       []byte("bad block"),
-			UncleHash:   types.EmptyUncleHash,
-			TxHash:      types.EmptyTxsHash,
-			ReceiptHash: types.EmptyReceiptsHash,
-		})
+		block := types.NewBlockWithHeader(
+			&types.Header{
+				Number:      big.NewInt(int64(n)),
+				Extra:       []byte("bad block"),
+				UncleHash:   types.EmptyUncleHash,
+				TxHash:      types.EmptyTxsHash,
+				ReceiptHash: types.EmptyReceiptsHash,
+			},
+		)
 		WriteBadBlock(db, block)
 	}
 	badBlocks = ReadAllBadBlocks(db)
@@ -246,7 +264,10 @@ func TestBadBlockStorage(t *testing.T) {
 	}
 	for i := 0; i < len(badBlocks)-1; i++ {
 		if badBlocks[i].NumberU64() < badBlocks[i+1].NumberU64() {
-			t.Fatalf("The bad blocks are not sorted #[%d](%d) < #[%d](%d)", i, i+1, badBlocks[i].NumberU64(), badBlocks[i+1].NumberU64())
+			t.Fatalf(
+				"The bad blocks are not sorted #[%d](%d) < #[%d](%d)", i, i+1, badBlocks[i].NumberU64(),
+				badBlocks[i+1].NumberU64(),
+			)
 		}
 	}
 
@@ -426,7 +447,10 @@ func checkReceiptsRLP(have, want types.Receipts) error {
 			return err
 		}
 		if !bytes.Equal(rlpHave, rlpWant) {
-			return fmt.Errorf("receipt #%d: receipt mismatch: have %s, want %s", i, hex.EncodeToString(rlpHave), hex.EncodeToString(rlpWant))
+			return fmt.Errorf(
+				"receipt #%d: receipt mismatch: have %s, want %s", i, hex.EncodeToString(rlpHave),
+				hex.EncodeToString(rlpWant),
+			)
 		}
 	}
 	return nil
@@ -442,13 +466,15 @@ func TestAncientStorage(t *testing.T) {
 	defer db.Close()
 
 	// Create a test block
-	block := types.NewBlockWithHeader(&types.Header{
-		Number:      big.NewInt(0),
-		Extra:       []byte("test block"),
-		UncleHash:   types.EmptyUncleHash,
-		TxHash:      types.EmptyTxsHash,
-		ReceiptHash: types.EmptyReceiptsHash,
-	})
+	block := types.NewBlockWithHeader(
+		&types.Header{
+			Number:      big.NewInt(0),
+			Extra:       []byte("test block"),
+			UncleHash:   types.EmptyUncleHash,
+			TxHash:      types.EmptyTxsHash,
+			ReceiptHash: types.EmptyReceiptsHash,
+		},
+	)
 	// Ensure nothing non-existent will be read
 	hash, number := block.Hash(), block.NumberU64()
 	if blob := ReadHeaderRLP(db, hash, number); len(blob) > 0 {
@@ -622,12 +648,14 @@ func makeTestBlocks(nblock int, txsPerBlock int) []*types.Block {
 	for i := 0; i < len(txs); i++ {
 		var err error
 		to := common.Address{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-		txs[i], err = types.SignNewTx(key, signer, &types.LegacyTx{
-			Nonce:    2,
-			GasPrice: big.NewInt(30000),
-			Gas:      0x45454545,
-			To:       &to,
-		})
+		txs[i], err = types.SignNewTx(
+			key, signer, &types.LegacyTx{
+				Nonce:    2,
+				GasPrice: big.NewInt(30000),
+				Gas:      0x45454545,
+				To:       &to,
+			},
+		)
 		if err != nil {
 			panic(err)
 		}
@@ -761,7 +789,10 @@ func TestReadLogs(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !bytes.Equal(rlpHave, rlpWant) {
-				t.Fatalf("receipt #%d: receipt mismatch: have %s, want %s", i, hex.EncodeToString(rlpHave), hex.EncodeToString(rlpWant))
+				t.Fatalf(
+					"receipt #%d: receipt mismatch: have %s, want %s", i, hex.EncodeToString(rlpHave),
+					hex.EncodeToString(rlpWant),
+				)
 			}
 		}
 	}
@@ -772,26 +803,32 @@ func TestDeriveLogFields(t *testing.T) {
 	to2 := common.HexToAddress("0x2")
 	to3 := common.HexToAddress("0x3")
 	txs := types.Transactions{
-		types.NewTx(&types.LegacyTx{
-			Nonce:    1,
-			Value:    big.NewInt(1),
-			Gas:      1,
-			GasPrice: big.NewInt(1),
-		}),
-		types.NewTx(&types.LegacyTx{
-			To:       &to2,
-			Nonce:    2,
-			Value:    big.NewInt(2),
-			Gas:      2,
-			GasPrice: big.NewInt(2),
-		}),
-		types.NewTx(&types.AccessListTx{
-			To:       &to3,
-			Nonce:    3,
-			Value:    big.NewInt(3),
-			Gas:      3,
-			GasPrice: big.NewInt(3),
-		}),
+		types.NewTx(
+			&types.LegacyTx{
+				Nonce:    1,
+				Value:    big.NewInt(1),
+				Gas:      1,
+				GasPrice: big.NewInt(1),
+			},
+		),
+		types.NewTx(
+			&types.LegacyTx{
+				To:       &to2,
+				Nonce:    2,
+				Value:    big.NewInt(2),
+				Gas:      2,
+				GasPrice: big.NewInt(2),
+			},
+		),
+		types.NewTx(
+			&types.AccessListTx{
+				To:       &to3,
+				Nonce:    3,
+				Value:    big.NewInt(3),
+				Gas:      3,
+				GasPrice: big.NewInt(3),
+			},
+		),
 	}
 	// Create the corresponding receipts
 	receipts := []*types.Receipt{
@@ -818,20 +855,31 @@ func TestDeriveLogFields(t *testing.T) {
 	// Derive log metadata fields
 	number := big.NewInt(1)
 	hash := common.BytesToHash([]byte{0x03, 0x14})
-	types.Receipts(receipts).DeriveFields(params.TestChainConfig, hash, number.Uint64(), 0, big.NewInt(0), big.NewInt(0), txs)
+	types.Receipts(receipts).DeriveFields(
+		params.TestChainConfig, hash, number.Uint64(), 0, big.NewInt(0), big.NewInt(0), txs,
+	)
 
 	// Iterate over all the computed fields and check that they're correct
 	logIndex := uint(0)
 	for i := range receipts {
 		for j := range receipts[i].Logs {
 			if receipts[i].Logs[j].BlockNumber != number.Uint64() {
-				t.Errorf("receipts[%d].Logs[%d].BlockNumber = %d, want %d", i, j, receipts[i].Logs[j].BlockNumber, number.Uint64())
+				t.Errorf(
+					"receipts[%d].Logs[%d].BlockNumber = %d, want %d", i, j, receipts[i].Logs[j].BlockNumber,
+					number.Uint64(),
+				)
 			}
 			if receipts[i].Logs[j].BlockHash != hash {
-				t.Errorf("receipts[%d].Logs[%d].BlockHash = %s, want %s", i, j, receipts[i].Logs[j].BlockHash.String(), hash.String())
+				t.Errorf(
+					"receipts[%d].Logs[%d].BlockHash = %s, want %s", i, j, receipts[i].Logs[j].BlockHash.String(),
+					hash.String(),
+				)
 			}
 			if receipts[i].Logs[j].TxHash != txs[i].Hash() {
-				t.Errorf("receipts[%d].Logs[%d].TxHash = %s, want %s", i, j, receipts[i].Logs[j].TxHash.String(), txs[i].Hash().String())
+				t.Errorf(
+					"receipts[%d].Logs[%d].TxHash = %s, want %s", i, j, receipts[i].Logs[j].TxHash.String(),
+					txs[i].Hash().String(),
+				)
 			}
 			if receipts[i].Logs[j].TxIndex != uint(i) {
 				t.Errorf("receipts[%d].Logs[%d].TransactionIndex = %d, want %d", i, j, receipts[i].Logs[j].TxIndex, i)
@@ -850,24 +898,28 @@ func BenchmarkDecodeRLPLogs(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	b.Run("ReceiptForStorage", func(b *testing.B) {
-		b.ReportAllocs()
-		var r []*types.ReceiptForStorage
-		for i := 0; i < b.N; i++ {
-			if err := rlp.DecodeBytes(buf, &r); err != nil {
-				b.Fatal(err)
+	b.Run(
+		"ReceiptForStorage", func(b *testing.B) {
+			b.ReportAllocs()
+			var r []*types.ReceiptForStorage
+			for i := 0; i < b.N; i++ {
+				if err := rlp.DecodeBytes(buf, &r); err != nil {
+					b.Fatal(err)
+				}
 			}
-		}
-	})
-	b.Run("rlpLogs", func(b *testing.B) {
-		b.ReportAllocs()
-		var r []*receiptLogs
-		for i := 0; i < b.N; i++ {
-			if err := rlp.DecodeBytes(buf, &r); err != nil {
-				b.Fatal(err)
+		},
+	)
+	b.Run(
+		"rlpLogs", func(b *testing.B) {
+			b.ReportAllocs()
+			var r []*receiptLogs
+			for i := 0; i < b.N; i++ {
+				if err := rlp.DecodeBytes(buf, &r); err != nil {
+					b.Fatal(err)
+				}
 			}
-		}
-	})
+		},
+	)
 }
 
 func TestHeadersRLPStorage(t *testing.T) {
@@ -883,14 +935,16 @@ func TestHeadersRLPStorage(t *testing.T) {
 	var chain []*types.Block
 	var pHash common.Hash
 	for i := 0; i < 100; i++ {
-		block := types.NewBlockWithHeader(&types.Header{
-			Number:      big.NewInt(int64(i)),
-			Extra:       []byte("test block"),
-			UncleHash:   types.EmptyUncleHash,
-			TxHash:      types.EmptyTxsHash,
-			ReceiptHash: types.EmptyReceiptsHash,
-			ParentHash:  pHash,
-		})
+		block := types.NewBlockWithHeader(
+			&types.Header{
+				Number:      big.NewInt(int64(i)),
+				Extra:       []byte("test block"),
+				UncleHash:   types.EmptyUncleHash,
+				TxHash:      types.EmptyTxsHash,
+				ReceiptHash: types.EmptyReceiptsHash,
+				ParentHash:  pHash,
+			},
+		)
 		chain = append(chain, block)
 		pHash = block.Hash()
 	}

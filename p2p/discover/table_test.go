@@ -27,22 +27,24 @@ import (
 	"testing/quick"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/internal/testlog"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/enr"
-	"github.com/ethereum/go-ethereum/p2p/netutil"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/internal/testlog"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/p2p/netutil"
 )
 
 func TestTable_pingReplace(t *testing.T) {
 	run := func(newNodeResponding, lastInBucketResponding bool) {
 		name := fmt.Sprintf("newNodeResponding=%t/lastInBucketResponding=%t", newNodeResponding, lastInBucketResponding)
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			testPingReplace(t, newNodeResponding, lastInBucketResponding)
-		})
+		t.Run(
+			name, func(t *testing.T) {
+				t.Parallel()
+				testPingReplace(t, newNodeResponding, lastInBucketResponding)
+			},
+		)
 	}
 
 	run(true, true)
@@ -54,10 +56,12 @@ func TestTable_pingReplace(t *testing.T) {
 func testPingReplace(t *testing.T, newNodeIsResponding, lastInBucketIsResponding bool) {
 	simclock := new(mclock.Simulated)
 	transport := newPingRecorder()
-	tab, db := newTestTable(transport, Config{
-		Clock: simclock,
-		Log:   testlog.Logger(t, log.LevelTrace),
-	})
+	tab, db := newTestTable(
+		transport, Config{
+			Clock: simclock,
+			Log:   testlog.Logger(t, log.LevelTrace),
+		},
+	)
 	defer db.Close()
 	defer tab.close()
 
@@ -401,10 +405,12 @@ func checkBucketContent(t *testing.T, tab *Table, nodes []*enode.Node) {
 // announces a new sequence number, the new record should be pulled.
 func TestTable_revalidateSyncRecord(t *testing.T) {
 	transport := newPingRecorder()
-	tab, db := newTestTable(transport, Config{
-		Clock: new(mclock.Simulated),
-		Log:   testlog.Logger(t, log.LevelTrace),
-	})
+	tab, db := newTestTable(
+		transport, Config{
+			Clock: new(mclock.Simulated),
+			Log:   testlog.Logger(t, log.LevelTrace),
+		},
+	)
 	<-tab.initDone
 	defer db.Close()
 	defer tab.close()

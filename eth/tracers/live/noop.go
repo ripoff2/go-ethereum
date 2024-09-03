@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 func init() {
@@ -44,13 +44,17 @@ func newNoopTracer(_ json.RawMessage) (*tracing.Hooks, error) {
 	}, nil
 }
 
-func (t *noop) OnOpcode(pc uint64, op byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error) {
+func (t *noop) OnOpcode(
+	pc uint64, op byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error,
+) {
 }
 
 func (t *noop) OnFault(pc uint64, op byte, gas, cost uint64, _ tracing.OpContext, depth int, err error) {
 }
 
-func (t *noop) OnEnter(depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int) {
+func (t *noop) OnEnter(
+	depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int,
+) {
 }
 
 func (t *noop) OnExit(depth int, output []byte, gasUsed uint64, err error, reverted bool) {
@@ -82,7 +86,9 @@ func (t *noop) OnBalanceChange(a common.Address, prev, new *big.Int, reason trac
 func (t *noop) OnNonceChange(a common.Address, prev, new uint64) {
 }
 
-func (t *noop) OnCodeChange(a common.Address, prevCodeHash common.Hash, prev []byte, codeHash common.Hash, code []byte) {
+func (t *noop) OnCodeChange(
+	a common.Address, prevCodeHash common.Hash, prev []byte, codeHash common.Hash, code []byte,
+) {
 }
 
 func (t *noop) OnStorageChange(a common.Address, k, prev, new common.Hash) {

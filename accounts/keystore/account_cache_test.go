@@ -29,8 +29,8 @@ import (
 
 	"github.com/cespare/cp"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 var (
@@ -38,7 +38,11 @@ var (
 	cachetestAccounts = []accounts.Account{
 		{
 			Address: common.HexToAddress("7ef5a6135f1fd6a02593eedc869c6d41d934aef8"),
-			URL:     accounts.URL{Scheme: KeyStoreScheme, Path: filepath.Join(cachetestDir, "UTC--2016-03-22T12-57-55.920751759Z--7ef5a6135f1fd6a02593eedc869c6d41d934aef8")},
+			URL: accounts.URL{
+				Scheme: KeyStoreScheme, Path: filepath.Join(
+					cachetestDir, "UTC--2016-03-22T12-57-55.920751759Z--7ef5a6135f1fd6a02593eedc869c6d41d934aef8",
+				),
+			},
 		},
 		{
 			Address: common.HexToAddress("f466859ead1932d743d622cb74fc058882e8648a"),
@@ -98,7 +102,9 @@ func TestWatchNewFile(t *testing.T) {
 	for i := range cachetestAccounts {
 		wantAccounts[i] = accounts.Account{
 			Address: cachetestAccounts[i].Address,
-			URL:     accounts.URL{Scheme: KeyStoreScheme, Path: filepath.Join(dir, filepath.Base(cachetestAccounts[i].URL.Path))},
+			URL: accounts.URL{
+				Scheme: KeyStoreScheme, Path: filepath.Join(dir, filepath.Base(cachetestAccounts[i].URL.Path)),
+			},
 		}
 		if err := cp.CopyFile(wantAccounts[i].URL.Path, cachetestAccounts[i].URL.Path); err != nil {
 			t.Fatal(err)
@@ -183,7 +189,10 @@ func TestCacheAddDeleteOrder(t *testing.T) {
 		},
 		{
 			Address: common.HexToAddress("7ef5a6135f1fd6a02593eedc869c6d41d934aef8"),
-			URL:     accounts.URL{Scheme: KeyStoreScheme, Path: "UTC--2016-03-22T12-57-55.920751759Z--7ef5a6135f1fd6a02593eedc869c6d41d934aef8"},
+			URL: accounts.URL{
+				Scheme: KeyStoreScheme,
+				Path:   "UTC--2016-03-22T12-57-55.920751759Z--7ef5a6135f1fd6a02593eedc869c6d41d934aef8",
+			},
 		},
 		{
 			Address: common.HexToAddress("f466859ead1932d743d622cb74fc058882e8648a"),
@@ -215,14 +224,21 @@ func TestCacheAddDeleteOrder(t *testing.T) {
 		}
 	}
 	if cache.hasAddress(common.HexToAddress("fd9bd350f08ee3c0c19b85a8e16114a11a60aa4e")) {
-		t.Errorf("expected hasAccount(%x) to return false", common.HexToAddress("fd9bd350f08ee3c0c19b85a8e16114a11a60aa4e"))
+		t.Errorf(
+			"expected hasAccount(%x) to return false", common.HexToAddress("fd9bd350f08ee3c0c19b85a8e16114a11a60aa4e"),
+		)
 	}
 
 	// Delete a few keys from the cache.
 	for i := 0; i < len(accs); i += 2 {
 		cache.delete(wantAccounts[i])
 	}
-	cache.delete(accounts.Account{Address: common.HexToAddress("fd9bd350f08ee3c0c19b85a8e16114a11a60aa4e"), URL: accounts.URL{Scheme: KeyStoreScheme, Path: "something"}})
+	cache.delete(
+		accounts.Account{
+			Address: common.HexToAddress("fd9bd350f08ee3c0c19b85a8e16114a11a60aa4e"),
+			URL:     accounts.URL{Scheme: KeyStoreScheme, Path: "something"},
+		},
+	)
 
 	// Check content again after deletion.
 	wantAccountsAfterDelete := []accounts.Account{
@@ -286,7 +302,10 @@ func TestCacheFind(t *testing.T) {
 		// by file
 		{Query: accounts.Account{URL: accs[0].URL}, WantResult: accs[0]},
 		// by basename
-		{Query: accounts.Account{URL: accounts.URL{Scheme: KeyStoreScheme, Path: filepath.Base(accs[0].URL.Path)}}, WantResult: accs[0]},
+		{
+			Query:      accounts.Account{URL: accounts.URL{Scheme: KeyStoreScheme, Path: filepath.Base(accs[0].URL.Path)}},
+			WantResult: accs[0],
+		},
 		// by file and address
 		{Query: accs[0], WantResult: accs[0]},
 		// ambiguous address, tie resolved by file
@@ -302,7 +321,13 @@ func TestCacheFind(t *testing.T) {
 		// no match error
 		{Query: nomatchAccount, WantError: ErrNoMatch},
 		{Query: accounts.Account{URL: nomatchAccount.URL}, WantError: ErrNoMatch},
-		{Query: accounts.Account{URL: accounts.URL{Scheme: KeyStoreScheme, Path: filepath.Base(nomatchAccount.URL.Path)}}, WantError: ErrNoMatch},
+		{
+			Query: accounts.Account{
+				URL: accounts.URL{
+					Scheme: KeyStoreScheme, Path: filepath.Base(nomatchAccount.URL.Path),
+				},
+			}, WantError: ErrNoMatch,
+		},
 		{Query: accounts.Account{Address: nomatchAccount.Address}, WantError: ErrNoMatch},
 	}
 	for i, test := range tests {

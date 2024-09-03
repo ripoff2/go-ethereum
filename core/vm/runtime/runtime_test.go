@@ -25,21 +25,21 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/asm"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/eth/tracers/logger"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/accounts/abi"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/asm"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/eth/tracers/logger"
+	"github.com/ripoff2/go-ethereum/params"
 
 	// force-load js tracers to trigger registration
-	_ "github.com/ethereum/go-ethereum/eth/tracers/js"
+	_ "github.com/ripoff2/go-ethereum/eth/tracers/js"
 )
 
 func TestDefaults(t *testing.T) {
@@ -74,26 +74,30 @@ func TestEVM(t *testing.T) {
 		}
 	}()
 
-	Execute([]byte{
-		byte(vm.DIFFICULTY),
-		byte(vm.TIMESTAMP),
-		byte(vm.GASLIMIT),
-		byte(vm.PUSH1),
-		byte(vm.ORIGIN),
-		byte(vm.BLOCKHASH),
-		byte(vm.COINBASE),
-	}, nil, nil)
+	Execute(
+		[]byte{
+			byte(vm.DIFFICULTY),
+			byte(vm.TIMESTAMP),
+			byte(vm.GASLIMIT),
+			byte(vm.PUSH1),
+			byte(vm.ORIGIN),
+			byte(vm.BLOCKHASH),
+			byte(vm.COINBASE),
+		}, nil, nil,
+	)
 }
 
 func TestExecute(t *testing.T) {
-	ret, _, err := Execute([]byte{
-		byte(vm.PUSH1), 10,
-		byte(vm.PUSH1), 0,
-		byte(vm.MSTORE),
-		byte(vm.PUSH1), 32,
-		byte(vm.PUSH1), 0,
-		byte(vm.RETURN),
-	}, nil, nil)
+	ret, _, err := Execute(
+		[]byte{
+			byte(vm.PUSH1), 10,
+			byte(vm.PUSH1), 0,
+			byte(vm.MSTORE),
+			byte(vm.PUSH1), 32,
+			byte(vm.PUSH1), 0,
+			byte(vm.RETURN),
+		}, nil, nil,
+	)
 	if err != nil {
 		t.Fatal("didn't expect error", err)
 	}
@@ -107,14 +111,16 @@ func TestExecute(t *testing.T) {
 func TestCall(t *testing.T) {
 	state, _ := state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
 	address := common.HexToAddress("0xaa")
-	state.SetCode(address, []byte{
-		byte(vm.PUSH1), 10,
-		byte(vm.PUSH1), 0,
-		byte(vm.MSTORE),
-		byte(vm.PUSH1), 32,
-		byte(vm.PUSH1), 0,
-		byte(vm.RETURN),
-	})
+	state.SetCode(
+		address, []byte{
+			byte(vm.PUSH1), 10,
+			byte(vm.PUSH1), 0,
+			byte(vm.MSTORE),
+			byte(vm.PUSH1), 32,
+			byte(vm.PUSH1), 0,
+			byte(vm.RETURN),
+		},
+	)
 
 	ret, _, err := Call(address, nil, &Config{State: state})
 	if err != nil {
@@ -230,17 +236,19 @@ func BenchmarkEVM_SWAP1(b *testing.B) {
 	state, _ := state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewMemoryDatabase()), nil)
 	contractAddr := common.BytesToAddress([]byte("contract"))
 
-	b.Run("10k", func(b *testing.B) {
-		contractCode := swapContract(10_000)
-		state.SetCode(contractAddr, contractCode)
+	b.Run(
+		"10k", func(b *testing.B) {
+			contractCode := swapContract(10_000)
+			state.SetCode(contractAddr, contractCode)
 
-		for i := 0; i < b.N; i++ {
-			_, _, err := Call(contractAddr, []byte{}, &Config{State: state})
-			if err != nil {
-				b.Fatal(err)
+			for i := 0; i < b.N; i++ {
+				_, _, err := Call(contractAddr, []byte{}, &Config{State: state})
+				if err != nil {
+					b.Fatal(err)
+				}
 			}
-		}
-	})
+		},
+	)
 }
 
 func BenchmarkEVM_RETURN(b *testing.B) {
@@ -259,22 +267,24 @@ func BenchmarkEVM_RETURN(b *testing.B) {
 	contractAddr := common.BytesToAddress([]byte("contract"))
 
 	for _, n := range []uint64{1_000, 10_000, 100_000, 1_000_000} {
-		b.Run(strconv.FormatUint(n, 10), func(b *testing.B) {
-			b.ReportAllocs()
+		b.Run(
+			strconv.FormatUint(n, 10), func(b *testing.B) {
+				b.ReportAllocs()
 
-			contractCode := returnContract(n)
-			state.SetCode(contractAddr, contractCode)
+				contractCode := returnContract(n)
+				state.SetCode(contractAddr, contractCode)
 
-			for i := 0; i < b.N; i++ {
-				ret, _, err := Call(contractAddr, []byte{}, &Config{State: state})
-				if err != nil {
-					b.Fatal(err)
+				for i := 0; i < b.N; i++ {
+					ret, _, err := Call(contractAddr, []byte{}, &Config{State: state})
+					if err != nil {
+						b.Fatal(err)
+					}
+					if uint64(len(ret)) != n {
+						b.Fatalf("expected return size %d, got %d", n, len(ret))
+					}
 				}
-				if uint64(len(ret)) != n {
-					b.Fatalf("expected return size %d, got %d", n, len(ret))
-				}
-			}
-		})
+			},
+		)
 	}
 }
 
@@ -360,10 +370,12 @@ func TestBlockhash(t *testing.T) {
 	// The method call to 'test()'
 	input := common.Hex2Bytes("f8a8fd6d")
 	chain := &dummyChain{}
-	ret, _, err := Execute(data, input, &Config{
-		GetHashFn:   core.GetHashFn(header, chain),
-		BlockNumber: new(big.Int).Set(header.Number),
-	})
+	ret, _, err := Execute(
+		data, input, &Config{
+			GetHashFn:   core.GetHashFn(header, chain),
+			BlockNumber: new(big.Int).Set(header.Number),
+		},
+	)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -414,11 +426,13 @@ func benchmarkNonModifyingCode(gas uint64, code []byte, name string, tracerCode 
 	reverting := common.HexToAddress("EE")
 	{
 		cfg.State.CreateAccount(reverting)
-		cfg.State.SetCode(reverting, []byte{
-			byte(vm.PUSH1), 0x00,
-			byte(vm.PUSH1), 0x00,
-			byte(vm.REVERT),
-		})
+		cfg.State.SetCode(
+			reverting, []byte{
+				byte(vm.PUSH1), 0x00,
+				byte(vm.PUSH1), 0x00,
+				byte(vm.REVERT),
+			},
+		)
 	}
 
 	//cfg.State.CreateAccount(cfg.Origin)
@@ -426,12 +440,14 @@ func benchmarkNonModifyingCode(gas uint64, code []byte, name string, tracerCode 
 	cfg.State.SetCode(destination, code)
 	Call(destination, nil, cfg)
 
-	b.Run(name, func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			Call(destination, nil, cfg)
-		}
-	})
+	b.Run(
+		name, func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				Call(destination, nil, cfg)
+			}
+		},
+	)
 }
 
 // BenchmarkSimpleLoop test a pretty simple loop which loops until OOG
@@ -567,15 +583,19 @@ func TestEip2929Cases(t *testing.T) {
 		ops := strings.Join(instrs, ", ")
 		fmt.Printf("### Case %d\n\n", id)
 		id++
-		fmt.Printf("%v\n\nBytecode: \n```\n%#x\n```\nOperations: \n```\n%v\n```\n\n",
+		fmt.Printf(
+			"%v\n\nBytecode: \n```\n%#x\n```\nOperations: \n```\n%v\n```\n\n",
 			comment,
-			code, ops)
-		Execute(code, nil, &Config{
-			EVMConfig: vm.Config{
-				Tracer:    logger.NewMarkdownLogger(nil, os.Stdout).Hooks(),
-				ExtraEips: []int{2929},
+			code, ops,
+		)
+		Execute(
+			code, nil, &Config{
+				EVMConfig: vm.Config{
+					Tracer:    logger.NewMarkdownLogger(nil, os.Stdout).Hooks(),
+					ExtraEips: []int{2929},
+				},
 			},
-		})
+		)
 	}
 
 	{ // First eip testcase
@@ -598,9 +618,12 @@ func TestEip2929Cases(t *testing.T) {
 
 			byte(vm.STOP),
 		}
-		prettyPrint("This checks `EXT`(codehash,codesize,balance) of precompiles, which should be `100`, "+
-			"and later checks the same operations twice against some non-precompiles. "+
-			"Those are cheaper second time they are accessed. Lastly, it checks the `BALANCE` of `origin` and `this`.", code)
+		prettyPrint(
+			"This checks `EXT`(codehash,codesize,balance) of precompiles, which should be `100`, "+
+				"and later checks the same operations twice against some non-precompiles. "+
+				"Those are cheaper second time they are accessed. Lastly, it checks the `BALANCE` of `origin` and `this`.",
+			code,
+		)
 	}
 
 	{ // EXTCODECOPY
@@ -617,8 +640,10 @@ func TestEip2929Cases(t *testing.T) {
 
 			byte(vm.STOP),
 		}
-		prettyPrint("This checks `extcodecopy( 0xff,0,0,0,0)` twice, (should be expensive first time), "+
-			"and then does `extcodecopy( this,0,0,0,0)`.", code)
+		prettyPrint(
+			"This checks `extcodecopy( 0xff,0,0,0,0)` twice, (should be expensive first time), "+
+				"and then does `extcodecopy( this,0,0,0,0)`.", code,
+		)
 	}
 
 	{ // SLOAD + SSTORE
@@ -637,8 +662,10 @@ func TestEip2929Cases(t *testing.T) {
 			// Read slot in access list (0x1)
 			byte(vm.PUSH1), 0x01, byte(vm.SLOAD), // SLOAD( 0x1)
 		}
-		prettyPrint("This checks `sload( 0x1)` followed by `sstore(loc: 0x01, val:0x11)`, then 'naked' sstore:"+
-			"`sstore(loc: 0x02, val:0x11)` twice, and `sload(0x2)`, `sload(0x1)`. ", code)
+		prettyPrint(
+			"This checks `sload( 0x1)` followed by `sstore(loc: 0x01, val:0x11)`, then 'naked' sstore:"+
+				"`sstore(loc: 0x02, val:0x11)` twice, and `sload(0x2)`, `sload(0x1)`. ", code,
+		)
 	}
 	{ // Call variants
 		code := []byte{
@@ -654,31 +681,36 @@ func TestEip2929Cases(t *testing.T) {
 			byte(vm.PUSH1), 0x0, byte(vm.DUP1), byte(vm.DUP1), byte(vm.DUP1), byte(vm.DUP1),
 			byte(vm.PUSH1), 0xff, byte(vm.PUSH1), 0x0, byte(vm.STATICCALL), byte(vm.POP),
 		}
-		prettyPrint("This calls the `identity`-precompile (cheap), then calls an account (expensive) and `staticcall`s the same"+
-			"account (cheap)", code)
+		prettyPrint(
+			"This calls the `identity`-precompile (cheap), then calls an account (expensive) and `staticcall`s the same"+
+				"account (cheap)", code,
+		)
 	}
 }
 
 // TestColdAccountAccessCost test that the cold account access cost is reported
 // correctly
-// see: https://github.com/ethereum/go-ethereum/issues/22649
+// see: https://github.com/ripoff2/go-ethereum/issues/22649
 func TestColdAccountAccessCost(t *testing.T) {
 	for i, tc := range []struct {
 		code []byte
 		step int
 		want uint64
 	}{
-		{ // EXTCODEHASH(0xff)
+		{
+			// EXTCODEHASH(0xff)
 			code: []byte{byte(vm.PUSH1), 0xFF, byte(vm.EXTCODEHASH), byte(vm.POP)},
 			step: 1,
 			want: 2600,
 		},
-		{ // BALANCE(0xff)
+		{
+			// BALANCE(0xff)
 			code: []byte{byte(vm.PUSH1), 0xFF, byte(vm.BALANCE), byte(vm.POP)},
 			step: 1,
 			want: 2600,
 		},
-		{ // CALL(0xff)
+		{
+			// CALL(0xff)
 			code: []byte{
 				byte(vm.PUSH1), 0x0,
 				byte(vm.DUP1), byte(vm.DUP1), byte(vm.DUP1), byte(vm.DUP1),
@@ -687,7 +719,8 @@ func TestColdAccountAccessCost(t *testing.T) {
 			step: 7,
 			want: 2855,
 		},
-		{ // CALLCODE(0xff)
+		{
+			// CALLCODE(0xff)
 			code: []byte{
 				byte(vm.PUSH1), 0x0,
 				byte(vm.DUP1), byte(vm.DUP1), byte(vm.DUP1), byte(vm.DUP1),
@@ -696,7 +729,8 @@ func TestColdAccountAccessCost(t *testing.T) {
 			step: 7,
 			want: 2855,
 		},
-		{ // DELEGATECALL(0xff)
+		{
+			// DELEGATECALL(0xff)
 			code: []byte{
 				byte(vm.PUSH1), 0x0,
 				byte(vm.DUP1), byte(vm.DUP1), byte(vm.DUP1),
@@ -705,7 +739,8 @@ func TestColdAccountAccessCost(t *testing.T) {
 			step: 6,
 			want: 2855,
 		},
-		{ // STATICCALL(0xff)
+		{
+			// STATICCALL(0xff)
 			code: []byte{
 				byte(vm.PUSH1), 0x0,
 				byte(vm.DUP1), byte(vm.DUP1), byte(vm.DUP1),
@@ -714,7 +749,8 @@ func TestColdAccountAccessCost(t *testing.T) {
 			step: 6,
 			want: 2855,
 		},
-		{ // SELFDESTRUCT(0xff)
+		{
+			// SELFDESTRUCT(0xff)
 			code: []byte{
 				byte(vm.PUSH1), 0xff, byte(vm.SELFDESTRUCT),
 			},
@@ -723,11 +759,13 @@ func TestColdAccountAccessCost(t *testing.T) {
 		},
 	} {
 		tracer := logger.NewStructLogger(nil)
-		Execute(tc.code, nil, &Config{
-			EVMConfig: vm.Config{
-				Tracer: tracer.Hooks(),
+		Execute(
+			tc.code, nil, &Config{
+				EVMConfig: vm.Config{
+					Tracer: tracer.Hooks(),
+				},
 			},
-		})
+		)
 		have := tracer.StructLogs()[tc.step].GasCost
 		if want := tc.want; have != want {
 			for ii, op := range tracer.StructLogs() {
@@ -766,7 +804,8 @@ func TestRuntimeJSTracer(t *testing.T) {
 	exit: function(res) {
 		this.exits++;
 		this.gasUsed = res.getGasUsed();
-	}}`}
+	}}`,
+	}
 	tests := []struct {
 		code []byte
 		// One result per tracer
@@ -892,12 +931,15 @@ func TestRuntimeJSTracer(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, _, err = Call(main, nil, &Config{
-				GasLimit: 1000000,
-				State:    statedb,
-				EVMConfig: vm.Config{
-					Tracer: tracer.Hooks,
-				}})
+			_, _, err = Call(
+				main, nil, &Config{
+					GasLimit: 1000000,
+					State:    statedb,
+					EVMConfig: vm.Config{
+						Tracer: tracer.Hooks,
+					},
+				},
+			)
 			if err != nil {
 				t.Fatal("didn't expect error", err)
 			}
@@ -927,11 +969,14 @@ func TestJSTracerCreateTx(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _, _, err = Create(code, &Config{
-		State: statedb,
-		EVMConfig: vm.Config{
-			Tracer: tracer.Hooks,
-		}})
+	_, _, _, err = Create(
+		code, &Config{
+			State: statedb,
+			EVMConfig: vm.Config{
+				Tracer: tracer.Hooks,
+			},
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

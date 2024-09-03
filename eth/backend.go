@@ -24,38 +24,38 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/bloombits"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state/pruner"
-	"github.com/ethereum/go-ethereum/core/txpool"
-	"github.com/ethereum/go-ethereum/core/txpool/blobpool"
-	"github.com/ethereum/go-ethereum/core/txpool/legacypool"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/downloader"
-	"github.com/ethereum/go-ethereum/eth/ethconfig"
-	"github.com/ethereum/go-ethereum/eth/gasprice"
-	"github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/eth/protocols/snap"
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/internal/ethapi"
-	"github.com/ethereum/go-ethereum/internal/shutdowncheck"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/miner"
-	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/dnsdisc"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/consensus"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/bloombits"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state/pruner"
+	"github.com/ripoff2/go-ethereum/core/txpool"
+	"github.com/ripoff2/go-ethereum/core/txpool/blobpool"
+	"github.com/ripoff2/go-ethereum/core/txpool/legacypool"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/eth/downloader"
+	"github.com/ripoff2/go-ethereum/eth/ethconfig"
+	"github.com/ripoff2/go-ethereum/eth/gasprice"
+	"github.com/ripoff2/go-ethereum/eth/protocols/eth"
+	"github.com/ripoff2/go-ethereum/eth/protocols/snap"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/internal/ethapi"
+	"github.com/ripoff2/go-ethereum/internal/shutdowncheck"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/miner"
+	"github.com/ripoff2/go-ethereum/node"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/p2p/dnsdisc"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 // Config contains the configuration options of the ETH protocol.
@@ -106,7 +106,10 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
 	if config.Miner.GasPrice == nil || config.Miner.GasPrice.Sign() <= 0 {
-		log.Warn("Sanitizing invalid miner gas price", "provided", config.Miner.GasPrice, "updated", ethconfig.Defaults.Miner.GasPrice)
+		log.Warn(
+			"Sanitizing invalid miner gas price", "provided", config.Miner.GasPrice, "updated",
+			ethconfig.Defaults.Miner.GasPrice,
+		)
 		config.Miner.GasPrice = new(big.Int).Set(ethconfig.Defaults.Miner.GasPrice)
 	}
 	if config.NoPruning && config.TrieDirtyCache > 0 {
@@ -118,10 +121,15 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 		}
 		config.TrieDirtyCache = 0
 	}
-	log.Info("Allocated trie memory caches", "clean", common.StorageSize(config.TrieCleanCache)*1024*1024, "dirty", common.StorageSize(config.TrieDirtyCache)*1024*1024)
+	log.Info(
+		"Allocated trie memory caches", "clean", common.StorageSize(config.TrieCleanCache)*1024*1024, "dirty",
+		common.StorageSize(config.TrieDirtyCache)*1024*1024,
+	)
 
 	// Assemble the Ethereum object
-	chainDb, err := stack.OpenDatabaseWithFreezer("chaindata", config.DatabaseCache, config.DatabaseHandles, config.DatabaseFreezer, "eth/db/chaindata/", false)
+	chainDb, err := stack.OpenDatabaseWithFreezer(
+		"chaindata", config.DatabaseCache, config.DatabaseHandles, config.DatabaseFreezer, "eth/db/chaindata/", false,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +180,10 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 
 	if !config.SkipBcVersionCheck {
 		if bcVersion != nil && *bcVersion > core.BlockChainVersion {
-			return nil, fmt.Errorf("database version is v%d, Geth %s only supports v%d", *bcVersion, params.VersionWithMeta, core.BlockChainVersion)
+			return nil, fmt.Errorf(
+				"database version is v%d, Geth %s only supports v%d", *bcVersion, params.VersionWithMeta,
+				core.BlockChainVersion,
+			)
 		} else if bcVersion == nil || *bcVersion < core.BlockChainVersion {
 			if bcVersion != nil { // only print warning on upgrade, not on init
 				log.Warn("Upgrade blockchain database version", "from", dbVer, "to", core.BlockChainVersion)
@@ -220,7 +231,10 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	shouldPreserve := func(header *types.Header) bool {
 		return false
 	}
-	eth.blockchain, err = core.NewBlockChain(chainDb, cacheConfig, config.Genesis, &overrides, eth.engine, vmConfig, shouldPreserve, &config.TransactionHistory)
+	eth.blockchain, err = core.NewBlockChain(
+		chainDb, cacheConfig, config.Genesis, &overrides, eth.engine, vmConfig, shouldPreserve,
+		&config.TransactionHistory,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -242,17 +256,19 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	}
 	// Permit the downloader to use the trie cache allowance during fast sync
 	cacheLimit := cacheConfig.TrieCleanLimit + cacheConfig.TrieDirtyLimit + cacheConfig.SnapshotLimit
-	if eth.handler, err = newHandler(&handlerConfig{
-		NodeID:         eth.p2pServer.Self().ID(),
-		Database:       chainDb,
-		Chain:          eth.blockchain,
-		TxPool:         eth.txPool,
-		Network:        networkID,
-		Sync:           config.SyncMode,
-		BloomCache:     uint64(cacheLimit),
-		EventMux:       eth.eventMux,
-		RequiredBlocks: config.RequiredBlocks,
-	}); err != nil {
+	if eth.handler, err = newHandler(
+		&handlerConfig{
+			NodeID:         eth.p2pServer.Self().ID(),
+			Database:       chainDb,
+			Chain:          eth.blockchain,
+			TxPool:         eth.txPool,
+			Network:        networkID,
+			Sync:           config.SyncMode,
+			BloomCache:     uint64(cacheLimit),
+			EventMux:       eth.eventMux,
+			RequiredBlocks: config.RequiredBlocks,
+		},
+	); err != nil {
 		return nil, err
 	}
 
@@ -282,12 +298,14 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 func makeExtraData(extra []byte) []byte {
 	if len(extra) == 0 {
 		// create default extradata
-		extra, _ = rlp.EncodeToBytes([]interface{}{
-			uint(params.VersionMajor<<16 | params.VersionMinor<<8 | params.VersionPatch),
-			"geth",
-			runtime.Version(),
-			runtime.GOOS,
-		})
+		extra, _ = rlp.EncodeToBytes(
+			[]interface{}{
+				uint(params.VersionMajor<<16 | params.VersionMinor<<8 | params.VersionPatch),
+				"geth",
+				runtime.Version(),
+				runtime.GOOS,
+			},
+		)
 	}
 	if uint64(len(extra)) > params.MaximumExtraDataSize {
 		log.Warn("Miner extra data exceed limit", "extra", hexutil.Bytes(extra), "limit", params.MaximumExtraDataSize)
@@ -305,24 +323,26 @@ func (s *Ethereum) APIs() []rpc.API {
 	apis = append(apis, s.engine.APIs(s.BlockChain())...)
 
 	// Append all the local APIs and return
-	return append(apis, []rpc.API{
-		{
-			Namespace: "miner",
-			Service:   NewMinerAPI(s),
-		}, {
-			Namespace: "eth",
-			Service:   downloader.NewDownloaderAPI(s.handler.downloader, s.blockchain, s.eventMux),
-		}, {
-			Namespace: "admin",
-			Service:   NewAdminAPI(s),
-		}, {
-			Namespace: "debug",
-			Service:   NewDebugAPI(s),
-		}, {
-			Namespace: "net",
-			Service:   s.netRPCService,
-		},
-	}...)
+	return append(
+		apis, []rpc.API{
+			{
+				Namespace: "miner",
+				Service:   NewMinerAPI(s),
+			}, {
+				Namespace: "eth",
+				Service:   downloader.NewDownloaderAPI(s.handler.downloader, s.blockchain, s.eventMux),
+			}, {
+				Namespace: "admin",
+				Service:   NewAdminAPI(s),
+			}, {
+				Namespace: "debug",
+				Service:   NewDebugAPI(s),
+			}, {
+				Namespace: "net",
+				Service:   s.netRPCService,
+			},
+		}...,
+	)
 }
 
 func (s *Ethereum) ResetWithGenesisBlock(gb *types.Block) {

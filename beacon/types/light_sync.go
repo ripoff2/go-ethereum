@@ -20,10 +20,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/beacon/merkle"
-	"github.com/ethereum/go-ethereum/beacon/params"
-	"github.com/ethereum/go-ethereum/common"
-	ctypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/beacon/merkle"
+	"github.com/ripoff2/go-ethereum/beacon/params"
+	"github.com/ripoff2/go-ethereum/common"
+	ctypes "github.com/ripoff2/go-ethereum/core/types"
 )
 
 // HeadInfo represents an unvalidated new head announcement.
@@ -47,7 +47,9 @@ func (c *BootstrapData) Validate() error {
 	if c.CommitteeRoot != c.Committee.Root() {
 		return errors.New("wrong committee root")
 	}
-	return merkle.VerifyProof(c.Header.StateRoot, params.StateIndexSyncCommittee, c.CommitteeBranch, merkle.Value(c.CommitteeRoot))
+	return merkle.VerifyProof(
+		c.Header.StateRoot, params.StateIndexSyncCommittee, c.CommitteeBranch, merkle.Value(c.CommitteeRoot),
+	)
 }
 
 // LightClientUpdate is a proof of the next sync committee root based on a header
@@ -79,11 +81,17 @@ func (update *LightClientUpdate) Validate() error {
 		if update.FinalizedHeader.SyncPeriod() != period {
 			return errors.New("finalized header is from different period")
 		}
-		if err := merkle.VerifyProof(update.AttestedHeader.Header.StateRoot, params.StateIndexFinalBlock, update.FinalityBranch, merkle.Value(update.FinalizedHeader.Hash())); err != nil {
+		if err := merkle.VerifyProof(
+			update.AttestedHeader.Header.StateRoot, params.StateIndexFinalBlock, update.FinalityBranch,
+			merkle.Value(update.FinalizedHeader.Hash()),
+		); err != nil {
 			return fmt.Errorf("invalid finalized header proof: %w", err)
 		}
 	}
-	if err := merkle.VerifyProof(update.AttestedHeader.Header.StateRoot, params.StateIndexNextSyncCommittee, update.NextSyncCommitteeBranch, merkle.Value(update.NextSyncCommitteeRoot)); err != nil {
+	if err := merkle.VerifyProof(
+		update.AttestedHeader.Header.StateRoot, params.StateIndexNextSyncCommittee, update.NextSyncCommitteeBranch,
+		merkle.Value(update.NextSyncCommitteeRoot),
+	); err != nil {
 		return fmt.Errorf("invalid next sync committee proof: %w", err)
 	}
 	return nil
@@ -223,7 +231,9 @@ func (u *FinalityUpdate) Validate() error {
 	if err := u.Finalized.Validate(); err != nil {
 		return err
 	}
-	return merkle.VerifyProof(u.Attested.StateRoot, params.StateIndexFinalBlock, u.FinalityBranch, merkle.Value(u.Finalized.Hash()))
+	return merkle.VerifyProof(
+		u.Attested.StateRoot, params.StateIndexFinalBlock, u.FinalityBranch, merkle.Value(u.Finalized.Hash()),
+	)
 }
 
 // ChainHeadEvent returns an authenticated execution payload associated with the

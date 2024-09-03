@@ -22,17 +22,17 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/internal/ethapi"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/internal/ethapi"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum/trie"
 )
 
 // DebugAPI is the collection of Ethereum full node APIs for debugging the
@@ -120,11 +120,13 @@ func (api *DebugAPI) GetBadBlocks(ctx context.Context) ([]*BadBlockArgs, error) 
 			blockRlp = fmt.Sprintf("%#x", rlpBytes)
 		}
 		blockJSON = ethapi.RPCMarshalBlock(block, true, true, api.eth.APIBackend.ChainConfig())
-		results = append(results, &BadBlockArgs{
-			Hash:  block.Hash(),
-			RLP:   blockRlp,
-			Block: blockJSON,
-		})
+		results = append(
+			results, &BadBlockArgs{
+				Hash:  block.Hash(),
+				RLP:   blockRlp,
+				Block: blockJSON,
+			},
+		)
 	}
 	return results, nil
 }
@@ -133,7 +135,9 @@ func (api *DebugAPI) GetBadBlocks(ctx context.Context) ([]*BadBlockArgs, error) 
 const AccountRangeMaxResults = 256
 
 // AccountRange enumerates all accounts in the given block and start point in paging request
-func (api *DebugAPI) AccountRange(blockNrOrHash rpc.BlockNumberOrHash, start hexutil.Bytes, maxResults int, nocode, nostorage, incompletes bool) (state.Dump, error) {
+func (api *DebugAPI) AccountRange(
+	blockNrOrHash rpc.BlockNumberOrHash, start hexutil.Bytes, maxResults int, nocode, nostorage, incompletes bool,
+) (state.Dump, error) {
 	var stateDb *state.StateDB
 	var err error
 
@@ -210,7 +214,10 @@ type storageEntry struct {
 }
 
 // StorageRangeAt returns the storage at the given block height and transaction index.
-func (api *DebugAPI) StorageRangeAt(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash, txIndex int, contractAddress common.Address, keyStart hexutil.Bytes, maxResult int) (StorageRangeResult, error) {
+func (api *DebugAPI) StorageRangeAt(
+	ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash, txIndex int, contractAddress common.Address,
+	keyStart hexutil.Bytes, maxResult int,
+) (StorageRangeResult, error) {
 	var block *types.Block
 
 	block, err := api.eth.APIBackend.BlockByNumberOrHash(ctx, blockNrOrHash)
@@ -229,7 +236,9 @@ func (api *DebugAPI) StorageRangeAt(ctx context.Context, blockNrOrHash rpc.Block
 	return storageRangeAt(statedb, block.Root(), contractAddress, keyStart, maxResult)
 }
 
-func storageRangeAt(statedb *state.StateDB, root common.Hash, address common.Address, start []byte, maxResult int) (StorageRangeResult, error) {
+func storageRangeAt(
+	statedb *state.StateDB, root common.Hash, address common.Address, start []byte, maxResult int,
+) (StorageRangeResult, error) {
 	storageRoot := statedb.GetStorageRoot(address)
 	if storageRoot == types.EmptyRootHash || storageRoot == (common.Hash{}) {
 		return StorageRangeResult{}, nil // empty storage
@@ -322,7 +331,10 @@ func (api *DebugAPI) GetModifiedAccountsByHash(startHash common.Hash, endHash *c
 
 func (api *DebugAPI) getModifiedAccounts(startBlock, endBlock *types.Block) ([]common.Address, error) {
 	if startBlock.Number().Uint64() >= endBlock.Number().Uint64() {
-		return nil, fmt.Errorf("start block height (%d) must be less than end block height (%d)", startBlock.Number().Uint64(), endBlock.Number().Uint64())
+		return nil, fmt.Errorf(
+			"start block height (%d) must be less than end block height (%d)", startBlock.Number().Uint64(),
+			endBlock.Number().Uint64(),
+		)
 	}
 	triedb := api.eth.BlockChain().TrieDB()
 

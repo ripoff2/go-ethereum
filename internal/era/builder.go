@@ -23,11 +23,11 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/internal/era/e2store"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/golang/snappy"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/internal/era/e2store"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 // Builder is used to create Era1 archives of block data.
@@ -113,7 +113,9 @@ func (b *Builder) Add(block *types.Block, receipts types.Receipts, td *big.Int) 
 
 // AddRLP writes a compressed block entry and compressed receipts entry to the
 // underlying e2store file.
-func (b *Builder) AddRLP(header, body, receipts []byte, number uint64, hash common.Hash, td, difficulty *big.Int) error {
+func (b *Builder) AddRLP(
+	header, body, receipts []byte, number uint64, hash common.Hash, td, difficulty *big.Int,
+) error {
 	// Write Era1 version entry before first block.
 	if b.startNum == nil {
 		n, err := b.w.Write(TypeVersion, nil)

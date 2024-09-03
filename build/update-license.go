@@ -78,7 +78,7 @@ var (
 		"internal/reexec",
 
 		// skip special licenses
-		"crypto/secp256k1", // Relicensed to BSD-3 via https://github.com/ethereum/go-ethereum/pull/17225
+		"crypto/secp256k1", // Relicensed to BSD-3 via https://github.com/ripoff2/go-ethereum/pull/17225
 	}
 
 	// paths with this prefix are licensed as GPL. all other files are LGPL.
@@ -94,7 +94,9 @@ var (
 
 // this template generates the license comment.
 // its input is an info structure.
-var licenseT = template.Must(template.New("").Parse(`
+var licenseT = template.Must(
+	template.New("").Parse(
+		`
 // Copyright {{.Year}} The go-ethereum Authors
 // This file is part of {{.Whole false}}.
 //
@@ -111,7 +113,9 @@ var licenseT = template.Must(template.New("").Parse(`
 // You should have received a copy of the GNU {{.License}}
 // along with {{.Whole false}}. If not, see <http://www.gnu.org/licenses/>.
 
-`[1:]))
+`[1:],
+	),
+)
 
 type info struct {
 	file string
@@ -195,20 +199,22 @@ func skipFile(path string) bool {
 func getFiles() []string {
 	cmd := exec.Command("git", "ls-tree", "-r", "--name-only", "HEAD")
 	var files []string
-	err := doLines(cmd, func(line string) {
-		if skipFile(line) {
-			return
-		}
-		ext := filepath.Ext(line)
-		for _, wantExt := range extensions {
-			if ext == wantExt {
-				goto keep
+	err := doLines(
+		cmd, func(line string) {
+			if skipFile(line) {
+				return
 			}
-		}
-		return
-	keep:
-		files = append(files, line)
-	})
+			ext := filepath.Ext(line)
+			for _, wantExt := range extensions {
+				if ext == wantExt {
+					goto keep
+				}
+			}
+			return
+		keep:
+			files = append(files, line)
+		},
+	)
 	if err != nil {
 		log.Fatal("error getting files:", err)
 	}
@@ -222,12 +228,14 @@ func gitAuthors(files []string) []string {
 	cmds = append(cmds, files...)
 	cmd := exec.Command("git", cmds...)
 	var authors []string
-	err := doLines(cmd, func(line string) {
-		m := authorRegexp.FindStringSubmatch(line)
-		if len(m) > 1 {
-			authors = append(authors, m[1])
-		}
-	})
+	err := doLines(
+		cmd, func(line string) {
+			m := authorRegexp.FindStringSubmatch(line)
+			if len(m) > 1 {
+				authors = append(authors, m[1])
+			}
+		},
+	)
 	if err != nil {
 		log.Fatalln("error getting authors:", err)
 	}
@@ -259,9 +267,11 @@ func mailmapLookup(authors []string) []string {
 	cmds = append(cmds, authors...)
 	cmd := exec.Command("git", cmds...)
 	var translated []string
-	err := doLines(cmd, func(line string) {
-		translated = append(translated, line)
-	})
+	err := doLines(
+		cmd, func(line string) {
+			translated = append(translated, line)
+		},
+	)
 	if err != nil {
 		log.Fatalln("error translating authors:", err)
 	}
@@ -291,9 +301,11 @@ func writeAuthors(files []string) {
 		}
 	}
 	// Write sorted list of authors back to the file.
-	slices.SortFunc(list, func(a, b string) int {
-		return strings.Compare(strings.ToLower(a), strings.ToLower(b))
-	})
+	slices.SortFunc(
+		list, func(a, b string) int {
+			return strings.Compare(strings.ToLower(a), strings.ToLower(b))
+		},
+	)
 	content := new(bytes.Buffer)
 	content.WriteString(authorsFileHeader)
 	for _, a := range list {
@@ -352,16 +364,20 @@ func isGenerated(file string) bool {
 // fileInfo finds the lowest year in which the given file was committed.
 func fileInfo(file string) (*info, error) {
 	info := &info{file: file, Year: int64(time.Now().Year())}
-	cmd := exec.Command("git", "log", "--follow", "--find-renames=80", "--find-copies=80", "--pretty=format:%ai", "--", file)
-	err := doLines(cmd, func(line string) {
-		y, err := strconv.ParseInt(line[:4], 10, 64)
-		if err != nil {
-			fmt.Printf("cannot parse year: %q", line[:4])
-		}
-		if y < info.Year {
-			info.Year = y
-		}
-	})
+	cmd := exec.Command(
+		"git", "log", "--follow", "--find-renames=80", "--find-copies=80", "--pretty=format:%ai", "--", file,
+	)
+	err := doLines(
+		cmd, func(line string) {
+			y, err := strconv.ParseInt(line[:4], 10, 64)
+			if err != nil {
+				fmt.Printf("cannot parse year: %q", line[:4])
+			}
+			if y < info.Year {
+				info.Year = y
+			}
+		},
+	)
 	return info, err
 }
 

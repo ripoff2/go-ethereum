@@ -22,13 +22,13 @@ import (
 	"math/big"
 	"sync/atomic"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/accounts/abi"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
 )
 
 //go:generate go run github.com/fjl/gencodec -type callFrame -field-override callFrameMarshaling -out gen_callframe_json.go
@@ -42,7 +42,7 @@ type callLog struct {
 	Topics  []common.Hash  `json:"topics"`
 	Data    hexutil.Bytes  `json:"data"`
 	// Position of the log relative to subcalls within the same trace
-	// See https://github.com/ethereum/go-ethereum/pull/28389 for details
+	// See https://github.com/ripoff2/go-ethereum/pull/28389 for details
 	Position hexutil.Uint `json:"position"`
 }
 
@@ -156,7 +156,9 @@ func newCallTracerObject(ctx *tracers.Context, cfg json.RawMessage) (*callTracer
 }
 
 // OnEnter is called when EVM enters a new scope (via call, create or selfdestruct).
-func (t *callTracer) OnEnter(depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int) {
+func (t *callTracer) OnEnter(
+	depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int,
+) {
 	t.depth = depth
 	if t.config.OnlyTopCall && depth > 0 {
 		return

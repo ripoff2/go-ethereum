@@ -24,7 +24,7 @@ import (
 	"math/big"
 	"reflect"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 var (
@@ -154,7 +154,10 @@ func forEachUnpack(t Type, output []byte, start, size int) (interface{}, error) 
 		return nil, fmt.Errorf("cannot marshal input to array, size is negative (%d)", size)
 	}
 	if start+32*size > len(output) {
-		return nil, fmt.Errorf("abi: cannot marshal into go array: offset %d would go over slice boundary (len=%d)", len(output), start+32*size)
+		return nil, fmt.Errorf(
+			"abi: cannot marshal into go array: offset %d would go over slice boundary (len=%d)", len(output),
+			start+32*size,
+		)
 	}
 
 	// this value will become our slice or our array, depending on the type
@@ -223,7 +226,9 @@ func forTupleUnpack(t Type, output []byte) (interface{}, error) {
 // into a go type with accordance with the ABI spec.
 func toGoType(index int, t Type, output []byte) (interface{}, error) {
 	if index+32 > len(output) {
-		return nil, fmt.Errorf("abi: cannot marshal in to go type: length insufficient %d require %d", len(output), index+32)
+		return nil, fmt.Errorf(
+			"abi: cannot marshal in to go type: length insufficient %d require %d", len(output), index+32,
+		)
 	}
 
 	var (
@@ -258,7 +263,9 @@ func toGoType(index int, t Type, output []byte) (interface{}, error) {
 		if isDynamicType(*t.Elem) {
 			offset := binary.BigEndian.Uint64(returnOutput[len(returnOutput)-8:])
 			if offset > uint64(len(output)) {
-				return nil, fmt.Errorf("abi: toGoType offset greater than output length: offset: %d, len(output): %d", offset, len(output))
+				return nil, fmt.Errorf(
+					"abi: toGoType offset greater than output length: offset: %d, len(output): %d", offset, len(output),
+				)
 			}
 			return forEachUnpack(t, output[offset:], 0, t.Size)
 		}
@@ -291,7 +298,10 @@ func lengthPrefixPointsTo(index int, output []byte) (start int, length int, err 
 	outputLength := big.NewInt(int64(len(output)))
 
 	if bigOffsetEnd.Cmp(outputLength) > 0 {
-		return 0, 0, fmt.Errorf("abi: cannot marshal in to go slice: offset %v would go over slice boundary (len=%v)", bigOffsetEnd, outputLength)
+		return 0, 0, fmt.Errorf(
+			"abi: cannot marshal in to go slice: offset %v would go over slice boundary (len=%v)", bigOffsetEnd,
+			outputLength,
+		)
 	}
 
 	if bigOffsetEnd.BitLen() > 63 {
@@ -307,7 +317,9 @@ func lengthPrefixPointsTo(index int, output []byte) (start int, length int, err 
 	}
 
 	if totalSize.Cmp(outputLength) > 0 {
-		return 0, 0, fmt.Errorf("abi: cannot marshal in to go type: length insufficient %v require %v", outputLength, totalSize)
+		return 0, 0, fmt.Errorf(
+			"abi: cannot marshal in to go type: length insufficient %v require %v", outputLength, totalSize,
+		)
 	}
 	start = int(bigOffsetEnd.Uint64())
 	length = int(lengthBig.Uint64())
@@ -320,7 +332,9 @@ func tuplePointsTo(index int, output []byte) (start int, err error) {
 	outputLen := big.NewInt(int64(len(output)))
 
 	if offset.Cmp(outputLen) > 0 {
-		return 0, fmt.Errorf("abi: cannot marshal in to go slice: offset %v would go over slice boundary (len=%v)", offset, outputLen)
+		return 0, fmt.Errorf(
+			"abi: cannot marshal in to go slice: offset %v would go over slice boundary (len=%v)", offset, outputLen,
+		)
 	}
 	if offset.BitLen() > 63 {
 		return 0, fmt.Errorf("abi offset larger than int64: %v", offset)

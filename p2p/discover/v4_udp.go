@@ -29,11 +29,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/discover/v4wire"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/netutil"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p/discover/v4wire"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/netutil"
 )
 
 // Errors
@@ -163,12 +163,14 @@ func (t *UDPv4) Self() *enode.Node {
 
 // Close shuts down the socket and aborts any running queries.
 func (t *UDPv4) Close() {
-	t.closeOnce.Do(func() {
-		t.cancelCloseCtx()
-		t.conn.Close()
-		t.wg.Wait()
-		t.tab.close()
-	})
+	t.closeOnce.Do(
+		func() {
+			t.cancelCloseCtx()
+			t.conn.Close()
+			t.wg.Wait()
+			t.tab.close()
+		},
+	)
 }
 
 // Resolve searches for a specific node with the given ID and tries to get the most recent
@@ -241,13 +243,15 @@ func (t *UDPv4) sendPing(toid enode.ID, toaddr netip.AddrPort, callback func()) 
 	}
 	// Add a matcher for the reply to the pending reply queue. Pongs are matched if they
 	// reference the ping we're about to send.
-	rm := t.pending(toid, toaddr.Addr(), v4wire.PongPacket, func(p v4wire.Packet) (matched bool, requestDone bool) {
-		matched = bytes.Equal(p.(*v4wire.Pong).ReplyTok, hash)
-		if matched && callback != nil {
-			callback()
-		}
-		return matched, matched
-	})
+	rm := t.pending(
+		toid, toaddr.Addr(), v4wire.PongPacket, func(p v4wire.Packet) (matched bool, requestDone bool) {
+			matched = bytes.Equal(p.(*v4wire.Pong).ReplyTok, hash)
+			if matched && callback != nil {
+				callback()
+			}
+			return matched, matched
+		},
+	)
 	// Send the packet.
 	t.localNode.UDPContact(toaddr)
 	t.write(toaddr, toid, req.Name(), packet)
@@ -298,13 +302,15 @@ func (t *UDPv4) newRandomLookup(ctx context.Context) *lookup {
 
 func (t *UDPv4) newLookup(ctx context.Context, targetKey v4wire.Pubkey) *lookup {
 	target := enode.ID(crypto.Keccak256Hash(targetKey[:]))
-	it := newLookup(ctx, t.tab, target, func(n *enode.Node) ([]*enode.Node, error) {
-		addr, ok := n.UDPEndpoint()
-		if !ok {
-			return nil, errNoUDPEndpoint
-		}
-		return t.findnode(n.ID(), addr, targetKey)
-	})
+	it := newLookup(
+		ctx, t.tab, target, func(n *enode.Node) ([]*enode.Node, error) {
+			addr, ok := n.UDPEndpoint()
+			if !ok {
+				return nil, errNoUDPEndpoint
+			}
+			return t.findnode(n.ID(), addr, targetKey)
+		},
+	)
 	return it
 }
 
@@ -317,23 +323,27 @@ func (t *UDPv4) findnode(toid enode.ID, toAddrPort netip.AddrPort, target v4wire
 	// active until enough nodes have been received.
 	nodes := make([]*enode.Node, 0, bucketSize)
 	nreceived := 0
-	rm := t.pending(toid, toAddrPort.Addr(), v4wire.NeighborsPacket, func(r v4wire.Packet) (matched bool, requestDone bool) {
-		reply := r.(*v4wire.Neighbors)
-		for _, rn := range reply.Nodes {
-			nreceived++
-			n, err := t.nodeFromRPC(toAddrPort, rn)
-			if err != nil {
-				t.log.Trace("Invalid neighbor node received", "ip", rn.IP, "addr", toAddrPort, "err", err)
-				continue
+	rm := t.pending(
+		toid, toAddrPort.Addr(), v4wire.NeighborsPacket, func(r v4wire.Packet) (matched bool, requestDone bool) {
+			reply := r.(*v4wire.Neighbors)
+			for _, rn := range reply.Nodes {
+				nreceived++
+				n, err := t.nodeFromRPC(toAddrPort, rn)
+				if err != nil {
+					t.log.Trace("Invalid neighbor node received", "ip", rn.IP, "addr", toAddrPort, "err", err)
+					continue
+				}
+				nodes = append(nodes, n)
 			}
-			nodes = append(nodes, n)
-		}
-		return true, nreceived >= bucketSize
-	})
-	t.send(toAddrPort, toid, &v4wire.Findnode{
-		Target:     target,
-		Expiration: uint64(time.Now().Add(expiration).Unix()),
-	})
+			return true, nreceived >= bucketSize
+		},
+	)
+	t.send(
+		toAddrPort, toid, &v4wire.Findnode{
+			Target:     target,
+			Expiration: uint64(time.Now().Add(expiration).Unix()),
+		},
+	)
 	// Ensure that callers don't see a timeout if the node actually responded. Since
 	// findnode can receive more than one neighbors response, the reply matcher will be
 	// active until the remote node sends enough nodes. If the remote end doesn't have
@@ -361,10 +371,12 @@ func (t *UDPv4) RequestENR(n *enode.Node) (*enode.Node, error) {
 
 	// Add a matcher for the reply to the pending reply queue. Responses are matched if
 	// they reference the request we're about to send.
-	rm := t.pending(n.ID(), addr.Addr(), v4wire.ENRResponsePacket, func(r v4wire.Packet) (matched bool, requestDone bool) {
-		matched = bytes.Equal(r.(*v4wire.ENRResponse).ReplyTok, hash)
-		return matched, matched
-	})
+	rm := t.pending(
+		n.ID(), addr.Addr(), v4wire.ENRResponsePacket, func(r v4wire.Packet) (matched bool, requestDone bool) {
+			matched = bytes.Equal(r.(*v4wire.ENRResponse).ReplyTok, hash)
+			return matched, matched
+		},
+	)
 	// Send the packet and wait for the reply.
 	t.write(addr, n.ID(), req.Name(), packet)
 	if err := <-rm.errc; err != nil {
@@ -680,20 +692,24 @@ func (t *UDPv4) handlePing(h *packetHandlerV4, from netip.AddrPort, fromID enode
 	req := h.Packet.(*v4wire.Ping)
 
 	// Reply.
-	t.send(from, fromID, &v4wire.Pong{
-		To:         v4wire.NewEndpoint(from, req.From.TCP),
-		ReplyTok:   mac,
-		Expiration: uint64(time.Now().Add(expiration).Unix()),
-		ENRSeq:     t.localNode.Node().Seq(),
-	})
+	t.send(
+		from, fromID, &v4wire.Pong{
+			To:         v4wire.NewEndpoint(from, req.From.TCP),
+			ReplyTok:   mac,
+			Expiration: uint64(time.Now().Add(expiration).Unix()),
+			ENRSeq:     t.localNode.Node().Seq(),
+		},
+	)
 
 	// Ping back if our last pong on file is too far in the past.
 	fromIP := from.Addr().AsSlice()
 	n := enode.NewV4(h.senderKey, fromIP, int(req.From.TCP), int(from.Port()))
 	if time.Since(t.db.LastPongReceived(n.ID(), from.Addr())) > bondExpiration {
-		t.sendPing(fromID, from, func() {
-			t.tab.addInboundNode(n)
-		})
+		t.sendPing(
+			fromID, from, func() {
+				t.tab.addInboundNode(n)
+			},
+		)
 	} else {
 		t.tab.addInboundNode(n)
 	}
@@ -783,7 +799,9 @@ func (t *UDPv4) verifyNeighbors(h *packetHandlerV4, from netip.AddrPort, fromID 
 
 // ENRREQUEST/v4
 
-func (t *UDPv4) verifyENRRequest(h *packetHandlerV4, from netip.AddrPort, fromID enode.ID, fromKey v4wire.Pubkey) error {
+func (t *UDPv4) verifyENRRequest(
+	h *packetHandlerV4, from netip.AddrPort, fromID enode.ID, fromKey v4wire.Pubkey,
+) error {
 	req := h.Packet.(*v4wire.ENRRequest)
 
 	if v4wire.Expired(req.Expiration) {
@@ -796,15 +814,19 @@ func (t *UDPv4) verifyENRRequest(h *packetHandlerV4, from netip.AddrPort, fromID
 }
 
 func (t *UDPv4) handleENRRequest(h *packetHandlerV4, from netip.AddrPort, fromID enode.ID, mac []byte) {
-	t.send(from, fromID, &v4wire.ENRResponse{
-		ReplyTok: mac,
-		Record:   *t.localNode.Node().Record(),
-	})
+	t.send(
+		from, fromID, &v4wire.ENRResponse{
+			ReplyTok: mac,
+			Record:   *t.localNode.Node().Record(),
+		},
+	)
 }
 
 // ENRRESPONSE/v4
 
-func (t *UDPv4) verifyENRResponse(h *packetHandlerV4, from netip.AddrPort, fromID enode.ID, fromKey v4wire.Pubkey) error {
+func (t *UDPv4) verifyENRResponse(
+	h *packetHandlerV4, from netip.AddrPort, fromID enode.ID, fromKey v4wire.Pubkey,
+) error {
 	if !t.handleReply(fromID, from.Addr(), h.Packet) {
 		return errUnsolicitedReply
 	}

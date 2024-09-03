@@ -23,10 +23,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/karalabe/hid"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // LedgerScheme is the protocol scheme prefixing account and wallet URLs.
@@ -70,30 +70,32 @@ type Hub struct {
 
 // NewLedgerHub creates a new hardware wallet manager for Ledger devices.
 func NewLedgerHub() (*Hub, error) {
-	return newHub(LedgerScheme, 0x2c97, []uint16{
+	return newHub(
+		LedgerScheme, 0x2c97, []uint16{
 
-		// Device definitions taken from
-		// https://github.com/LedgerHQ/ledger-live/blob/38012bc8899e0f07149ea9cfe7e64b2c146bc92b/libs/ledgerjs/packages/devices/src/index.ts
+			// Device definitions taken from
+			// https://github.com/LedgerHQ/ledger-live/blob/38012bc8899e0f07149ea9cfe7e64b2c146bc92b/libs/ledgerjs/packages/devices/src/index.ts
 
-		// Original product IDs
-		0x0000, /* Ledger Blue */
-		0x0001, /* Ledger Nano S */
-		0x0004, /* Ledger Nano X */
-		0x0005, /* Ledger Nano S Plus */
-		0x0006, /* Ledger Nano FTS */
+			// Original product IDs
+			0x0000, /* Ledger Blue */
+			0x0001, /* Ledger Nano S */
+			0x0004, /* Ledger Nano X */
+			0x0005, /* Ledger Nano S Plus */
+			0x0006, /* Ledger Nano FTS */
 
-		0x0015, /* HID + U2F + WebUSB Ledger Blue */
-		0x1015, /* HID + U2F + WebUSB Ledger Nano S */
-		0x4015, /* HID + U2F + WebUSB Ledger Nano X */
-		0x5015, /* HID + U2F + WebUSB Ledger Nano S Plus */
-		0x6015, /* HID + U2F + WebUSB Ledger Nano FTS */
+			0x0015, /* HID + U2F + WebUSB Ledger Blue */
+			0x1015, /* HID + U2F + WebUSB Ledger Nano S */
+			0x4015, /* HID + U2F + WebUSB Ledger Nano X */
+			0x5015, /* HID + U2F + WebUSB Ledger Nano S Plus */
+			0x6015, /* HID + U2F + WebUSB Ledger Nano FTS */
 
-		0x0011, /* HID + WebUSB Ledger Blue */
-		0x1011, /* HID + WebUSB Ledger Nano S */
-		0x4011, /* HID + WebUSB Ledger Nano X */
-		0x5011, /* HID + WebUSB Ledger Nano S Plus */
-		0x6011, /* HID + WebUSB Ledger Nano FTS */
-	}, 0xffa0, 0, newLedgerDriver)
+			0x0011, /* HID + WebUSB Ledger Blue */
+			0x1011, /* HID + WebUSB Ledger Nano S */
+			0x4011, /* HID + WebUSB Ledger Nano X */
+			0x5011, /* HID + WebUSB Ledger Nano S Plus */
+			0x6011, /* HID + WebUSB Ledger Nano FTS */
+		}, 0xffa0, 0, newLedgerDriver,
+	)
 }
 
 // NewTrezorHubWithHID creates a new hardware wallet manager for Trezor devices.
@@ -104,11 +106,17 @@ func NewTrezorHubWithHID() (*Hub, error) {
 // NewTrezorHubWithWebUSB creates a new hardware wallet manager for Trezor devices with
 // firmware version > 1.8.0
 func NewTrezorHubWithWebUSB() (*Hub, error) {
-	return newHub(TrezorScheme, 0x1209, []uint16{0x53c1 /* Trezor WebUSB */}, 0xffff /* No usage id on webusb, don't match unset (0) */, 0, newTrezorDriver)
+	return newHub(
+		TrezorScheme, 0x1209, []uint16{0x53c1 /* Trezor WebUSB */},
+		0xffff /* No usage id on webusb, don't match unset (0) */, 0, newTrezorDriver,
+	)
 }
 
 // newHub creates a new hardware wallet manager for generic USB devices.
-func newHub(scheme string, vendorID uint16, productIDs []uint16, usageID uint16, endpointID int, makeDriver func(log.Logger) driver) (*Hub, error) {
+func newHub(
+	scheme string, vendorID uint16, productIDs []uint16, usageID uint16, endpointID int,
+	makeDriver func(log.Logger) driver,
+) (*Hub, error) {
 	if !hid.Supported() {
 		return nil, errors.New("unsupported platform")
 	}
@@ -177,8 +185,10 @@ func (hub *Hub) refreshWallets() {
 			// See rationale before the enumeration why this is needed and only on Linux.
 			hub.commsLock.Unlock()
 		}
-		log.Error("Failed to enumerate USB devices", "hub", hub.scheme,
-			"vendor", hub.vendorID, "failcount", failcount, "err", err)
+		log.Error(
+			"Failed to enumerate USB devices", "hub", hub.scheme,
+			"vendor", hub.vendorID, "failcount", failcount, "err", err,
+		)
 		return
 	}
 	hub.enumFails.Store(0)

@@ -19,9 +19,9 @@ package sync
 import (
 	"testing"
 
-	"github.com/ethereum/go-ethereum/beacon/light/request"
-	"github.com/ethereum/go-ethereum/beacon/types"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/beacon/light/request"
+	"github.com/ripoff2/go-ethereum/beacon/types"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 var (
@@ -37,11 +37,23 @@ var (
 	testHead3 = types.HeadInfo{Slot: 124, BlockRoot: common.Hash{3}}
 	testHead4 = types.HeadInfo{Slot: 125, BlockRoot: common.Hash{4}}
 
-	testOptUpdate1 = types.OptimisticUpdate{SignatureSlot: 0x0124, Attested: types.HeaderWithExecProof{Header: types.Header{Slot: 0x0123, StateRoot: common.Hash{1}}}}
-	testOptUpdate2 = types.OptimisticUpdate{SignatureSlot: 0x2010, Attested: types.HeaderWithExecProof{Header: types.Header{Slot: 0x200e, StateRoot: common.Hash{2}}}}
+	testOptUpdate1 = types.OptimisticUpdate{
+		SignatureSlot: 0x0124,
+		Attested:      types.HeaderWithExecProof{Header: types.Header{Slot: 0x0123, StateRoot: common.Hash{1}}},
+	}
+	testOptUpdate2 = types.OptimisticUpdate{
+		SignatureSlot: 0x2010,
+		Attested:      types.HeaderWithExecProof{Header: types.Header{Slot: 0x200e, StateRoot: common.Hash{2}}},
+	}
 	// testOptUpdate3 is at the end of period 1 but signed in period 2
-	testOptUpdate3 = types.OptimisticUpdate{SignatureSlot: 0x4000, Attested: types.HeaderWithExecProof{Header: types.Header{Slot: 0x3fff, StateRoot: common.Hash{3}}}}
-	testOptUpdate4 = types.OptimisticUpdate{SignatureSlot: 0x6444, Attested: types.HeaderWithExecProof{Header: types.Header{Slot: 0x6443, StateRoot: common.Hash{4}}}}
+	testOptUpdate3 = types.OptimisticUpdate{
+		SignatureSlot: 0x4000,
+		Attested:      types.HeaderWithExecProof{Header: types.Header{Slot: 0x3fff, StateRoot: common.Hash{3}}},
+	}
+	testOptUpdate4 = types.OptimisticUpdate{
+		SignatureSlot: 0x6444,
+		Attested:      types.HeaderWithExecProof{Header: types.Header{Slot: 0x6443, StateRoot: common.Hash{4}}},
+	}
 )
 
 func finality(opt types.OptimisticUpdate) types.FinalityUpdate {

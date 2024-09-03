@@ -27,20 +27,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/cmd/evm/internal/compiler"
-	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/core/vm/runtime"
-	"github.com/ethereum/go-ethereum/eth/tracers/logger"
-	"github.com/ethereum/go-ethereum/internal/flags"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/triedb"
-	"github.com/ethereum/go-ethereum/triedb/hashdb"
+	"github.com/ripoff2/go-ethereum/cmd/evm/internal/compiler"
+	"github.com/ripoff2/go-ethereum/cmd/utils"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/core/vm/runtime"
+	"github.com/ripoff2/go-ethereum/eth/tracers/logger"
+	"github.com/ripoff2/go-ethereum/internal/flags"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum/triedb/hashdb"
 	"github.com/urfave/cli/v2"
 )
 
@@ -80,13 +80,17 @@ type execStats struct {
 	bytesAllocated int64         // The cumulative number of bytes allocated during execution.
 }
 
-func timedExec(bench bool, execFunc func() ([]byte, uint64, error)) (output []byte, gasLeft uint64, stats execStats, err error) {
+func timedExec(bench bool, execFunc func() ([]byte, uint64, error)) (
+	output []byte, gasLeft uint64, stats execStats, err error,
+) {
 	if bench {
-		result := testing.Benchmark(func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				output, gasLeft, err = execFunc()
-			}
-		})
+		result := testing.Benchmark(
+			func(b *testing.B) {
+				for i := 0; i < b.N; i++ {
+					output, gasLeft, err = execFunc()
+				}
+			},
+		)
 
 		// Get the average execution time from the benchmarking result.
 		// There are other useful stats here that could be reported.
@@ -149,10 +153,12 @@ func runCmd(ctx *cli.Context) error {
 	}
 
 	db := rawdb.NewMemoryDatabase()
-	triedb := triedb.NewDatabase(db, &triedb.Config{
-		Preimages: preimages,
-		HashDB:    hashdb.Defaults,
-	})
+	triedb := triedb.NewDatabase(
+		db, &triedb.Config{
+			Preimages: preimages,
+			HashDB:    hashdb.Defaults,
+		},
+	)
 	defer triedb.Close()
 	genesis := genesisConfig.MustCommit(db, triedb)
 	sdb := state.NewDatabaseWithNodeDB(db, triedb)
@@ -295,11 +301,13 @@ func runCmd(ctx *cli.Context) error {
 	}
 
 	if bench || ctx.Bool(StatDumpFlag.Name) {
-		fmt.Fprintf(os.Stderr, `EVM gas used:    %d
+		fmt.Fprintf(
+			os.Stderr, `EVM gas used:    %d
 execution time:  %v
 allocations:     %d
 allocated bytes: %d
-`, initialGas-leftOverGas, stats.time, stats.allocs, stats.bytesAllocated)
+`, initialGas-leftOverGas, stats.time, stats.allocs, stats.bytesAllocated,
+		)
 	}
 	if tracer == nil {
 		fmt.Printf("%#x\n", output)

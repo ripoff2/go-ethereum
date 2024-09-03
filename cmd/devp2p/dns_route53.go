@@ -30,8 +30,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 	"github.com/aws/aws-sdk-go-v2/service/route53/types"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/dnsdisc"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p/dnsdisc"
 	"github.com/urfave/cli/v2"
 )
 
@@ -213,7 +213,9 @@ func (c *route53Client) findZoneID(name string) (string, error) {
 
 // computeChanges creates DNS changes for the given set of DNS discovery records.
 // The 'existing' arg is the set of records that already exist on Route53.
-func (c *route53Client) computeChanges(name string, records map[string]string, existing map[string]recordSet) []types.Change {
+func (c *route53Client) computeChanges(
+	name string, records map[string]string, existing map[string]recordSet,
+) []types.Change {
 	// Convert all names to lowercase.
 	lrecords := make(map[string]string, len(records))
 	for name, r := range records {
@@ -261,12 +263,14 @@ func (c *route53Client) computeChanges(name string, records map[string]string, e
 	deletions := makeDeletionChanges(existing, records)
 	changes = append(changes, deletions...)
 
-	log.Info("Computed DNS changes",
+	log.Info(
+		"Computed DNS changes",
 		"changes", len(changes),
 		"inserts", inserts,
 		"skips", skips,
 		"deleted", len(deletions),
-		"upserts", upserts)
+		"upserts", upserts,
+	)
 	// Ensure changes are in the correct order.
 	sortChanges(changes)
 	return changes
@@ -288,18 +292,20 @@ func makeDeletionChanges(records map[string]recordSet, keep map[string]string) [
 // sortChanges ensures DNS changes are in leaf-added -> root-changed -> leaf-deleted order.
 func sortChanges(changes []types.Change) {
 	score := map[string]int{"CREATE": 1, "UPSERT": 2, "DELETE": 3}
-	slices.SortFunc(changes, func(a, b types.Change) int {
-		if a.Action == b.Action {
-			return strings.Compare(*a.ResourceRecordSet.Name, *b.ResourceRecordSet.Name)
-		}
-		if score[string(a.Action)] < score[string(b.Action)] {
-			return -1
-		}
-		if score[string(a.Action)] > score[string(b.Action)] {
-			return 1
-		}
-		return 0
-	})
+	slices.SortFunc(
+		changes, func(a, b types.Change) int {
+			if a.Action == b.Action {
+				return strings.Compare(*a.ResourceRecordSet.Name, *b.ResourceRecordSet.Name)
+			}
+			if score[string(a.Action)] < score[string(b.Action)] {
+				return -1
+			}
+			if score[string(a.Action)] > score[string(b.Action)] {
+				return 1
+			}
+			return 0
+		},
+	)
 }
 
 // splitChanges splits up DNS changes such that each change batch

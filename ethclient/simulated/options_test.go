@@ -22,10 +22,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 // Tests that the simulator starts with the initial gas limit in the genesis block,
@@ -57,17 +57,21 @@ func TestWithBlockGasLimitOption(t *testing.T) {
 // Tests that the simulator honors the RPC call caps set by the options.
 func TestWithCallGasLimitOption(t *testing.T) {
 	// Construct a simulator, targeting a different gas limit
-	sim := NewBackend(types.GenesisAlloc{
-		testAddr: {Balance: big.NewInt(10000000000000000)},
-	}, WithCallGasLimit(params.TxGas-1))
+	sim := NewBackend(
+		types.GenesisAlloc{
+			testAddr: {Balance: big.NewInt(10000000000000000)},
+		}, WithCallGasLimit(params.TxGas-1),
+	)
 	defer sim.Close()
 
 	client := sim.Client()
-	_, err := client.CallContract(context.Background(), ethereum.CallMsg{
-		From: testAddr,
-		To:   &testAddr,
-		Gas:  21000,
-	}, nil)
+	_, err := client.CallContract(
+		context.Background(), ethereum.CallMsg{
+			From: testAddr,
+			To:   &testAddr,
+			Gas:  21000,
+		}, nil,
+	)
 	if !strings.Contains(err.Error(), core.ErrIntrinsicGas.Error()) {
 		t.Fatalf("error mismatch: have %v, want %v", err, core.ErrIntrinsicGas)
 	}

@@ -19,11 +19,11 @@ package core
 import (
 	"sync/atomic"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/stateless"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/stateless"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
 )
 
 // Validator is an interface which defines the standard for block validation. It
@@ -35,7 +35,9 @@ type Validator interface {
 
 	// ValidateState validates the given statedb and optionally the receipts and
 	// gas used.
-	ValidateState(block *types.Block, state *state.StateDB, receipts types.Receipts, usedGas uint64, stateless bool) error
+	ValidateState(
+		block *types.Block, state *state.StateDB, receipts types.Receipts, usedGas uint64, stateless bool,
+	) error
 
 	// ValidateWitness cross validates a block execution with stateless remote clients.
 	ValidateWitness(witness *stateless.Witness, receiptRoot common.Hash, stateRoot common.Hash) error

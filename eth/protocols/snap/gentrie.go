@@ -19,10 +19,10 @@ package snap
 import (
 	"bytes"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/trie"
 )
 
 // genTrie interface is used by the snap syncer to generate merkle tree nodes
@@ -298,9 +298,13 @@ type hashTrie struct {
 
 // newHashTrie initializes the hash trie.
 func newHashTrie(batch ethdb.Batch) *hashTrie {
-	return &hashTrie{tr: trie.NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
-		rawdb.WriteLegacyTrieNode(batch, hash, blob)
-	})}
+	return &hashTrie{
+		tr: trie.NewStackTrie(
+			func(path []byte, hash common.Hash, blob []byte) {
+				rawdb.WriteLegacyTrieNode(batch, hash, blob)
+			},
+		),
+	}
 }
 
 // update implements genTrie interface, inserting a (key, value) pair into

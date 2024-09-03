@@ -23,14 +23,14 @@ import (
 	"io"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie/trienode"
-	"github.com/ethereum/go-ethereum/trie/triestate"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
+	"github.com/ripoff2/go-ethereum/trie/triestate"
 )
 
 var (
@@ -240,7 +240,11 @@ func (db *Database) loadDiffLayer(parent layer, r *rlp.Stream) (layer, error) {
 		}
 		storages[entry.Account] = set
 	}
-	return db.loadDiffLayer(newDiffLayer(parent, root, parent.stateID()+1, block, nodes, triestate.New(accounts, storages)), r)
+	return db.loadDiffLayer(
+		newDiffLayer(
+			parent, root, parent.stateID()+1, block, nodes, triestate.New(accounts, storages),
+		), r,
+	)
 }
 
 // journal implements the layer interface, marshaling the un-flushed trie nodes
@@ -327,7 +331,10 @@ func (dl *diffLayer) journal(w io.Writer) error {
 	if err := rlp.Encode(w, storage); err != nil {
 		return err
 	}
-	log.Debug("Journaled pathdb diff layer", "root", dl.root, "parent", dl.parent.rootHash(), "id", dl.stateID(), "block", dl.block, "nodes", len(dl.nodes))
+	log.Debug(
+		"Journaled pathdb diff layer", "root", dl.root, "parent", dl.parent.rootHash(), "id", dl.stateID(), "block",
+		dl.block, "nodes", len(dl.nodes),
+	)
 	return nil
 }
 
@@ -343,7 +350,9 @@ func (db *Database) Journal(root common.Hash) error {
 	}
 	disk := db.tree.bottom()
 	if l, ok := l.(*diffLayer); ok {
-		log.Info("Persisting dirty state to disk", "head", l.block, "root", root, "layers", l.id-disk.id+disk.buffer.layers)
+		log.Info(
+			"Persisting dirty state to disk", "head", l.block, "root", root, "layers", l.id-disk.id+disk.buffer.layers,
+		)
 	} else { // disk layer only on noop runs (likely) or deep reorgs (unlikely)
 		log.Info("Persisting dirty state to disk", "root", root, "layers", disk.buffer.layers)
 	}
@@ -380,6 +389,9 @@ func (db *Database) Journal(root common.Hash) error {
 
 	// Set the db in read only mode to reject all following mutations
 	db.readOnly = true
-	log.Info("Persisted dirty state to disk", "size", common.StorageSize(journal.Len()), "elapsed", common.PrettyDuration(time.Since(start)))
+	log.Info(
+		"Persisted dirty state to disk", "size", common.StorageSize(journal.Len()), "elapsed",
+		common.PrettyDuration(time.Since(start)),
+	)
 	return nil
 }

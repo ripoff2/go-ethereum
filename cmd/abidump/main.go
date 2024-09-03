@@ -23,16 +23,18 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/signer/core/apitypes"
-	"github.com/ethereum/go-ethereum/signer/fourbyte"
+	"github.com/ripoff2/go-ethereum/signer/core/apitypes"
+	"github.com/ripoff2/go-ethereum/signer/fourbyte"
 )
 
 func init() {
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage:", os.Args[0], "<hexdata>")
 		flag.PrintDefaults()
-		fmt.Fprintln(os.Stderr, `
-Parses the given ABI data and tries to interpret it from the fourbyte database.`)
+		fmt.Fprintln(
+			os.Stderr, `
+Parses the given ABI data and tries to interpret it from the fourbyte database.`,
+		)
 	}
 }
 

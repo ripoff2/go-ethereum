@@ -31,16 +31,16 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/discover"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/enr"
-	"github.com/ethereum/go-ethereum/p2p/nat"
-	"github.com/ethereum/go-ethereum/p2p/netutil"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p/discover"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/p2p/nat"
+	"github.com/ripoff2/go-ethereum/p2p/netutil"
 )
 
 const (
@@ -314,20 +314,24 @@ func (srv *Server) LocalNode() *enode.LocalNode {
 // Peers returns all connected peers.
 func (srv *Server) Peers() []*Peer {
 	var ps []*Peer
-	srv.doPeerOp(func(peers map[enode.ID]*Peer) {
-		for _, p := range peers {
-			ps = append(ps, p)
-		}
-	})
+	srv.doPeerOp(
+		func(peers map[enode.ID]*Peer) {
+			for _, p := range peers {
+				ps = append(ps, p)
+			}
+		},
+	)
 	return ps
 }
 
 // PeerCount returns the number of connected peers.
 func (srv *Server) PeerCount() int {
 	var count int
-	srv.doPeerOp(func(ps map[enode.ID]*Peer) {
-		count = len(ps)
-	})
+	srv.doPeerOp(
+		func(ps map[enode.ID]*Peer) {
+			count = len(ps)
+		},
+	)
 	return count
 }
 
@@ -349,14 +353,16 @@ func (srv *Server) RemovePeer(node *enode.Node) {
 		sub event.Subscription
 	)
 	// Disconnect the peer on the main loop.
-	srv.doPeerOp(func(peers map[enode.ID]*Peer) {
-		srv.dialsched.removeStatic(node)
-		if peer := peers[node.ID()]; peer != nil {
-			ch = make(chan *PeerEvent, 1)
-			sub = srv.peerFeed.Subscribe(ch)
-			peer.Disconnect(DiscRequested)
-		}
-	})
+	srv.doPeerOp(
+		func(peers map[enode.ID]*Peer) {
+			srv.dialsched.removeStatic(node)
+			if peer := peers[node.ID()]; peer != nil {
+				ch = make(chan *PeerEvent, 1)
+				sub = srv.peerFeed.Subscribe(ch)
+				peer.Disconnect(DiscRequested)
+			}
+		},
+	)
 	// Wait for the peer connection to end.
 	if ch != nil {
 		defer sub.Unsubscribe()
@@ -778,7 +784,10 @@ running:
 				// The handshakes are done and it passed all checks.
 				p := srv.launchPeer(c)
 				peers[c.node.ID()] = p
-				srv.log.Debug("Adding p2p peer", "peercount", len(peers), "id", p.ID(), "conn", c.flags, "addr", p.RemoteAddr(), "name", p.Name())
+				srv.log.Debug(
+					"Adding p2p peer", "peercount", len(peers), "id", p.ID(), "conn", c.flags, "addr", p.RemoteAddr(),
+					"name", p.Name(),
+				)
 				srv.dialsched.peerAdded(c)
 				if p.Inbound() {
 					inboundCount++
@@ -796,7 +805,10 @@ running:
 			// A peer disconnected.
 			d := common.PrettyDuration(mclock.Now() - pd.created)
 			delete(peers, pd.ID())
-			srv.log.Debug("Removing p2p peer", "peercount", len(peers), "id", pd.ID(), "duration", d, "req", pd.requested, "err", pd.err)
+			srv.log.Debug(
+				"Removing p2p peer", "peercount", len(peers), "id", pd.ID(), "duration", d, "req", pd.requested, "err",
+				pd.err,
+			)
 			srv.dialsched.peerRemoved(pd.rw)
 			if pd.Inbound() {
 				inboundCount--
@@ -1059,12 +1071,14 @@ func (srv *Server) runPeer(p *Peer) {
 	if srv.newPeerHook != nil {
 		srv.newPeerHook(p)
 	}
-	srv.peerFeed.Send(&PeerEvent{
-		Type:          PeerEventTypeAdd,
-		Peer:          p.ID(),
-		RemoteAddress: p.RemoteAddr().String(),
-		LocalAddress:  p.LocalAddr().String(),
-	})
+	srv.peerFeed.Send(
+		&PeerEvent{
+			Type:          PeerEventTypeAdd,
+			Peer:          p.ID(),
+			RemoteAddress: p.RemoteAddr().String(),
+			LocalAddress:  p.LocalAddr().String(),
+		},
+	)
 
 	// Run the per-peer main loop.
 	remoteRequested, err := p.run()
@@ -1078,13 +1092,15 @@ func (srv *Server) runPeer(p *Peer) {
 	// after the send to delpeer so subscribers have a consistent view of
 	// the peer set (i.e. Server.Peers() doesn't include the peer when the
 	// event is received).
-	srv.peerFeed.Send(&PeerEvent{
-		Type:          PeerEventTypeDrop,
-		Peer:          p.ID(),
-		Error:         err.Error(),
-		RemoteAddress: p.RemoteAddr().String(),
-		LocalAddress:  p.LocalAddr().String(),
-	})
+	srv.peerFeed.Send(
+		&PeerEvent{
+			Type:          PeerEventTypeDrop,
+			Peer:          p.ID(),
+			Error:         err.Error(),
+			RemoteAddress: p.RemoteAddr().String(),
+			LocalAddress:  p.LocalAddr().String(),
+		},
+	)
 }
 
 // NodeInfo represents a short summary of the information known about the host.
@@ -1141,9 +1157,11 @@ func (srv *Server) PeersInfo() []*PeerInfo {
 		}
 	}
 	// Sort the result array alphabetically by node identifier
-	slices.SortFunc(infos, func(a, b *PeerInfo) int {
-		return cmp.Compare(a.ID, b.ID)
-	})
+	slices.SortFunc(
+		infos, func(a, b *PeerInfo) int {
+			return cmp.Compare(a.ID, b.ID)
+		},
+	)
 
 	return infos
 }

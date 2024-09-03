@@ -22,23 +22,25 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/triedb"
 )
 
 // noopReleaser is returned in case there is no operation expected
 // for releasing state.
 var noopReleaser = tracers.StateReleaseFunc(func() {})
 
-func (eth *Ethereum) hashState(ctx context.Context, block *types.Block, reexec uint64, base *state.StateDB, readOnly bool, preferDisk bool) (statedb *state.StateDB, release tracers.StateReleaseFunc, err error) {
+func (eth *Ethereum) hashState(
+	ctx context.Context, block *types.Block, reexec uint64, base *state.StateDB, readOnly bool, preferDisk bool,
+) (statedb *state.StateDB, release tracers.StateReleaseFunc, err error) {
 	var (
 		current  *types.Block
 		database state.Database
@@ -138,7 +140,10 @@ func (eth *Ethereum) hashState(ctx context.Context, block *types.Block, reexec u
 		}
 		// Print progress logs if long enough time elapsed
 		if time.Since(logged) > 8*time.Second && report {
-			log.Info("Regenerating historical state", "block", current.NumberU64()+1, "target", origin, "remaining", origin-current.NumberU64()-1, "elapsed", time.Since(start))
+			log.Info(
+				"Regenerating historical state", "block", current.NumberU64()+1, "target", origin, "remaining",
+				origin-current.NumberU64()-1, "elapsed", time.Since(start),
+			)
 			logged = time.Now()
 		}
 		// Retrieve the next block to regenerate and process it
@@ -153,8 +158,10 @@ func (eth *Ethereum) hashState(ctx context.Context, block *types.Block, reexec u
 		// Finalize the state so any modifications are written to the trie
 		root, err := statedb.Commit(current.NumberU64(), eth.blockchain.Config().IsEIP158(current.Number()))
 		if err != nil {
-			return nil, nil, fmt.Errorf("stateAtBlock commit failed, number %d root %v: %w",
-				current.NumberU64(), current.Root().Hex(), err)
+			return nil, nil, fmt.Errorf(
+				"stateAtBlock commit failed, number %d root %v: %w",
+				current.NumberU64(), current.Root().Hex(), err,
+			)
 		}
 		statedb, err = state.New(root, database, nil)
 		if err != nil {
@@ -170,7 +177,10 @@ func (eth *Ethereum) hashState(ctx context.Context, block *types.Block, reexec u
 	}
 	if report {
 		_, nodes, imgs := tdb.Size() // all memory is contained within the nodes return in hashdb
-		log.Info("Historical state regenerated", "block", current.NumberU64(), "elapsed", time.Since(start), "nodes", nodes, "preimages", imgs)
+		log.Info(
+			"Historical state regenerated", "block", current.NumberU64(), "elapsed", time.Since(start), "nodes", nodes,
+			"preimages", imgs,
+		)
 	}
 	return statedb, func() { tdb.Dereference(block.Root()) }, nil
 }
@@ -209,7 +219,9 @@ func (eth *Ethereum) pathState(block *types.Block) (*state.StateDB, func(), erro
 //   - preferDisk: This arg can be used by the caller to signal that even though the 'base' is
 //     provided, it would be preferable to start from a fresh state, if we have it
 //     on disk.
-func (eth *Ethereum) stateAtBlock(ctx context.Context, block *types.Block, reexec uint64, base *state.StateDB, readOnly bool, preferDisk bool) (statedb *state.StateDB, release tracers.StateReleaseFunc, err error) {
+func (eth *Ethereum) stateAtBlock(
+	ctx context.Context, block *types.Block, reexec uint64, base *state.StateDB, readOnly bool, preferDisk bool,
+) (statedb *state.StateDB, release tracers.StateReleaseFunc, err error) {
 	if eth.blockchain.TrieDB().Scheme() == rawdb.HashScheme {
 		return eth.hashState(ctx, block, reexec, base, readOnly, preferDisk)
 	}
@@ -217,7 +229,9 @@ func (eth *Ethereum) stateAtBlock(ctx context.Context, block *types.Block, reexe
 }
 
 // stateAtTransaction returns the execution environment of a certain transaction.
-func (eth *Ethereum) stateAtTransaction(ctx context.Context, block *types.Block, txIndex int, reexec uint64) (*types.Transaction, vm.BlockContext, *state.StateDB, tracers.StateReleaseFunc, error) {
+func (eth *Ethereum) stateAtTransaction(
+	ctx context.Context, block *types.Block, txIndex int, reexec uint64,
+) (*types.Transaction, vm.BlockContext, *state.StateDB, tracers.StateReleaseFunc, error) {
 	// Short circuit if it's genesis block.
 	if block.NumberU64() == 0 {
 		return nil, vm.BlockContext{}, nil, nil, errors.New("no transaction in genesis")
@@ -268,5 +282,7 @@ func (eth *Ethereum) stateAtTransaction(ctx context.Context, block *types.Block,
 		// Only delete empty objects if EIP158/161 (a.k.a Spurious Dragon) is in effect
 		statedb.Finalise(vmenv.ChainConfig().IsEIP158(block.Number()))
 	}
-	return nil, vm.BlockContext{}, nil, nil, fmt.Errorf("transaction index %d out of range for block %#x", txIndex, block.Hash())
+	return nil, vm.BlockContext{}, nil, nil, fmt.Errorf(
+		"transaction index %d out of range for block %#x", txIndex, block.Hash(),
+	)
 }

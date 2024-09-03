@@ -29,10 +29,10 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/crypto/ecies"
-	"github.com/ethereum/go-ethereum/p2p/pipes"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/crypto/ecies"
+	"github.com/ripoff2/go-ethereum/p2p/pipes"
+	"github.com/ripoff2/go-ethereum/rlp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -119,21 +119,29 @@ func doHandshake(t *testing.T, peer1, peer2 *Conn, key1, key2 *ecdsa.PrivateKey)
 // This test checks the frame data of written messages.
 func TestFrameReadWrite(t *testing.T) {
 	conn := NewConn(nil, nil)
-	hash := fakeHash([]byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1})
-	conn.InitWithSecrets(Secrets{
-		AES:        crypto.Keccak256(),
-		MAC:        crypto.Keccak256(),
-		IngressMAC: hash,
-		EgressMAC:  hash,
-	})
+	hash := fakeHash(
+		[]byte{
+			1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		},
+	)
+	conn.InitWithSecrets(
+		Secrets{
+			AES:        crypto.Keccak256(),
+			MAC:        crypto.Keccak256(),
+			IngressMAC: hash,
+			EgressMAC:  hash,
+		},
+	)
 	h := conn.session
 
-	golden := unhex(`
+	golden := unhex(
+		`
 		00828ddae471818bb0bfa6b551d1cb42
 		01010101010101010101010101010101
 		ba628a4ba590cb43f7848f41c4382885
 		01010101010101010101010101010101
-	`)
+	`,
+	)
 	msgCode := uint64(8)
 	msg := []uint{1, 2, 3, 4}
 	msgEnc, _ := rlp.EncodeToBytes(msg)

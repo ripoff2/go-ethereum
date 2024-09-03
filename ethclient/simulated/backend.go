@@ -20,20 +20,20 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth"
-	"github.com/ethereum/go-ethereum/eth/catalyst"
-	"github.com/ethereum/go-ethereum/eth/downloader"
-	"github.com/ethereum/go-ethereum/eth/ethconfig"
-	"github.com/ethereum/go-ethereum/eth/filters"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/eth"
+	"github.com/ripoff2/go-ethereum/eth/catalyst"
+	"github.com/ripoff2/go-ethereum/eth/downloader"
+	"github.com/ripoff2/go-ethereum/eth/ethconfig"
+	"github.com/ripoff2/go-ethereum/eth/filters"
+	"github.com/ripoff2/go-ethereum/ethclient"
+	"github.com/ripoff2/go-ethereum/node"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 // Client exposes the methods provided by the Ethereum RPC client.
@@ -112,10 +112,14 @@ func newWithNode(stack *node.Node, conf *eth.Config, blockPeriod uint64) (*Backe
 	}
 	// Register the filter system
 	filterSystem := filters.NewFilterSystem(backend.APIBackend, filters.Config{})
-	stack.RegisterAPIs([]rpc.API{{
-		Namespace: "eth",
-		Service:   filters.NewFilterAPI(filterSystem),
-	}})
+	stack.RegisterAPIs(
+		[]rpc.API{
+			{
+				Namespace: "eth",
+				Service:   filters.NewFilterAPI(filterSystem),
+			},
+		},
+	)
 	// Start the node
 	if err := stack.Start(); err != nil {
 		return nil, err

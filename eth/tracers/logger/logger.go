@@ -25,14 +25,14 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 // Storage represents a contract's storage.
@@ -152,7 +152,9 @@ func (l *StructLogger) Reset() {
 // OnOpcode logs a new structured log message and pushes it out to the environment
 //
 // OnOpcode also tracks SLOAD/SSTORE ops to track storage change.
-func (l *StructLogger) OnOpcode(pc uint64, opcode byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error) {
+func (l *StructLogger) OnOpcode(
+	pc uint64, opcode byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error,
+) {
 	// If tracing was interrupted, set the error and stop
 	if l.interrupt.Load() {
 		return
@@ -242,12 +244,14 @@ func (l *StructLogger) GetResult() (json.RawMessage, error) {
 	if failed && l.err != vm.ErrExecutionReverted {
 		returnVal = ""
 	}
-	return json.Marshal(&ExecutionResult{
-		Gas:         l.usedGas,
-		Failed:      failed,
-		ReturnValue: returnVal,
-		StructLogs:  formatLogs(l.StructLogs()),
-	})
+	return json.Marshal(
+		&ExecutionResult{
+			Gas:         l.usedGas,
+			Failed:      failed,
+			ReturnValue: returnVal,
+			StructLogs:  formatLogs(l.StructLogs()),
+		},
+	)
 }
 
 // Stop terminates execution of the tracer at the first opportune moment.
@@ -359,36 +363,48 @@ func (t *mdLogger) OnTxStart(env *tracing.VMContext, tx *types.Transaction, from
 	t.env = env
 }
 
-func (t *mdLogger) OnEnter(depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int) {
+func (t *mdLogger) OnEnter(
+	depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int,
+) {
 	if depth != 0 {
 		return
 	}
 	create := vm.OpCode(typ) == vm.CREATE
 	if !create {
-		fmt.Fprintf(t.out, "From: `%v`\nTo: `%v`\nData: `%#x`\nGas: `%d`\nValue `%v` wei\n",
+		fmt.Fprintf(
+			t.out, "From: `%v`\nTo: `%v`\nData: `%#x`\nGas: `%d`\nValue `%v` wei\n",
 			from.String(), to.String(),
-			input, gas, value)
+			input, gas, value,
+		)
 	} else {
-		fmt.Fprintf(t.out, "From: `%v`\nCreate at: `%v`\nData: `%#x`\nGas: `%d`\nValue `%v` wei\n",
+		fmt.Fprintf(
+			t.out, "From: `%v`\nCreate at: `%v`\nData: `%#x`\nGas: `%d`\nValue `%v` wei\n",
 			from.String(), to.String(),
-			input, gas, value)
+			input, gas, value,
+		)
 	}
 
-	fmt.Fprintf(t.out, `
+	fmt.Fprintf(
+		t.out, `
 |  Pc   |      Op     | Cost |   Stack   |   RStack  |  Refund |
 |-------|-------------|------|-----------|-----------|---------|
-`)
+`,
+	)
 }
 
 func (t *mdLogger) OnExit(depth int, output []byte, gasUsed uint64, err error, reverted bool) {
 	if depth == 0 {
-		fmt.Fprintf(t.out, "\nOutput: `%#x`\nConsumed gas: `%d`\nError: `%v`\n",
-			output, gasUsed, err)
+		fmt.Fprintf(
+			t.out, "\nOutput: `%#x`\nConsumed gas: `%d`\nError: `%v`\n",
+			output, gasUsed, err,
+		)
 	}
 }
 
 // OnOpcode also tracks SLOAD/SSTORE ops to track storage change.
-func (t *mdLogger) OnOpcode(pc uint64, op byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error) {
+func (t *mdLogger) OnOpcode(
+	pc uint64, op byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error,
+) {
 	stack := scope.StackData()
 	fmt.Fprintf(t.out, "| %4d  | %10v  |  %3d |", pc, op, cost)
 

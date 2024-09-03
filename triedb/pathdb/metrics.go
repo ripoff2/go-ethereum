@@ -16,7 +16,7 @@
 
 package pathdb
 
-import "github.com/ethereum/go-ethereum/metrics"
+import "github.com/ripoff2/go-ethereum/metrics"
 
 var (
 	cleanHitMeter   = metrics.NewRegisteredMeter("pathdb/clean/hit", nil)
@@ -28,7 +28,9 @@ var (
 	dirtyMissMeter        = metrics.NewRegisteredMeter("pathdb/dirty/miss", nil)
 	dirtyReadMeter        = metrics.NewRegisteredMeter("pathdb/dirty/read", nil)
 	dirtyWriteMeter       = metrics.NewRegisteredMeter("pathdb/dirty/write", nil)
-	dirtyNodeHitDepthHist = metrics.NewRegisteredHistogram("pathdb/dirty/depth", nil, metrics.NewExpDecaySample(1028, 0.015))
+	dirtyNodeHitDepthHist = metrics.NewRegisteredHistogram(
+		"pathdb/dirty/depth", nil, metrics.NewExpDecaySample(1028, 0.015),
+	)
 
 	cleanFalseMeter = metrics.NewRegisteredMeter("pathdb/clean/false", nil)
 	dirtyFalseMeter = metrics.NewRegisteredMeter("pathdb/dirty/false", nil)

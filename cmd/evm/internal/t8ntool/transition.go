@@ -25,18 +25,18 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/consensus/misc/eip1559"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/eth/tracers/logger"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/tests"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/consensus/misc/eip1559"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/eth/tracers/logger"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/tests"
 	"github.com/urfave/cli/v2"
 )
 
@@ -82,7 +82,11 @@ type input struct {
 }
 
 func Transition(ctx *cli.Context) error {
-	var getTracer = func(txIndex int, txHash common.Hash) (*tracers.Tracer, io.WriteCloser, error) { return nil, nil, nil }
+	var getTracer = func(txIndex int, txHash common.Hash) (
+		*tracers.Tracer, io.WriteCloser, error,
+	) {
+		return nil, nil, nil
+	}
 
 	baseDir, err := createBasedir(ctx)
 	if err != nil {
@@ -98,7 +102,11 @@ func Transition(ctx *cli.Context) error {
 			Debug:            true,
 		}
 		getTracer = func(txIndex int, txHash common.Hash) (*tracers.Tracer, io.WriteCloser, error) {
-			traceFile, err := os.Create(filepath.Join(baseDir, fmt.Sprintf("trace-%d-%v.jsonl", txIndex, txHash.String())))
+			traceFile, err := os.Create(
+				filepath.Join(
+					baseDir, fmt.Sprintf("trace-%d-%v.jsonl", txIndex, txHash.String()),
+				),
+			)
 			if err != nil {
 				return nil, nil, NewError(ErrorIO, fmt.Errorf("failed creating trace-file: %v", err))
 			}
@@ -122,7 +130,11 @@ func Transition(ctx *cli.Context) error {
 			config = []byte(ctx.String(TraceTracerConfigFlag.Name))
 		}
 		getTracer = func(txIndex int, txHash common.Hash) (*tracers.Tracer, io.WriteCloser, error) {
-			traceFile, err := os.Create(filepath.Join(baseDir, fmt.Sprintf("trace-%d-%v.json", txIndex, txHash.String())))
+			traceFile, err := os.Create(
+				filepath.Join(
+					baseDir, fmt.Sprintf("trace-%d-%v.json", txIndex, txHash.String()),
+				),
+			)
 			if err != nil {
 				return nil, nil, NewError(ErrorIO, fmt.Errorf("failed creating trace-file: %v", err))
 			}
@@ -219,12 +231,14 @@ func applyLondonChecks(env *stEnv, chainConfig *params.ChainConfig) error {
 	if env.ParentBaseFee == nil || env.Number == 0 {
 		return NewError(ErrorConfig, errors.New("EIP-1559 config but missing 'parentBaseFee' in env section"))
 	}
-	env.BaseFee = eip1559.CalcBaseFee(chainConfig, &types.Header{
-		Number:   new(big.Int).SetUint64(env.Number - 1),
-		BaseFee:  env.ParentBaseFee,
-		GasUsed:  env.ParentGasUsed,
-		GasLimit: env.ParentGasLimit,
-	})
+	env.BaseFee = eip1559.CalcBaseFee(
+		chainConfig, &types.Header{
+			Number:   new(big.Int).SetUint64(env.Number - 1),
+			BaseFee:  env.ParentBaseFee,
+			GasUsed:  env.ParentGasUsed,
+			GasLimit: env.ParentGasLimit,
+		},
+	)
 	return nil
 }
 
@@ -248,15 +262,24 @@ func applyMergeChecks(env *stEnv, chainConfig *params.ChainConfig) error {
 		}
 		switch {
 		case env.ParentDifficulty == nil:
-			return NewError(ErrorConfig, errors.New("currentDifficulty was not provided, and cannot be calculated due to missing parentDifficulty"))
+			return NewError(
+				ErrorConfig,
+				errors.New("currentDifficulty was not provided, and cannot be calculated due to missing parentDifficulty"),
+			)
 		case env.Number == 0:
 			return NewError(ErrorConfig, errors.New("currentDifficulty needs to be provided for block number 0"))
 		case env.Timestamp <= env.ParentTimestamp:
-			return NewError(ErrorConfig, fmt.Errorf("currentDifficulty cannot be calculated -- currentTime (%d) needs to be after parent time (%d)",
-				env.Timestamp, env.ParentTimestamp))
+			return NewError(
+				ErrorConfig, fmt.Errorf(
+					"currentDifficulty cannot be calculated -- currentTime (%d) needs to be after parent time (%d)",
+					env.Timestamp, env.ParentTimestamp,
+				),
+			)
 		}
-		env.Difficulty = calcDifficulty(chainConfig, env.Number, env.Timestamp,
-			env.ParentTimestamp, env.ParentDifficulty, env.ParentUncleHash)
+		env.Difficulty = calcDifficulty(
+			chainConfig, env.Number, env.Timestamp,
+			env.ParentTimestamp, env.ParentDifficulty, env.ParentUncleHash,
+		)
 		return nil
 	}
 	// post-merge:

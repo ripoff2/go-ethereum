@@ -21,11 +21,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // CheckDanglingStorage iterates the snap storage data, and verifies that all
@@ -44,7 +44,9 @@ func checkDanglingDiskStorage(chaindb ethdb.KeyValueStore) error {
 		lastReport = time.Now()
 		start      = time.Now()
 		lastKey    []byte
-		it         = rawdb.NewKeyLengthIterator(chaindb.NewIterator(rawdb.SnapshotStoragePrefix, nil), 1+2*common.HashLength)
+		it         = rawdb.NewKeyLengthIterator(
+			chaindb.NewIterator(rawdb.SnapshotStoragePrefix, nil), 1+2*common.HashLength,
+		)
 	)
 	log.Info("Checking dangling snapshot disk storage")
 
@@ -58,11 +60,17 @@ func checkDanglingDiskStorage(chaindb ethdb.KeyValueStore) error {
 		}
 		lastKey = common.CopyBytes(accKey)
 		if time.Since(lastReport) > time.Second*8 {
-			log.Info("Iterating snap storage", "at", fmt.Sprintf("%#x", accKey), "elapsed", common.PrettyDuration(time.Since(start)))
+			log.Info(
+				"Iterating snap storage", "at", fmt.Sprintf("%#x", accKey), "elapsed",
+				common.PrettyDuration(time.Since(start)),
+			)
 			lastReport = time.Now()
 		}
 		if data := rawdb.ReadAccountSnapshot(chaindb, common.BytesToHash(accKey)); len(data) == 0 {
-			log.Warn("Dangling storage - missing account", "account", fmt.Sprintf("%#x", accKey), "storagekey", fmt.Sprintf("%#x", k))
+			log.Warn(
+				"Dangling storage - missing account", "account", fmt.Sprintf("%#x", accKey), "storagekey",
+				fmt.Sprintf("%#x", k),
+			)
 			return fmt.Errorf("dangling snapshot storage account %#x", accKey)
 		}
 	}
@@ -75,14 +83,21 @@ func checkDanglingDiskStorage(chaindb ethdb.KeyValueStore) error {
 func checkDanglingMemStorage(db ethdb.KeyValueStore) error {
 	start := time.Now()
 	log.Info("Checking dangling journalled storage")
-	err := iterateJournal(db, func(pRoot, root common.Hash, destructs map[common.Hash]struct{}, accounts map[common.Hash][]byte, storage map[common.Hash]map[common.Hash][]byte) error {
-		for accHash := range storage {
-			if _, ok := accounts[accHash]; !ok {
-				log.Error("Dangling storage - missing account", "account", fmt.Sprintf("%#x", accHash), "root", root)
+	err := iterateJournal(
+		db, func(
+			pRoot, root common.Hash, destructs map[common.Hash]struct{}, accounts map[common.Hash][]byte,
+			storage map[common.Hash]map[common.Hash][]byte,
+		) error {
+			for accHash := range storage {
+				if _, ok := accounts[accHash]; !ok {
+					log.Error(
+						"Dangling storage - missing account", "account", fmt.Sprintf("%#x", accHash), "root", root,
+					)
+				}
 			}
-		}
-		return nil
-	})
+			return nil
+		},
+	)
 	if err != nil {
 		log.Info("Failed to resolve snapshot journal", "err", err)
 		return err
@@ -109,7 +124,9 @@ func CheckJournalAccount(db ethdb.KeyValueStore, hash common.Hash) error {
 	}
 	// Check storage
 	{
-		it := rawdb.NewKeyLengthIterator(db.NewIterator(append(rawdb.SnapshotStoragePrefix, hash.Bytes()...), nil), 1+2*common.HashLength)
+		it := rawdb.NewKeyLengthIterator(
+			db.NewIterator(append(rawdb.SnapshotStoragePrefix, hash.Bytes()...), nil), 1+2*common.HashLength,
+		)
 		fmt.Printf("\tStorage:\n")
 		for it.Next() {
 			slot := it.Key()[33:]
@@ -119,34 +136,39 @@ func CheckJournalAccount(db ethdb.KeyValueStore, hash common.Hash) error {
 	}
 	var depth = 0
 
-	return iterateJournal(db, func(pRoot, root common.Hash, destructs map[common.Hash]struct{}, accounts map[common.Hash][]byte, storage map[common.Hash]map[common.Hash][]byte) error {
-		_, a := accounts[hash]
-		_, b := destructs[hash]
-		_, c := storage[hash]
-		depth++
-		if !a && !b && !c {
+	return iterateJournal(
+		db, func(
+			pRoot, root common.Hash, destructs map[common.Hash]struct{}, accounts map[common.Hash][]byte,
+			storage map[common.Hash]map[common.Hash][]byte,
+		) error {
+			_, a := accounts[hash]
+			_, b := destructs[hash]
+			_, c := storage[hash]
+			depth++
+			if !a && !b && !c {
+				return nil
+			}
+			fmt.Printf("Disklayer+%d: Root: %x, parent %x\n", depth, root, pRoot)
+			if data, ok := accounts[hash]; ok {
+				account, err := types.FullAccount(data)
+				if err != nil {
+					panic(err)
+				}
+				fmt.Printf("\taccount.nonce: %d\n", account.Nonce)
+				fmt.Printf("\taccount.balance: %x\n", account.Balance)
+				fmt.Printf("\taccount.root: %x\n", account.Root)
+				fmt.Printf("\taccount.codehash: %x\n", account.CodeHash)
+			}
+			if _, ok := destructs[hash]; ok {
+				fmt.Printf("\t Destructed!")
+			}
+			if data, ok := storage[hash]; ok {
+				fmt.Printf("\tStorage\n")
+				for k, v := range data {
+					fmt.Printf("\t\t%x: %x\n", k, v)
+				}
+			}
 			return nil
-		}
-		fmt.Printf("Disklayer+%d: Root: %x, parent %x\n", depth, root, pRoot)
-		if data, ok := accounts[hash]; ok {
-			account, err := types.FullAccount(data)
-			if err != nil {
-				panic(err)
-			}
-			fmt.Printf("\taccount.nonce: %d\n", account.Nonce)
-			fmt.Printf("\taccount.balance: %x\n", account.Balance)
-			fmt.Printf("\taccount.root: %x\n", account.Root)
-			fmt.Printf("\taccount.codehash: %x\n", account.CodeHash)
-		}
-		if _, ok := destructs[hash]; ok {
-			fmt.Printf("\t Destructed!")
-		}
-		if data, ok := storage[hash]; ok {
-			fmt.Printf("\tStorage\n")
-			for k, v := range data {
-				fmt.Printf("\t\t%x: %x\n", k, v)
-			}
-		}
-		return nil
-	})
+		},
+	)
 }

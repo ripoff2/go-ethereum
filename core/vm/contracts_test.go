@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 // precompiledTest defines the input/output pairs for precompiled contract tests.
@@ -97,21 +97,23 @@ func testPrecompiled(addr string, test precompiledTest, t *testing.T) {
 	p := allPrecompiles[common.HexToAddress(addr)]
 	in := common.Hex2Bytes(test.Input)
 	gas := p.RequiredGas(in)
-	t.Run(fmt.Sprintf("%s-Gas=%d", test.Name, gas), func(t *testing.T) {
-		if res, _, err := RunPrecompiledContract(p, in, gas, nil); err != nil {
-			t.Error(err)
-		} else if common.Bytes2Hex(res) != test.Expected {
-			t.Errorf("Expected %v, got %v", test.Expected, common.Bytes2Hex(res))
-		}
-		if expGas := test.Gas; expGas != gas {
-			t.Errorf("%v: gas wrong, expected %d, got %d", test.Name, expGas, gas)
-		}
-		// Verify that the precompile did not touch the input buffer
-		exp := common.Hex2Bytes(test.Input)
-		if !bytes.Equal(in, exp) {
-			t.Errorf("Precompiled %v modified input data", addr)
-		}
-	})
+	t.Run(
+		fmt.Sprintf("%s-Gas=%d", test.Name, gas), func(t *testing.T) {
+			if res, _, err := RunPrecompiledContract(p, in, gas, nil); err != nil {
+				t.Error(err)
+			} else if common.Bytes2Hex(res) != test.Expected {
+				t.Errorf("Expected %v, got %v", test.Expected, common.Bytes2Hex(res))
+			}
+			if expGas := test.Gas; expGas != gas {
+				t.Errorf("%v: gas wrong, expected %d, got %d", test.Name, expGas, gas)
+			}
+			// Verify that the precompile did not touch the input buffer
+			exp := common.Hex2Bytes(test.Input)
+			if !bytes.Equal(in, exp) {
+				t.Errorf("Precompiled %v modified input data", addr)
+			}
+		},
+	)
 }
 
 func testPrecompiledOOG(addr string, test precompiledTest, t *testing.T) {
@@ -119,34 +121,38 @@ func testPrecompiledOOG(addr string, test precompiledTest, t *testing.T) {
 	in := common.Hex2Bytes(test.Input)
 	gas := p.RequiredGas(in) - 1
 
-	t.Run(fmt.Sprintf("%s-Gas=%d", test.Name, gas), func(t *testing.T) {
-		_, _, err := RunPrecompiledContract(p, in, gas, nil)
-		if err.Error() != "out of gas" {
-			t.Errorf("Expected error [out of gas], got [%v]", err)
-		}
-		// Verify that the precompile did not touch the input buffer
-		exp := common.Hex2Bytes(test.Input)
-		if !bytes.Equal(in, exp) {
-			t.Errorf("Precompiled %v modified input data", addr)
-		}
-	})
+	t.Run(
+		fmt.Sprintf("%s-Gas=%d", test.Name, gas), func(t *testing.T) {
+			_, _, err := RunPrecompiledContract(p, in, gas, nil)
+			if err.Error() != "out of gas" {
+				t.Errorf("Expected error [out of gas], got [%v]", err)
+			}
+			// Verify that the precompile did not touch the input buffer
+			exp := common.Hex2Bytes(test.Input)
+			if !bytes.Equal(in, exp) {
+				t.Errorf("Precompiled %v modified input data", addr)
+			}
+		},
+	)
 }
 
 func testPrecompiledFailure(addr string, test precompiledFailureTest, t *testing.T) {
 	p := allPrecompiles[common.HexToAddress(addr)]
 	in := common.Hex2Bytes(test.Input)
 	gas := p.RequiredGas(in)
-	t.Run(test.Name, func(t *testing.T) {
-		_, _, err := RunPrecompiledContract(p, in, gas, nil)
-		if err.Error() != test.ExpectedError {
-			t.Errorf("Expected error [%v], got [%v]", test.ExpectedError, err)
-		}
-		// Verify that the precompile did not touch the input buffer
-		exp := common.Hex2Bytes(test.Input)
-		if !bytes.Equal(in, exp) {
-			t.Errorf("Precompiled %v modified input data", addr)
-		}
-	})
+	t.Run(
+		test.Name, func(t *testing.T) {
+			_, _, err := RunPrecompiledContract(p, in, gas, nil)
+			if err.Error() != test.ExpectedError {
+				t.Errorf("Expected error [%v], got [%v]", test.ExpectedError, err)
+			}
+			// Verify that the precompile did not touch the input buffer
+			exp := common.Hex2Bytes(test.Input)
+			if !bytes.Equal(in, exp) {
+				t.Errorf("Precompiled %v modified input data", addr)
+			}
+		},
+	)
 }
 
 func benchmarkPrecompiled(addr string, test precompiledTest, bench *testing.B) {
@@ -163,34 +169,36 @@ func benchmarkPrecompiled(addr string, test precompiledTest, bench *testing.B) {
 		data = make([]byte, len(in))
 	)
 
-	bench.Run(fmt.Sprintf("%s-Gas=%d", test.Name, reqGas), func(bench *testing.B) {
-		bench.ReportAllocs()
-		start := time.Now()
-		bench.ResetTimer()
-		for i := 0; i < bench.N; i++ {
-			copy(data, in)
-			res, _, err = RunPrecompiledContract(p, data, reqGas, nil)
-		}
-		bench.StopTimer()
-		elapsed := uint64(time.Since(start))
-		if elapsed < 1 {
-			elapsed = 1
-		}
-		gasUsed := reqGas * uint64(bench.N)
-		bench.ReportMetric(float64(reqGas), "gas/op")
-		// Keep it as uint64, multiply 100 to get two digit float later
-		mgasps := (100 * 1000 * gasUsed) / elapsed
-		bench.ReportMetric(float64(mgasps)/100, "mgas/s")
-		//Check if it is correct
-		if err != nil {
-			bench.Error(err)
-			return
-		}
-		if common.Bytes2Hex(res) != test.Expected {
-			bench.Errorf("Expected %v, got %v", test.Expected, common.Bytes2Hex(res))
-			return
-		}
-	})
+	bench.Run(
+		fmt.Sprintf("%s-Gas=%d", test.Name, reqGas), func(bench *testing.B) {
+			bench.ReportAllocs()
+			start := time.Now()
+			bench.ResetTimer()
+			for i := 0; i < bench.N; i++ {
+				copy(data, in)
+				res, _, err = RunPrecompiledContract(p, data, reqGas, nil)
+			}
+			bench.StopTimer()
+			elapsed := uint64(time.Since(start))
+			if elapsed < 1 {
+				elapsed = 1
+			}
+			gasUsed := reqGas * uint64(bench.N)
+			bench.ReportMetric(float64(reqGas), "gas/op")
+			// Keep it as uint64, multiply 100 to get two digit float later
+			mgasps := (100 * 1000 * gasUsed) / elapsed
+			bench.ReportMetric(float64(mgasps)/100, "mgas/s")
+			//Check if it is correct
+			if err != nil {
+				bench.Error(err)
+				return
+			}
+			if common.Bytes2Hex(res) != test.Expected {
+				bench.Errorf("Expected %v, got %v", test.Expected, common.Bytes2Hex(res))
+				return
+			}
+		},
+	)
 }
 
 // Benchmarks the sample inputs from the ECRECOVER precompile.

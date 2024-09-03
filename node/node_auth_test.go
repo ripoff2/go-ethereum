@@ -26,9 +26,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 type helloRPC string
@@ -120,22 +120,24 @@ func TestAuthEndpoints(t *testing.T) {
 		t.Fatalf("could not create a new node: %v", err)
 	}
 	// register dummy apis so we can test the modules are available and reachable with authentication
-	node.RegisterAPIs([]rpc.API{
-		{
-			Namespace:     "engine",
-			Version:       "1.0",
-			Service:       helloRPC("hello engine"),
-			Public:        true,
-			Authenticated: true,
+	node.RegisterAPIs(
+		[]rpc.API{
+			{
+				Namespace:     "engine",
+				Version:       "1.0",
+				Service:       helloRPC("hello engine"),
+				Public:        true,
+				Authenticated: true,
+			},
+			{
+				Namespace:     "eth",
+				Version:       "1.0",
+				Service:       helloRPC("hello eth"),
+				Public:        true,
+				Authenticated: true,
+			},
 		},
-		{
-			Namespace:     "eth",
-			Version:       "1.0",
-			Service:       helloRPC("hello eth"),
-			Public:        true,
-			Authenticated: true,
-		},
-	})
+	)
 	if err := node.Start(); err != nil {
 		t.Fatalf("failed to start test node: %v", err)
 	}
@@ -166,19 +168,33 @@ func TestAuthEndpoints(t *testing.T) {
 		{name: "http good", endpoint: node.HTTPAuthEndpoint(), prov: goodAuth, expectCall1Fail: false},
 
 		// Try a bad auth
-		{name: "ws bad", endpoint: node.WSAuthEndpoint(), prov: badAuth, expectDialFail: true},      // ws auth is immediate
-		{name: "http bad", endpoint: node.HTTPAuthEndpoint(), prov: badAuth, expectCall1Fail: true}, // http auth is on first call
+		{name: "ws bad", endpoint: node.WSAuthEndpoint(), prov: badAuth, expectDialFail: true}, // ws auth is immediate
+		{
+			name: "http bad", endpoint: node.HTTPAuthEndpoint(), prov: badAuth, expectCall1Fail: true,
+		}, // http auth is on first call
 
 		// A common mistake with JWT is to allow the "none" algorithm, which is a valid JWT but not secure.
 		{name: "ws none", endpoint: node.WSAuthEndpoint(), prov: noneAuth(secret), expectDialFail: true},
 		{name: "http none", endpoint: node.HTTPAuthEndpoint(), prov: noneAuth(secret), expectCall1Fail: true},
 
 		// claims of 5 seconds or more, older or newer, are not allowed
-		{name: "ws too old", endpoint: node.WSAuthEndpoint(), prov: offsetTimeAuth(secret, -tooLong), expectDialFail: true},
-		{name: "http too old", endpoint: node.HTTPAuthEndpoint(), prov: offsetTimeAuth(secret, -tooLong), expectCall1Fail: true},
+		{
+			name: "ws too old", endpoint: node.WSAuthEndpoint(), prov: offsetTimeAuth(secret, -tooLong),
+			expectDialFail: true,
+		},
+		{
+			name: "http too old", endpoint: node.HTTPAuthEndpoint(), prov: offsetTimeAuth(secret, -tooLong),
+			expectCall1Fail: true,
+		},
 		// note: for it to be too long we need to add a delay, so that once we receive the request, the difference has not dipped below the "tooLong"
-		{name: "ws too new", endpoint: node.WSAuthEndpoint(), prov: offsetTimeAuth(secret, tooLong+requestDelay), expectDialFail: true},
-		{name: "http too new", endpoint: node.HTTPAuthEndpoint(), prov: offsetTimeAuth(secret, tooLong+requestDelay), expectCall1Fail: true},
+		{
+			name: "ws too new", endpoint: node.WSAuthEndpoint(), prov: offsetTimeAuth(secret, tooLong+requestDelay),
+			expectDialFail: true,
+		},
+		{
+			name: "http too new", endpoint: node.HTTPAuthEndpoint(), prov: offsetTimeAuth(secret, tooLong+requestDelay),
+			expectCall1Fail: true,
+		},
 
 		// Try offset the time, but stay just within bounds
 		{name: "ws old", endpoint: node.WSAuthEndpoint(), prov: offsetTimeAuth(secret, -notTooLong)},
@@ -188,8 +204,14 @@ func TestAuthEndpoints(t *testing.T) {
 
 		// ws only authenticates on initial dial, then continues communication
 		{name: "ws single auth", endpoint: node.WSAuthEndpoint(), prov: changingAuth(goodAuth, badAuth)},
-		{name: "http call fail auth", endpoint: node.HTTPAuthEndpoint(), prov: changingAuth(goodAuth, badAuth), expectCall2Fail: true},
-		{name: "http call fail time", endpoint: node.HTTPAuthEndpoint(), prov: changingAuth(goodAuth, offsetTimeAuth(secret, tooLong+requestDelay)), expectCall2Fail: true},
+		{
+			name: "http call fail auth", endpoint: node.HTTPAuthEndpoint(), prov: changingAuth(goodAuth, badAuth),
+			expectCall2Fail: true,
+		},
+		{
+			name: "http call fail time", endpoint: node.HTTPAuthEndpoint(),
+			prov: changingAuth(goodAuth, offsetTimeAuth(secret, tooLong+requestDelay)), expectCall2Fail: true,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -199,9 +221,11 @@ func TestAuthEndpoints(t *testing.T) {
 
 func noneAuth(secret [32]byte) rpc.HTTPAuth {
 	return func(header http.Header) error {
-		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims{
-			"iat": &jwt.NumericDate{Time: time.Now()},
-		})
+		token := jwt.NewWithClaims(
+			jwt.SigningMethodNone, jwt.MapClaims{
+				"iat": &jwt.NumericDate{Time: time.Now()},
+			},
+		)
 		s, err := token.SignedString(secret[:])
 		if err != nil {
 			return fmt.Errorf("failed to create JWT token: %w", err)
@@ -224,9 +248,11 @@ func changingAuth(provs ...rpc.HTTPAuth) rpc.HTTPAuth {
 
 func offsetTimeAuth(secret [32]byte, offset time.Duration) rpc.HTTPAuth {
 	return func(header http.Header) error {
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"iat": &jwt.NumericDate{Time: time.Now().Add(offset)},
-		})
+		token := jwt.NewWithClaims(
+			jwt.SigningMethodHS256, jwt.MapClaims{
+				"iat": &jwt.NumericDate{Time: time.Now().Add(offset)},
+			},
+		)
 		s, err := token.SignedString(secret[:])
 		if err != nil {
 			return fmt.Errorf("failed to create JWT token: %w", err)

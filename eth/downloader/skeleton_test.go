@@ -25,12 +25,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/eth/protocols/eth"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // hookedBackfiller is a tester backfiller with all interface methods mocked and
@@ -99,7 +99,9 @@ func newSkeletonTestPeer(id string, headers []*types.Header) *skeletonTestPeer {
 // and sets an optional serve hook that can return headers for delivery instead
 // of the predefined chain. Useful for emulating malicious behavior that would
 // otherwise require dedicated peer types.
-func newSkeletonTestPeerWithHook(id string, headers []*types.Header, serve func(origin uint64) []*types.Header) *skeletonTestPeer {
+func newSkeletonTestPeerWithHook(
+	id string, headers []*types.Header, serve func(origin uint64) []*types.Header,
+) *skeletonTestPeer {
 	return &skeletonTestPeer{
 		id:      id,
 		headers: headers,
@@ -110,7 +112,9 @@ func newSkeletonTestPeerWithHook(id string, headers []*types.Header, serve func(
 // RequestHeadersByNumber constructs a GetBlockHeaders function based on a numbered
 // origin; associated with a particular peer in the download tester. The returned
 // function can be used to retrieve batches of headers from the particular peer.
-func (p *skeletonTestPeer) RequestHeadersByNumber(origin uint64, amount int, skip int, reverse bool, sink chan *eth.Response) (*eth.Request, error) {
+func (p *skeletonTestPeer) RequestHeadersByNumber(
+	origin uint64, amount int, skip int, reverse bool, sink chan *eth.Response,
+) (*eth.Request, error) {
 	// Since skeleton test peer are in-memory mocks, dropping the does not make
 	// them inaccessible. As such, check a local `dropped` field to see if the
 	// peer has been dropped and should not respond any more.
@@ -138,7 +142,12 @@ func (p *skeletonTestPeer) RequestHeadersByNumber(origin uint64, amount int, ski
 	// batches of headers. Panic if the peer is requested an amount other than the
 	// configured batch size (apart from the request leading to the genesis).
 	if amount > requestHeaders || (amount < requestHeaders && origin > uint64(amount)) {
-		panic(fmt.Sprintf("non-chunk size header batch requested: requested %d, want %d, origin %d", amount, requestHeaders, origin))
+		panic(
+			fmt.Sprintf(
+				"non-chunk size header batch requested: requested %d, want %d, origin %d", amount, requestHeaders,
+				origin,
+			),
+		)
 	}
 	// Simple reverse header retrieval. Fill from the peer's chain and return.
 	// If the tester has a serve hook set, try to use that before falling back
@@ -518,10 +527,12 @@ func TestSkeletonSyncRetrievals(t *testing.T) {
 	// progression, create a long fake chain to test with.
 	chain := []*types.Header{{Number: big.NewInt(0)}}
 	for i := 1; i < 10000; i++ {
-		chain = append(chain, &types.Header{
-			ParentHash: chain[i-1].Hash(),
-			Number:     big.NewInt(int64(i)),
-		})
+		chain = append(
+			chain, &types.Header{
+				ParentHash: chain[i-1].Hash(),
+				Number:     big.NewInt(int64(i)),
+			},
+		)
 	}
 	// Some tests require a forking side chain to trigger cornercases.
 	var sidechain []*types.Header
@@ -529,11 +540,13 @@ func TestSkeletonSyncRetrievals(t *testing.T) {
 		sidechain = append(sidechain, chain[i])
 	}
 	for i := len(chain) / 2; i < len(chain); i++ {
-		sidechain = append(sidechain, &types.Header{
-			ParentHash: sidechain[i-1].Hash(),
-			Number:     big.NewInt(int64(i)),
-			Extra:      []byte("B"), // force a different hash
-		})
+		sidechain = append(
+			sidechain, &types.Header{
+				ParentHash: sidechain[i-1].Hash(),
+				Number:     big.NewInt(int64(i)),
+				Extra:      []byte("B"), // force a different hash
+			},
+		)
 	}
 	tests := []skeletonTest{
 		// Completely empty database with only the genesis set. The sync is expected
@@ -604,7 +617,9 @@ func TestSkeletonSyncRetrievals(t *testing.T) {
 		{
 			head: chain[requestHeaders+100],
 			peers: []*skeletonTestPeer{
-				newSkeletonTestPeer("header-skipper", append(append(append([]*types.Header{}, chain[:99]...), nil), chain[100:]...)),
+				newSkeletonTestPeer(
+					"header-skipper", append(append(append([]*types.Header{}, chain[:99]...), nil), chain[100:]...),
+				),
 			},
 			mid: skeletonExpect{
 				state: []*subchain{{Head: requestHeaders + 100, Tail: 100}},
@@ -627,7 +642,9 @@ func TestSkeletonSyncRetrievals(t *testing.T) {
 		{
 			head: chain[requestHeaders+100],
 			peers: []*skeletonTestPeer{
-				newSkeletonTestPeer("header-skipper", append(append(append([]*types.Header{}, chain[:50]...), nil), chain[51:]...)),
+				newSkeletonTestPeer(
+					"header-skipper", append(append(append([]*types.Header{}, chain[:50]...), nil), chain[51:]...),
+				),
 			},
 			mid: skeletonExpect{
 				state: []*subchain{{Head: requestHeaders + 100, Tail: 100}},
@@ -650,7 +667,9 @@ func TestSkeletonSyncRetrievals(t *testing.T) {
 		{
 			head: chain[requestHeaders+100], // We want to force the 100th header to be a request boundary
 			peers: []*skeletonTestPeer{
-				newSkeletonTestPeer("header-duper", append(append(append([]*types.Header{}, chain[:99]...), chain[98]), chain[100:]...)),
+				newSkeletonTestPeer(
+					"header-duper", append(append(append([]*types.Header{}, chain[:99]...), chain[98]), chain[100:]...),
+				),
 			},
 			mid: skeletonExpect{
 				state: []*subchain{{Head: requestHeaders + 100, Tail: 100}},
@@ -673,7 +692,9 @@ func TestSkeletonSyncRetrievals(t *testing.T) {
 		{
 			head: chain[requestHeaders+100], // We want to force the 100th header to be a request boundary
 			peers: []*skeletonTestPeer{
-				newSkeletonTestPeer("header-duper", append(append(append([]*types.Header{}, chain[:50]...), chain[49]), chain[51:]...)),
+				newSkeletonTestPeer(
+					"header-duper", append(append(append([]*types.Header{}, chain[:50]...), chain[49]), chain[51:]...),
+				),
 			},
 			mid: skeletonExpect{
 				state: []*subchain{{Head: requestHeaders + 100, Tail: 100}},
@@ -696,7 +717,8 @@ func TestSkeletonSyncRetrievals(t *testing.T) {
 		{
 			head: chain[requestHeaders+100], // We want to force the 100th header to be a request boundary
 			peers: []*skeletonTestPeer{
-				newSkeletonTestPeer("header-changer",
+				newSkeletonTestPeer(
+					"header-changer",
 					append(
 						append(
 							append([]*types.Header{}, chain[:99]...),
@@ -730,7 +752,8 @@ func TestSkeletonSyncRetrievals(t *testing.T) {
 		{
 			head: chain[requestHeaders+100], // We want to force the 100th header to be a request boundary
 			peers: []*skeletonTestPeer{
-				newSkeletonTestPeer("header-changer",
+				newSkeletonTestPeer(
+					"header-changer",
 					append(
 						append(
 							append([]*types.Header{}, chain[:50]...),
@@ -771,18 +794,22 @@ func TestSkeletonSyncRetrievals(t *testing.T) {
 		{
 			head: chain[2*requestHeaders],
 			peers: []*skeletonTestPeer{
-				newSkeletonTestPeerWithHook("peer-1", chain, func(origin uint64) []*types.Header {
-					if origin == chain[2*requestHeaders+1].Number.Uint64() {
-						time.Sleep(100 * time.Millisecond)
-					}
-					return nil // Fallback to default behavior, just delayed
-				}),
-				newSkeletonTestPeerWithHook("peer-2", chain, func(origin uint64) []*types.Header {
-					if origin == chain[2*requestHeaders+1].Number.Uint64() {
-						time.Sleep(100 * time.Millisecond)
-					}
-					return nil // Fallback to default behavior, just delayed
-				}),
+				newSkeletonTestPeerWithHook(
+					"peer-1", chain, func(origin uint64) []*types.Header {
+						if origin == chain[2*requestHeaders+1].Number.Uint64() {
+							time.Sleep(100 * time.Millisecond)
+						}
+						return nil // Fallback to default behavior, just delayed
+					},
+				),
+				newSkeletonTestPeerWithHook(
+					"peer-2", chain, func(origin uint64) []*types.Header {
+						if origin == chain[2*requestHeaders+1].Number.Uint64() {
+							time.Sleep(100 * time.Millisecond)
+						}
+						return nil // Fallback to default behavior, just delayed
+					},
+				),
 			},
 			mid: skeletonExpect{
 				state: []*subchain{{Head: 2 * requestHeaders, Tail: 1}},
@@ -905,7 +932,11 @@ func TestSkeletonSyncRetrievals(t *testing.T) {
 		// Apply the post-init events if there's any
 		endpeers := tt.peers
 		if tt.newPeer != nil {
-			if err := peerset.Register(newPeerConnection(tt.newPeer.id, eth.ETH68, tt.newPeer, log.New("id", tt.newPeer.id))); err != nil {
+			if err := peerset.Register(
+				newPeerConnection(
+					tt.newPeer.id, eth.ETH68, tt.newPeer, log.New("id", tt.newPeer.id),
+				),
+			); err != nil {
 				t.Errorf("test %d: failed to register new peer: %v", i, err)
 			}
 			time.Sleep(time.Millisecond * 50) // given time for peer registration
@@ -934,7 +965,9 @@ func TestSkeletonSyncRetrievals(t *testing.T) {
 	}
 }
 
-func checkSkeletonProgress(db ethdb.KeyValueReader, unpredictable bool, peers []*skeletonTestPeer, expected skeletonExpect) error {
+func checkSkeletonProgress(
+	db ethdb.KeyValueReader, unpredictable bool, peers []*skeletonTestPeer, expected skeletonExpect,
+) error {
 	var progress skeletonProgress
 	// Check the post-init end state if it matches the required results
 	json.Unmarshal(rawdb.ReadSkeletonSyncStatus(db), &progress)
@@ -944,10 +977,14 @@ func checkSkeletonProgress(db ethdb.KeyValueReader, unpredictable bool, peers []
 	}
 	for j := 0; j < len(progress.Subchains); j++ {
 		if progress.Subchains[j].Head != expected.state[j].Head {
-			return fmt.Errorf("subchain %d head mismatch: have %d, want %d", j, progress.Subchains[j].Head, expected.state[j].Head)
+			return fmt.Errorf(
+				"subchain %d head mismatch: have %d, want %d", j, progress.Subchains[j].Head, expected.state[j].Head,
+			)
 		}
 		if progress.Subchains[j].Tail != expected.state[j].Tail {
-			return fmt.Errorf("subchain %d tail mismatch: have %d, want %d", j, progress.Subchains[j].Tail, expected.state[j].Tail)
+			return fmt.Errorf(
+				"subchain %d tail mismatch: have %d, want %d", j, progress.Subchains[j].Tail, expected.state[j].Tail,
+			)
 		}
 	}
 	if !unpredictable {

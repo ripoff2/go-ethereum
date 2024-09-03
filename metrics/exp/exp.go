@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/metrics/prometheus"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/metrics/prometheus"
 )
 
 type exp struct {
@@ -26,13 +26,15 @@ func (exp *exp) expHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	fmt.Fprintf(w, "{\n")
 	first := true
-	expvar.Do(func(kv expvar.KeyValue) {
-		if !first {
-			fmt.Fprintf(w, ",\n")
-		}
-		first = false
-		fmt.Fprintf(w, "%q: %s", kv.Key, kv.Value)
-	})
+	expvar.Do(
+		func(kv expvar.KeyValue) {
+			if !first {
+				fmt.Fprintf(w, ",\n")
+			}
+			first = false
+			fmt.Fprintf(w, "%q: %s", kv.Key, kv.Value)
+		},
+	)
 	fmt.Fprintf(w, "\n}\n")
 }
 
@@ -186,28 +188,30 @@ func (exp *exp) publishResettingTimer(name string, metric metrics.ResettingTimer
 }
 
 func (exp *exp) syncToExpvar() {
-	exp.registry.Each(func(name string, i interface{}) {
-		switch i := i.(type) {
-		case metrics.Counter:
-			exp.publishCounter(name, i.Snapshot())
-		case metrics.CounterFloat64:
-			exp.publishCounterFloat64(name, i.Snapshot())
-		case metrics.Gauge:
-			exp.publishGauge(name, i.Snapshot())
-		case metrics.GaugeFloat64:
-			exp.publishGaugeFloat64(name, i.Snapshot())
-		case metrics.GaugeInfo:
-			exp.publishGaugeInfo(name, i.Snapshot())
-		case metrics.Histogram:
-			exp.publishHistogram(name, i)
-		case metrics.Meter:
-			exp.publishMeter(name, i)
-		case metrics.Timer:
-			exp.publishTimer(name, i)
-		case metrics.ResettingTimer:
-			exp.publishResettingTimer(name, i)
-		default:
-			panic(fmt.Sprintf("unsupported type for '%s': %T", name, i))
-		}
-	})
+	exp.registry.Each(
+		func(name string, i interface{}) {
+			switch i := i.(type) {
+			case metrics.Counter:
+				exp.publishCounter(name, i.Snapshot())
+			case metrics.CounterFloat64:
+				exp.publishCounterFloat64(name, i.Snapshot())
+			case metrics.Gauge:
+				exp.publishGauge(name, i.Snapshot())
+			case metrics.GaugeFloat64:
+				exp.publishGaugeFloat64(name, i.Snapshot())
+			case metrics.GaugeInfo:
+				exp.publishGaugeInfo(name, i.Snapshot())
+			case metrics.Histogram:
+				exp.publishHistogram(name, i)
+			case metrics.Meter:
+				exp.publishMeter(name, i)
+			case metrics.Timer:
+				exp.publishTimer(name, i)
+			case metrics.ResettingTimer:
+				exp.publishResettingTimer(name, i)
+			default:
+				panic(fmt.Sprintf("unsupported type for '%s': %T", name, i))
+			}
+		},
+	)
 }

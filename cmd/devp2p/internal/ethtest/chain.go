@@ -31,16 +31,16 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/forkid"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/forkid"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/eth/protocols/eth"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 // Chain is a lightweight blockchain-like store which can read a hivechain
@@ -108,9 +108,11 @@ func (c *Chain) AccountsInHashOrder() []state.DumpAccount {
 		}
 		i++
 	}
-	slices.SortFunc(list, func(x, y state.DumpAccount) int {
-		return bytes.Compare(x.AddressHash, y.AddressHash)
-	})
+	slices.SortFunc(
+		list, func(x, y state.DumpAccount) int {
+			return bytes.Compare(x.AddressHash, y.AddressHash)
+		},
+	)
 	return list
 }
 
@@ -221,7 +223,9 @@ func (c *Chain) GetHeaders(req *eth.GetBlockHeadersPacket) ([]*types.Header, err
 		}
 	}
 	if headers[0] == nil {
-		return nil, fmt.Errorf("no headers found for given origin number %v, hash %v", req.Origin.Number, req.Origin.Hash)
+		return nil, fmt.Errorf(
+			"no headers found for given origin number %v, hash %v", req.Origin.Number, req.Origin.Hash,
+		)
 	}
 	if req.Reverse {
 		for i := 1; i < int(req.Amount); i++ {

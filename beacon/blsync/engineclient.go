@@ -22,12 +22,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/beacon/engine"
-	"github.com/ethereum/go-ethereum/beacon/types"
-	"github.com/ethereum/go-ethereum/common"
-	ctypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum/beacon/engine"
+	"github.com/ripoff2/go-ethereum/beacon/types"
+	"github.com/ripoff2/go-ethereum/common"
+	ctypes "github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 type engineClient struct {
@@ -67,7 +67,10 @@ func (ec *engineClient) updateLoop(headCh <-chan types.ChainHeadEvent) {
 
 		case event := <-headCh:
 			if ec.rpc == nil { // dry run, no engine API specified
-				log.Info("New execution block retrieved", "number", event.Block.NumberU64(), "hash", event.Block.Hash(), "finalized", event.Finalized)
+				log.Info(
+					"New execution block retrieved", "number", event.Block.NumberU64(), "hash", event.Block.Hash(),
+					"finalized", event.Finalized,
+				)
 				continue
 			}
 
@@ -76,9 +79,14 @@ func (ec *engineClient) updateLoop(headCh <-chan types.ChainHeadEvent) {
 
 			log.Debug("Calling NewPayload", "number", event.Block.NumberU64(), "hash", event.Block.Hash())
 			if status, err := ec.callNewPayload(forkName, event); err == nil {
-				log.Info("Successful NewPayload", "number", event.Block.NumberU64(), "hash", event.Block.Hash(), "status", status)
+				log.Info(
+					"Successful NewPayload", "number", event.Block.NumberU64(), "hash", event.Block.Hash(), "status",
+					status,
+				)
 			} else {
-				log.Error("Failed NewPayload", "number", event.Block.NumberU64(), "hash", event.Block.Hash(), "error", err)
+				log.Error(
+					"Failed NewPayload", "number", event.Block.NumberU64(), "hash", event.Block.Hash(), "error", err,
+				)
 			}
 
 			log.Debug("Calling ForkchoiceUpdated", "head", event.Block.Hash())

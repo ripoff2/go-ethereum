@@ -32,7 +32,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/ethereum/go-ethereum/internal/reexec"
+	"github.com/ripoff2/go-ethereum/internal/reexec"
 )
 
 func NewTestCmd(t *testing.T, data interface{}) *TestCmd {
@@ -137,13 +137,17 @@ func (tt *TestCmd) matchExactOutput(want []byte) error {
 		// Find the mismatch position.
 		for i := 0; i < n; i++ {
 			if want[i] != buf[i] {
-				return fmt.Errorf("output mismatch at ◊:\n---------------- (stdout text)\n%s◊%s\n---------------- (expected text)\n%s",
-					buf[:i], buf[i:n], want)
+				return fmt.Errorf(
+					"output mismatch at ◊:\n---------------- (stdout text)\n%s◊%s\n---------------- (expected text)\n%s",
+					buf[:i], buf[i:n], want,
+				)
 			}
 		}
 		if n < len(want) {
-			return fmt.Errorf("not enough output, got until ◊:\n---------------- (stdout text)\n%s\n---------------- (expected text)\n%s◊%s",
-				buf, want[:n], want[n:])
+			return fmt.Errorf(
+				"not enough output, got until ◊:\n---------------- (stdout text)\n%s\n---------------- (expected text)\n%s◊%s",
+				buf, want[:n], want[n:],
+			)
 		}
 	}
 	return nil
@@ -165,8 +169,10 @@ func (tt *TestCmd) ExpectRegexp(regex string) (*regexp.Regexp, []string) {
 	tt.withKillTimeout(func() { matches = re.FindReaderSubmatchIndex(rtee) })
 	output := rtee.buf.Bytes()
 	if matches == nil {
-		tt.Fatalf("Output did not match:\n---------------- (stdout text)\n%s\n---------------- (regular expression)\n%s",
-			output, regex)
+		tt.Fatalf(
+			"Output did not match:\n---------------- (stdout text)\n%s\n---------------- (regular expression)\n%s",
+			output, regex,
+		)
 		return re, nil
 	}
 	tt.Logf("Matched stdout text:\n%s", output)
@@ -182,9 +188,11 @@ func (tt *TestCmd) ExpectRegexp(regex string) (*regexp.Regexp, []string) {
 // printing any additional text on stdout.
 func (tt *TestCmd) ExpectExit() {
 	var output []byte
-	tt.withKillTimeout(func() {
-		output, _ = io.ReadAll(tt.stdout)
-	})
+	tt.withKillTimeout(
+		func() {
+			output, _ = io.ReadAll(tt.stdout)
+		},
+	)
 	tt.WaitExit()
 	if tt.Cleanup != nil {
 		tt.Cleanup()
@@ -237,10 +245,12 @@ func (tt *TestCmd) Kill() {
 }
 
 func (tt *TestCmd) withKillTimeout(fn func()) {
-	timeout := time.AfterFunc(30*time.Second, func() {
-		tt.Log("killing the child process (timeout)")
-		tt.Kill()
-	})
+	timeout := time.AfterFunc(
+		30*time.Second, func() {
+			tt.Log("killing the child process (timeout)")
+			tt.Kill()
+		},
+	)
 	defer timeout.Stop()
 	fn()
 }

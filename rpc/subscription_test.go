@@ -28,8 +28,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
 )
 
 func TestNewID(t *testing.T) {
@@ -122,7 +122,10 @@ func TestSubscriptions(t *testing.T) {
 					continue
 				}
 				if count, found := count[subid]; !found || count < notificationCount {
-					t.Errorf("didn't receive all notifications (%d<%d) in time for namespace %q", count, notificationCount, namespace)
+					t.Errorf(
+						"didn't receive all notifications (%d<%d) in time for namespace %q", count, notificationCount,
+						namespace,
+					)
 				}
 			}
 			t.Fatal("timed out")
@@ -185,7 +188,9 @@ type subConfirmation struct {
 
 // waitForMessages reads RPC messages from 'in' and dispatches them into the given channels.
 // It stops if there is an error.
-func waitForMessages(in *json.Decoder, successes chan subConfirmation, notifications chan subscriptionResult, errors chan error) {
+func waitForMessages(
+	in *json.Decoder, successes chan subConfirmation, notifications chan subscriptionResult, errors chan error,
+) {
 	for {
 		resp, notification, err := readAndValidateMessage(in)
 		if err != nil {

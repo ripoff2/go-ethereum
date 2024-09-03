@@ -5,9 +5,9 @@ import (
 	uurl "net/url"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
 	client "github.com/influxdata/influxdb1-client/v2"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
 )
 
 type reporter struct {
@@ -32,7 +32,9 @@ func InfluxDB(r metrics.Registry, d time.Duration, url, database, username, pass
 }
 
 // InfluxDBWithTags starts a InfluxDB reporter which will post the from the given metrics.Registry at each d interval with the specified tags
-func InfluxDBWithTags(r metrics.Registry, d time.Duration, url, database, username, password, namespace string, tags map[string]string) {
+func InfluxDBWithTags(
+	r metrics.Registry, d time.Duration, url, database, username, password, namespace string, tags map[string]string,
+) {
 	u, err := uurl.Parse(url)
 	if err != nil {
 		log.Warn("Unable to parse InfluxDB", "url", url, "err", err)
@@ -59,7 +61,9 @@ func InfluxDBWithTags(r metrics.Registry, d time.Duration, url, database, userna
 }
 
 // InfluxDBWithTagsOnce runs once an InfluxDB reporter and post the given metrics.Registry with the specified tags
-func InfluxDBWithTagsOnce(r metrics.Registry, url, database, username, password, namespace string, tags map[string]string) error {
+func InfluxDBWithTagsOnce(
+	r metrics.Registry, url, database, username, password, namespace string, tags map[string]string,
+) error {
 	u, err := uurl.Parse(url)
 	if err != nil {
 		return fmt.Errorf("unable to parse InfluxDB. url: %s, err: %v", url, err)
@@ -87,12 +91,14 @@ func InfluxDBWithTagsOnce(r metrics.Registry, url, database, username, password,
 }
 
 func (r *reporter) makeClient() (err error) {
-	r.client, err = client.NewHTTPClient(client.HTTPConfig{
-		Addr:     r.url.String(),
-		Username: r.username,
-		Password: r.password,
-		Timeout:  10 * time.Second,
-	})
+	r.client, err = client.NewHTTPClient(
+		client.HTTPConfig{
+			Addr:     r.url.String(),
+			Username: r.username,
+			Password: r.password,
+			Timeout:  10 * time.Second,
+		},
+	)
 
 	return
 }
@@ -129,24 +135,27 @@ func (r *reporter) send(tstamp int64) error {
 	bps, err := client.NewBatchPoints(
 		client.BatchPointsConfig{
 			Database: r.database,
-		})
+		},
+	)
 	if err != nil {
 		return err
 	}
-	r.reg.Each(func(name string, i interface{}) {
-		var now time.Time
-		if tstamp <= 0 {
-			now = time.Now()
-		} else {
-			now = time.Unix(tstamp, 0)
-		}
-		measurement, fields := readMeter(r.namespace, name, i)
-		if fields == nil {
-			return
-		}
-		if p, err := client.NewPoint(measurement, r.tags, fields, now); err == nil {
-			bps.AddPoint(p)
-		}
-	})
+	r.reg.Each(
+		func(name string, i interface{}) {
+			var now time.Time
+			if tstamp <= 0 {
+				now = time.Now()
+			} else {
+				now = time.Unix(tstamp, 0)
+			}
+			measurement, fields := readMeter(r.namespace, name, i)
+			if fields == nil {
+				return
+			}
+			if p, err := client.NewPoint(measurement, r.tags, fields, now); err == nil {
+				bps.AddPoint(p)
+			}
+		},
+	)
 	return r.client.Write(bps)
 }

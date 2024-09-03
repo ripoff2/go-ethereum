@@ -28,10 +28,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/netutil"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/netutil"
 )
 
 const (
@@ -350,11 +350,13 @@ func (d *dialScheduler) rearmHistoryTimer() {
 
 // expireHistory removes expired items from d.history.
 func (d *dialScheduler) expireHistory() {
-	d.history.expire(d.clock.Now(), func(hkey string) {
-		var id enode.ID
-		copy(id[:], hkey)
-		d.updateStaticPool(id)
-	})
+	d.history.expire(
+		d.clock.Now(), func(hkey string) {
+			var id enode.ID
+			copy(id[:], hkey)
+			d.updateStaticPool(id)
+		},
+	)
 }
 
 // freeDialSlots returns the number of free dial slots. The result can be negative

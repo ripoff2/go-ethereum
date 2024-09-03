@@ -25,9 +25,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/core/rawdb/ancienttest"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/core/rawdb/ancienttest"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -52,17 +52,19 @@ func TestFreezerModify(t *testing.T) {
 	defer f.Close()
 
 	// Commit test data.
-	_, err := f.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-		for i := range valuesRaw {
-			if err := op.AppendRaw("raw", uint64(i), valuesRaw[i]); err != nil {
-				return err
+	_, err := f.ModifyAncients(
+		func(op ethdb.AncientWriteOp) error {
+			for i := range valuesRaw {
+				if err := op.AppendRaw("raw", uint64(i), valuesRaw[i]); err != nil {
+					return err
+				}
+				if err := op.Append("rlp", uint64(i), valuesRLP[i]); err != nil {
+					return err
+				}
 			}
-			if err := op.Append("rlp", uint64(i), valuesRLP[i]); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+			return nil
+		},
+	)
 	if err != nil {
 		t.Fatal("ModifyAncients failed:", err)
 	}
@@ -96,14 +98,16 @@ func TestFreezerModifyRollback(t *testing.T) {
 	f, dir := newFreezerForTesting(t, freezerTestTableDef)
 
 	theError := errors.New("oops")
-	_, err := f.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-		// Append three items. This creates two files immediately,
-		// because the table size limit of the test freezer is 2048.
-		require.NoError(t, op.AppendRaw("test", 0, make([]byte, 2048)))
-		require.NoError(t, op.AppendRaw("test", 1, make([]byte, 2048)))
-		require.NoError(t, op.AppendRaw("test", 2, make([]byte, 2048)))
-		return theError
-	})
+	_, err := f.ModifyAncients(
+		func(op ethdb.AncientWriteOp) error {
+			// Append three items. This creates two files immediately,
+			// because the table size limit of the test freezer is 2048.
+			require.NoError(t, op.AppendRaw("test", 0, make([]byte, 2048)))
+			require.NoError(t, op.AppendRaw("test", 1, make([]byte, 2048)))
+			require.NoError(t, op.AppendRaw("test", 2, make([]byte, 2048)))
+			return theError
+		},
+	)
 	if err != theError {
 		t.Errorf("ModifyAncients returned wrong error %q", err)
 	}
@@ -140,16 +144,18 @@ func TestFreezerConcurrentModifyRetrieve(t *testing.T) {
 		defer wg.Done()
 		defer close(written)
 		for item := uint64(0); item < 10000; item += writeBatchSize {
-			_, err := f.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-				for i := uint64(0); i < writeBatchSize; i++ {
-					item := item + i
-					value := getChunk(32, int(item))
-					if err := op.AppendRaw("test", item, value); err != nil {
-						return err
+			_, err := f.ModifyAncients(
+				func(op ethdb.AncientWriteOp) error {
+					for i := uint64(0); i < writeBatchSize; i++ {
+						item := item + i
+						value := getChunk(32, int(item))
+						if err := op.AppendRaw("test", item, value); err != nil {
+							return err
+						}
 					}
-				}
-				return nil
-			})
+					return nil
+				},
+			)
 			if err != nil {
 				panic(err)
 			}
@@ -194,14 +200,16 @@ func TestFreezerConcurrentModifyTruncate(t *testing.T) {
 		if _, err := f.TruncateHead(0); err != nil {
 			t.Fatal("truncate failed:", err)
 		}
-		_, err := f.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-			for i := uint64(0); i < 100; i++ {
-				if err := op.AppendRaw("test", i, item); err != nil {
-					return err
+		_, err := f.ModifyAncients(
+			func(op ethdb.AncientWriteOp) error {
+				for i := uint64(0); i < 100; i++ {
+					if err := op.AppendRaw("test", i, item); err != nil {
+						return err
+					}
 				}
-			}
-			return nil
-		})
+				return nil
+			},
+		)
 		if err != nil {
 			t.Fatal("modify failed:", err)
 		}
@@ -215,14 +223,16 @@ func TestFreezerConcurrentModifyTruncate(t *testing.T) {
 		)
 		wg.Add(3)
 		go func() {
-			_, modifyErr = f.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-				for i := uint64(100); i < 200; i++ {
-					if err := op.AppendRaw("test", i, item); err != nil {
-						return err
+			_, modifyErr = f.ModifyAncients(
+				func(op ethdb.AncientWriteOp) error {
+					for i := uint64(100); i < 200; i++ {
+						if err := op.AppendRaw("test", i, item); err != nil {
+							return err
+						}
 					}
-				}
-				return nil
-			})
+					return nil
+				},
+			)
 			wg.Done()
 		}()
 		go func() {
@@ -400,20 +410,24 @@ func TestFreezerCloseSync(t *testing.T) {
 }
 
 func TestFreezerSuite(t *testing.T) {
-	ancienttest.TestAncientSuite(t, func(kinds []string) ethdb.AncientStore {
-		tables := make(map[string]bool)
-		for _, kind := range kinds {
-			tables[kind] = true
-		}
-		f, _ := newFreezerForTesting(t, tables)
-		return f
-	})
-	ancienttest.TestResettableAncientSuite(t, func(kinds []string) ethdb.ResettableAncientStore {
-		tables := make(map[string]bool)
-		for _, kind := range kinds {
-			tables[kind] = true
-		}
-		f, _ := newResettableFreezer(t.TempDir(), "", false, 2048, tables)
-		return f
-	})
+	ancienttest.TestAncientSuite(
+		t, func(kinds []string) ethdb.AncientStore {
+			tables := make(map[string]bool)
+			for _, kind := range kinds {
+				tables[kind] = true
+			}
+			f, _ := newFreezerForTesting(t, tables)
+			return f
+		},
+	)
+	ancienttest.TestResettableAncientSuite(
+		t, func(kinds []string) ethdb.ResettableAncientStore {
+			tables := make(map[string]bool)
+			for _, kind := range kinds {
+				tables[kind] = true
+			}
+			f, _ := newResettableFreezer(t.TempDir(), "", false, 2048, tables)
+			return f
+		},
+	)
 }

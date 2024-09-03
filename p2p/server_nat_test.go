@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/internal/testlog"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/internal/testlog"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 func TestServerPortMapping(t *testing.T) {
@@ -84,7 +84,9 @@ type mockNAT struct {
 	ipRequests    atomic.Int32
 }
 
-func (m *mockNAT) AddMapping(protocol string, extport, intport int, name string, lifetime time.Duration) (uint16, error) {
+func (m *mockNAT) AddMapping(protocol string, extport, intport int, name string, lifetime time.Duration) (
+	uint16, error,
+) {
 	m.mapRequests.Add(1)
 	return m.mappedPort, nil
 }

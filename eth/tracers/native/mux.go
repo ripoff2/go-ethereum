@@ -20,10 +20,10 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
 )
 
 func init() {
@@ -77,7 +77,9 @@ func newMuxTracer(ctx *tracers.Context, cfg json.RawMessage) (*tracers.Tracer, e
 	}, nil
 }
 
-func (t *muxTracer) OnOpcode(pc uint64, op byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error) {
+func (t *muxTracer) OnOpcode(
+	pc uint64, op byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error,
+) {
 	for _, t := range t.tracers {
 		if t.OnOpcode != nil {
 			t.OnOpcode(pc, op, gas, cost, scope, rData, depth, err)
@@ -101,7 +103,9 @@ func (t *muxTracer) OnGasChange(old, new uint64, reason tracing.GasChangeReason)
 	}
 }
 
-func (t *muxTracer) OnEnter(depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int) {
+func (t *muxTracer) OnEnter(
+	depth int, typ byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int,
+) {
 	for _, t := range t.tracers {
 		if t.OnEnter != nil {
 			t.OnEnter(depth, typ, from, to, input, gas, value)
@@ -149,7 +153,9 @@ func (t *muxTracer) OnNonceChange(a common.Address, prev, new uint64) {
 	}
 }
 
-func (t *muxTracer) OnCodeChange(a common.Address, prevCodeHash common.Hash, prev []byte, codeHash common.Hash, code []byte) {
+func (t *muxTracer) OnCodeChange(
+	a common.Address, prevCodeHash common.Hash, prev []byte, codeHash common.Hash, code []byte,
+) {
 	for _, t := range t.tracers {
 		if t.OnCodeChange != nil {
 			t.OnCodeChange(a, prevCodeHash, prev, codeHash, code)

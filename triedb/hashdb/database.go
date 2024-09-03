@@ -24,17 +24,17 @@ import (
 	"time"
 
 	"github.com/VictoriaMetrics/fastcache"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/trie/trienode"
-	"github.com/ethereum/go-ethereum/trie/triestate"
-	"github.com/ethereum/go-ethereum/triedb/database"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
+	"github.com/ripoff2/go-ethereum/trie/triestate"
+	"github.com/ripoff2/go-ethereum/triedb/database"
 )
 
 var (
@@ -155,11 +155,13 @@ func (db *Database) insert(hash common.Hash, node []byte) {
 		node:      node,
 		flushPrev: db.newest,
 	}
-	entry.forChildren(func(child common.Hash) {
-		if c := db.dirties[child]; c != nil {
-			c.parents++
-		}
-	})
+	entry.forChildren(
+		func(child common.Hash) {
+			if c := db.dirties[child]; c != nil {
+				c.parents++
+			}
+		},
+	)
 	db.dirties[hash] = entry
 
 	// Update the flush-list endpoints
@@ -271,8 +273,12 @@ func (db *Database) Dereference(root common.Hash) {
 	memcacheGCBytesMeter.Mark(int64(storage - db.dirtiesSize))
 	memcacheGCNodesMeter.Mark(int64(nodes - len(db.dirties)))
 
-	log.Debug("Dereferenced trie from memory database", "nodes", nodes-len(db.dirties), "size", storage-db.dirtiesSize, "time", time.Since(start),
-		"gcnodes", db.gcnodes, "gcsize", db.gcsize, "gctime", db.gctime, "livenodes", len(db.dirties), "livesize", db.dirtiesSize)
+	log.Debug(
+		"Dereferenced trie from memory database", "nodes", nodes-len(db.dirties), "size", storage-db.dirtiesSize,
+		"time", time.Since(start),
+		"gcnodes", db.gcnodes, "gcsize", db.gcsize, "gctime", db.gctime, "livenodes", len(db.dirties), "livesize",
+		db.dirtiesSize,
+	)
 }
 
 // dereference is the private locked version of Dereference.
@@ -308,9 +314,11 @@ func (db *Database) dereference(hash common.Hash) {
 			db.dirties[node.flushNext].flushPrev = node.flushPrev
 		}
 		// Dereference all children and delete the node
-		node.forChildren(func(child common.Hash) {
-			db.dereference(child)
-		})
+		node.forChildren(
+			func(child common.Hash) {
+				db.dereference(child)
+			},
+		)
 		delete(db.dirties, hash)
 		db.dirtiesSize -= common.StorageSize(common.HashLength + len(node.node))
 		if node.external != nil {
@@ -389,8 +397,12 @@ func (db *Database) Cap(limit common.StorageSize) error {
 	memcacheFlushBytesMeter.Mark(int64(storage - db.dirtiesSize))
 	memcacheFlushNodesMeter.Mark(int64(nodes - len(db.dirties)))
 
-	log.Debug("Persisted nodes from memory database", "nodes", nodes-len(db.dirties), "size", storage-db.dirtiesSize, "time", time.Since(start),
-		"flushnodes", db.flushnodes, "flushsize", db.flushsize, "flushtime", db.flushtime, "livenodes", len(db.dirties), "livesize", db.dirtiesSize)
+	log.Debug(
+		"Persisted nodes from memory database", "nodes", nodes-len(db.dirties), "size", storage-db.dirtiesSize, "time",
+		time.Since(start),
+		"flushnodes", db.flushnodes, "flushsize", db.flushsize, "flushtime", db.flushtime, "livenodes", len(db.dirties),
+		"livesize", db.dirtiesSize,
+	)
 
 	return nil
 }
@@ -437,8 +449,12 @@ func (db *Database) Commit(node common.Hash, report bool) error {
 	if !report {
 		logger = log.Debug
 	}
-	logger("Persisted trie from memory database", "nodes", nodes-len(db.dirties)+int(db.flushnodes), "size", storage-db.dirtiesSize+db.flushsize, "time", time.Since(start)+db.flushtime,
-		"gcnodes", db.gcnodes, "gcsize", db.gcsize, "gctime", db.gctime, "livenodes", len(db.dirties), "livesize", db.dirtiesSize)
+	logger(
+		"Persisted trie from memory database", "nodes", nodes-len(db.dirties)+int(db.flushnodes), "size",
+		storage-db.dirtiesSize+db.flushsize, "time", time.Since(start)+db.flushtime,
+		"gcnodes", db.gcnodes, "gcsize", db.gcsize, "gctime", db.gctime, "livenodes", len(db.dirties), "livesize",
+		db.dirtiesSize,
+	)
 
 	// Reset the garbage collection statistics
 	db.gcnodes, db.gcsize, db.gctime = 0, 0, 0
@@ -457,11 +473,13 @@ func (db *Database) commit(hash common.Hash, batch ethdb.Batch, uncacher *cleane
 	var err error
 
 	// Dereference all children and delete the node
-	node.forChildren(func(child common.Hash) {
-		if err == nil {
-			err = db.commit(child, batch, uncacher)
-		}
-	})
+	node.forChildren(
+		func(child common.Hash) {
+			if err == nil {
+				err = db.commit(child, batch, uncacher)
+			}
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -541,7 +559,9 @@ func (db *Database) Initialized(genesisRoot common.Hash) bool {
 
 // Update inserts the dirty nodes in provided nodeset into database and link the
 // account trie with multiple storage tries if necessary.
-func (db *Database) Update(root common.Hash, parent common.Hash, block uint64, nodes *trienode.MergedNodeSet, states *triestate.Set) error {
+func (db *Database) Update(
+	root common.Hash, parent common.Hash, block uint64, nodes *trienode.MergedNodeSet, states *triestate.Set,
+) error {
 	// Ensure the parent state is present and signal a warning if not.
 	if parent != types.EmptyRootHash {
 		if blob, _ := db.node(parent); len(blob) == 0 {
@@ -569,12 +589,14 @@ func (db *Database) Update(root common.Hash, parent common.Hash, block uint64, n
 	}
 	for _, owner := range order {
 		subset := nodes.Sets[owner]
-		subset.ForEachWithOrder(func(path string, n *trienode.Node) {
-			if n.IsDeleted() {
-				return // ignore deletion
-			}
-			db.insert(n.Hash, n.Blob)
-		})
+		subset.ForEachWithOrder(
+			func(path string, n *trienode.Node) {
+				if n.IsDeleted() {
+					return // ignore deletion
+				}
+				db.insert(n.Hash, n.Blob)
+			},
+		)
 	}
 	// Link up the account trie and storage trie if the node points
 	// to an account trie leaf.

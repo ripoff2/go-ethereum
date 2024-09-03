@@ -21,8 +21,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/internal/testrand"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/internal/testrand"
 )
 
 // TestAncientSuite runs a suite of tests against an ancient database
@@ -48,12 +48,14 @@ func basicRead(t *testing.T, newFn func(kinds []string) ethdb.AncientStore) {
 	)
 	defer db.Close()
 
-	db.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-		for i := 0; i < len(data); i++ {
-			op.AppendRaw("a", uint64(i), data[i])
-		}
-		return nil
-	})
+	db.ModifyAncients(
+		func(op ethdb.AncientWriteOp) error {
+			for i := 0; i < len(data); i++ {
+				op.AppendRaw("a", uint64(i), data[i])
+			}
+			return nil
+		},
+	)
 	db.TruncateTail(10)
 	db.TruncateHead(90)
 
@@ -130,12 +132,14 @@ func batchRead(t *testing.T, newFn func(kinds []string) ethdb.AncientStore) {
 	)
 	defer db.Close()
 
-	db.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-		for i := 0; i < 100; i++ {
-			op.AppendRaw("a", uint64(i), data[i])
-		}
-		return nil
-	})
+	db.ModifyAncients(
+		func(op ethdb.AncientWriteOp) error {
+			for i := 0; i < 100; i++ {
+				op.AppendRaw("a", uint64(i), data[i])
+			}
+			return nil
+		},
+	)
 	db.TruncateTail(10)
 	db.TruncateHead(90)
 
@@ -208,24 +212,28 @@ func basicWrite(t *testing.T, newFn func(kinds []string) ethdb.AncientStore) {
 	defer db.Close()
 
 	// The ancient write to tables should be aligned
-	_, err := db.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-		for i := 0; i < 100; i++ {
-			op.AppendRaw("a", uint64(i), dataA[i])
-		}
-		return nil
-	})
+	_, err := db.ModifyAncients(
+		func(op ethdb.AncientWriteOp) error {
+			for i := 0; i < 100; i++ {
+				op.AppendRaw("a", uint64(i), dataA[i])
+			}
+			return nil
+		},
+	)
 	if err == nil {
 		t.Fatal("Unaligned ancient write should be rejected")
 	}
 
 	// Test normal ancient write
-	size, err := db.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-		for i := 0; i < 100; i++ {
-			op.AppendRaw("a", uint64(i), dataA[i])
-			op.AppendRaw("b", uint64(i), dataB[i])
-		}
-		return nil
-	})
+	size, err := db.ModifyAncients(
+		func(op ethdb.AncientWriteOp) error {
+			for i := 0; i < 100; i++ {
+				op.AppendRaw("a", uint64(i), dataA[i])
+				op.AppendRaw("b", uint64(i), dataB[i])
+			}
+			return nil
+		},
+	)
 	if err != nil {
 		t.Fatalf("Failed to write ancient data %v", err)
 	}
@@ -236,26 +244,30 @@ func basicWrite(t *testing.T, newFn func(kinds []string) ethdb.AncientStore) {
 
 	// Write should work after head truncating
 	db.TruncateHead(90)
-	_, err = db.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-		for i := 90; i < 100; i++ {
-			op.AppendRaw("a", uint64(i), dataA[i])
-			op.AppendRaw("b", uint64(i), dataB[i])
-		}
-		return nil
-	})
+	_, err = db.ModifyAncients(
+		func(op ethdb.AncientWriteOp) error {
+			for i := 90; i < 100; i++ {
+				op.AppendRaw("a", uint64(i), dataA[i])
+				op.AppendRaw("b", uint64(i), dataB[i])
+			}
+			return nil
+		},
+	)
 	if err != nil {
 		t.Fatalf("Failed to write ancient data %v", err)
 	}
 
 	// Write should work after truncating everything
 	db.TruncateTail(0)
-	_, err = db.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-		for i := 0; i < 100; i++ {
-			op.AppendRaw("a", uint64(i), dataA[i])
-			op.AppendRaw("b", uint64(i), dataB[i])
-		}
-		return nil
-	})
+	_, err = db.ModifyAncients(
+		func(op ethdb.AncientWriteOp) error {
+			for i := 0; i < 100; i++ {
+				op.AppendRaw("a", uint64(i), dataA[i])
+				op.AppendRaw("b", uint64(i), dataB[i])
+			}
+			return nil
+		},
+	)
 	if err != nil {
 		t.Fatalf("Failed to write ancient data %v", err)
 	}
@@ -266,14 +278,16 @@ func nonMutable(t *testing.T, newFn func(kinds []string) ethdb.AncientStore) {
 	defer db.Close()
 
 	// We write 100 zero-bytes to the freezer and immediately mutate the slice
-	db.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-		data := make([]byte, 100)
-		op.AppendRaw("a", uint64(0), data)
-		for i := range data {
-			data[i] = 0xff
-		}
-		return nil
-	})
+	db.ModifyAncients(
+		func(op ethdb.AncientWriteOp) error {
+			data := make([]byte, 100)
+			op.AppendRaw("a", uint64(0), data)
+			for i := range data {
+				data[i] = 0xff
+			}
+			return nil
+		},
+	)
 	// Now read it.
 	data, err := db.Ancient("a", uint64(0))
 	if err != nil {
@@ -289,31 +303,37 @@ func nonMutable(t *testing.T, newFn func(kinds []string) ethdb.AncientStore) {
 // TestResettableAncientSuite runs a suite of tests against a resettable ancient
 // database implementation.
 func TestResettableAncientSuite(t *testing.T, newFn func(kinds []string) ethdb.ResettableAncientStore) {
-	t.Run("Reset", func(t *testing.T) {
-		var (
-			db   = newFn([]string{"a"})
-			data = makeDataset(100, 32)
-		)
-		defer db.Close()
+	t.Run(
+		"Reset", func(t *testing.T) {
+			var (
+				db   = newFn([]string{"a"})
+				data = makeDataset(100, 32)
+			)
+			defer db.Close()
 
-		db.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-			for i := 0; i < 100; i++ {
-				op.AppendRaw("a", uint64(i), data[i])
-			}
-			return nil
-		})
-		db.TruncateTail(10)
-		db.TruncateHead(90)
+			db.ModifyAncients(
+				func(op ethdb.AncientWriteOp) error {
+					for i := 0; i < 100; i++ {
+						op.AppendRaw("a", uint64(i), data[i])
+					}
+					return nil
+				},
+			)
+			db.TruncateTail(10)
+			db.TruncateHead(90)
 
-		// Ancient write should work after resetting
-		db.Reset()
-		db.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-			for i := 0; i < 100; i++ {
-				op.AppendRaw("a", uint64(i), data[i])
-			}
-			return nil
-		})
-	})
+			// Ancient write should work after resetting
+			db.Reset()
+			db.ModifyAncients(
+				func(op ethdb.AncientWriteOp) error {
+					for i := 0; i < 100; i++ {
+						op.AppendRaw("a", uint64(i), data[i])
+					}
+					return nil
+				},
+			)
+		},
+	)
 }
 
 func makeDataset(size, value int) [][]byte {

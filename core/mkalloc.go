@@ -33,9 +33,9 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 type allocItem struct {
@@ -68,16 +68,20 @@ func makelist(g *core.Genesis) []allocItem {
 			for key, val := range account.Storage {
 				misc.Slots = append(misc.Slots, allocItemStorageItem{key, val})
 			}
-			slices.SortFunc(misc.Slots, func(a, b allocItemStorageItem) int {
-				return a.Key.Cmp(b.Key)
-			})
+			slices.SortFunc(
+				misc.Slots, func(a, b allocItemStorageItem) int {
+					return a.Key.Cmp(b.Key)
+				},
+			)
 		}
 		bigAddr := new(big.Int).SetBytes(addr.Bytes())
 		items = append(items, allocItem{bigAddr, account.Balance, misc})
 	}
-	slices.SortFunc(items, func(a, b allocItem) int {
-		return a.Addr.Cmp(b.Addr)
-	})
+	slices.SortFunc(
+		items, func(a, b allocItem) int {
+			return a.Addr.Cmp(b.Addr)
+		},
+	)
 	return items
 }
 

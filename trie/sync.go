@@ -21,15 +21,15 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/common/prque"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/common/prque"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
 )
 
 // ErrNotRequested is returned by the trie sync when it's requested to process a
@@ -228,12 +228,14 @@ func (batch *syncMemBatch) addNode(owner common.Hash, path []byte, blob []byte, 
 	} else {
 		batch.size += common.HashLength + uint64(len(blob))
 	}
-	batch.nodes = append(batch.nodes, nodeOp{
-		owner: owner,
-		path:  path,
-		blob:  blob,
-		hash:  hash,
-	})
+	batch.nodes = append(
+		batch.nodes, nodeOp{
+			owner: owner,
+			path:  path,
+			blob:  blob,
+			hash:  hash,
+		},
+	)
 }
 
 // delNode caches a node database delete operation.
@@ -247,11 +249,13 @@ func (batch *syncMemBatch) delNode(owner common.Hash, path []byte) {
 	} else {
 		batch.size += common.HashLength + uint64(len(path))
 	}
-	batch.nodes = append(batch.nodes, nodeOp{
-		del:   true,
-		owner: owner,
-		path:  path,
-	})
+	batch.nodes = append(
+		batch.nodes, nodeOp{
+			del:   true,
+			owner: owner,
+			path:  path,
+		},
+	)
 }
 
 // Sync is the main state trie synchronisation scheduler, which provides yet
@@ -551,10 +555,12 @@ func (s *Sync) children(req *nodeRequest, object node) ([]*nodeRequest, error) {
 		if hasTerm(key) {
 			key = key[:len(key)-1]
 		}
-		children = []childNode{{
-			node: node.Val,
-			path: append(append([]byte(nil), req.path...), key...),
-		}}
+		children = []childNode{
+			{
+				node: node.Val,
+				path: append(append([]byte(nil), req.path...), key...),
+			},
+		}
 		// Mark all internal nodes between shortNode and its **in disk**
 		// child as invalid. This is essential in the case of path mode
 		// scheme; otherwise, state healing might overwrite existing child
@@ -593,10 +599,12 @@ func (s *Sync) children(req *nodeRequest, object node) ([]*nodeRequest, error) {
 	case *fullNode:
 		for i := 0; i < 17; i++ {
 			if node.Children[i] != nil {
-				children = append(children, childNode{
-					node: node.Children[i],
-					path: append(append([]byte(nil), req.path...), byte(i)),
-				})
+				children = append(
+					children, childNode{
+						node: node.Children[i],
+						path: append(append([]byte(nil), req.path...), byte(i)),
+					},
+				)
 			}
 		}
 	default:

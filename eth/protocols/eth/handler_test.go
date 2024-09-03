@@ -22,21 +22,21 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/consensus/beacon"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/txpool"
-	"github.com/ethereum/go-ethereum/core/txpool/legacypool"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus"
+	"github.com/ripoff2/go-ethereum/consensus/beacon"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/txpool"
+	"github.com/ripoff2/go-ethereum/core/txpool/legacypool"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 var (
@@ -180,7 +180,9 @@ func testGetBlockHeaders(t *testing.T, protocol uint) {
 	}{
 		// A single random block should be retrievable by hash
 		{
-			&GetBlockHeadersRequest{Origin: HashOrNumber{Hash: backend.chain.GetBlockByNumber(limit / 2).Hash()}, Amount: 1},
+			&GetBlockHeadersRequest{
+				Origin: HashOrNumber{Hash: backend.chain.GetBlockByNumber(limit / 2).Hash()}, Amount: 1,
+			},
 			[]common.Hash{backend.chain.GetBlockByNumber(limit / 2).Hash()},
 		},
 		// A single random block should be retrievable by number
@@ -226,21 +228,31 @@ func testGetBlockHeaders(t *testing.T, protocol uint) {
 			[]common.Hash{backend.chain.GetBlockByNumber(0).Hash()},
 		},
 		{
-			&GetBlockHeadersRequest{Origin: HashOrNumber{Number: backend.chain.CurrentBlock().Number.Uint64()}, Amount: 1},
+			&GetBlockHeadersRequest{
+				Origin: HashOrNumber{Number: backend.chain.CurrentBlock().Number.Uint64()}, Amount: 1,
+			},
 			[]common.Hash{backend.chain.CurrentBlock().Hash()},
 		},
-		{ // If the peer requests a bit into the future, we deliver what we have
-			&GetBlockHeadersRequest{Origin: HashOrNumber{Number: backend.chain.CurrentBlock().Number.Uint64()}, Amount: 10},
+		{
+			// If the peer requests a bit into the future, we deliver what we have
+			&GetBlockHeadersRequest{
+				Origin: HashOrNumber{Number: backend.chain.CurrentBlock().Number.Uint64()}, Amount: 10,
+			},
 			[]common.Hash{backend.chain.CurrentBlock().Hash()},
 		},
 		// Ensure protocol limits are honored
 		{
-			&GetBlockHeadersRequest{Origin: HashOrNumber{Number: backend.chain.CurrentBlock().Number.Uint64() - 1}, Amount: limit + 10, Reverse: true},
+			&GetBlockHeadersRequest{
+				Origin: HashOrNumber{Number: backend.chain.CurrentBlock().Number.Uint64() - 1}, Amount: limit + 10,
+				Reverse: true,
+			},
 			getHashes(backend.chain.CurrentBlock().Number.Uint64(), limit),
 		},
 		// Check that requesting more than available is handled gracefully
 		{
-			&GetBlockHeadersRequest{Origin: HashOrNumber{Number: backend.chain.CurrentBlock().Number.Uint64() - 4}, Skip: 3, Amount: 3},
+			&GetBlockHeadersRequest{
+				Origin: HashOrNumber{Number: backend.chain.CurrentBlock().Number.Uint64() - 4}, Skip: 3, Amount: 3,
+			},
 			[]common.Hash{
 				backend.chain.GetBlockByNumber(backend.chain.CurrentBlock().Number.Uint64() - 4).Hash(),
 				backend.chain.GetBlockByNumber(backend.chain.CurrentBlock().Number.Uint64()).Hash(),
@@ -254,7 +266,9 @@ func testGetBlockHeaders(t *testing.T, protocol uint) {
 		},
 		// Check that requesting more than available is handled gracefully, even if mid skip
 		{
-			&GetBlockHeadersRequest{Origin: HashOrNumber{Number: backend.chain.CurrentBlock().Number.Uint64() - 4}, Skip: 2, Amount: 3},
+			&GetBlockHeadersRequest{
+				Origin: HashOrNumber{Number: backend.chain.CurrentBlock().Number.Uint64() - 4}, Skip: 2, Amount: 3,
+			},
 			[]common.Hash{
 				backend.chain.GetBlockByNumber(backend.chain.CurrentBlock().Number.Uint64() - 4).Hash(),
 				backend.chain.GetBlockByNumber(backend.chain.CurrentBlock().Number.Uint64() - 1).Hash(),
@@ -277,14 +291,20 @@ func testGetBlockHeaders(t *testing.T, protocol uint) {
 		},
 		// Check a corner case where skipping overflow loops back into the chain start
 		{
-			&GetBlockHeadersRequest{Origin: HashOrNumber{Hash: backend.chain.GetBlockByNumber(3).Hash()}, Amount: 2, Reverse: false, Skip: math.MaxUint64 - 1},
+			&GetBlockHeadersRequest{
+				Origin: HashOrNumber{Hash: backend.chain.GetBlockByNumber(3).Hash()}, Amount: 2, Reverse: false,
+				Skip: math.MaxUint64 - 1,
+			},
 			[]common.Hash{
 				backend.chain.GetBlockByNumber(3).Hash(),
 			},
 		},
 		// Check a corner case where skipping overflow loops back to the same header
 		{
-			&GetBlockHeadersRequest{Origin: HashOrNumber{Hash: backend.chain.GetBlockByNumber(1).Hash()}, Amount: 2, Reverse: false, Skip: math.MaxUint64},
+			&GetBlockHeadersRequest{
+				Origin: HashOrNumber{Hash: backend.chain.GetBlockByNumber(1).Hash()}, Amount: 2, Reverse: false,
+				Skip: math.MaxUint64,
+			},
 			[]common.Hash{
 				backend.chain.GetBlockByNumber(1).Hash(),
 			},
@@ -294,7 +314,9 @@ func testGetBlockHeaders(t *testing.T, protocol uint) {
 			&GetBlockHeadersRequest{Origin: HashOrNumber{Hash: unknown}, Amount: 1},
 			[]common.Hash{},
 		}, {
-			&GetBlockHeadersRequest{Origin: HashOrNumber{Number: backend.chain.CurrentBlock().Number.Uint64() + 1}, Amount: 1},
+			&GetBlockHeadersRequest{
+				Origin: HashOrNumber{Number: backend.chain.CurrentBlock().Number.Uint64() + 1}, Amount: 1,
+			},
 			[]common.Hash{},
 		},
 	}
@@ -306,14 +328,18 @@ func testGetBlockHeaders(t *testing.T, protocol uint) {
 			headers = append(headers, backend.chain.GetBlockByHash(hash).Header())
 		}
 		// Send the hash request and verify the response
-		p2p.Send(peer.app, GetBlockHeadersMsg, &GetBlockHeadersPacket{
-			RequestId:              123,
-			GetBlockHeadersRequest: tt.query,
-		})
-		if err := p2p.ExpectMsg(peer.app, BlockHeadersMsg, &BlockHeadersPacket{
-			RequestId:           123,
-			BlockHeadersRequest: headers,
-		}); err != nil {
+		p2p.Send(
+			peer.app, GetBlockHeadersMsg, &GetBlockHeadersPacket{
+				RequestId:              123,
+				GetBlockHeadersRequest: tt.query,
+			},
+		)
+		if err := p2p.ExpectMsg(
+			peer.app, BlockHeadersMsg, &BlockHeadersPacket{
+				RequestId:           123,
+				BlockHeadersRequest: headers,
+			},
+		); err != nil {
 			t.Errorf("test %d: headers mismatch: %v", i, err)
 		}
 		// If the test used number origins, repeat with hashes as the too
@@ -321,10 +347,12 @@ func testGetBlockHeaders(t *testing.T, protocol uint) {
 			if origin := backend.chain.GetBlockByNumber(tt.query.Origin.Number); origin != nil {
 				tt.query.Origin.Hash, tt.query.Origin.Number = origin.Hash(), 0
 
-				p2p.Send(peer.app, GetBlockHeadersMsg, &GetBlockHeadersPacket{
-					RequestId:              456,
-					GetBlockHeadersRequest: tt.query,
-				})
+				p2p.Send(
+					peer.app, GetBlockHeadersMsg, &GetBlockHeadersPacket{
+						RequestId:              456,
+						GetBlockHeadersRequest: tt.query,
+					},
+				)
 				expected := &BlockHeadersPacket{RequestId: 456, BlockHeadersRequest: headers}
 				if err := p2p.ExpectMsg(peer.app, BlockHeadersMsg, expected); err != nil {
 					t.Errorf("test %d by hash: headers mismatch: %v", i, err)
@@ -368,20 +396,26 @@ func testGetBlockBodies(t *testing.T, protocol uint) {
 		{10, nil, nil, 10},           // Multiple random blocks should be retrievable
 		{limit, nil, nil, limit},     // The maximum possible blocks should be retrievable
 		{limit + 1, nil, nil, limit}, // No more than the possible block count should be returned
-		{0, []common.Hash{backend.chain.Genesis().Hash()}, []bool{true}, 1},      // The genesis block should be retrievable
-		{0, []common.Hash{backend.chain.CurrentBlock().Hash()}, []bool{true}, 1}, // The chains head block should be retrievable
-		{0, []common.Hash{{}}, []bool{false}, 0},                                 // A non existent block should not be returned
+		{0, []common.Hash{backend.chain.Genesis().Hash()}, []bool{true}, 1}, // The genesis block should be retrievable
+		{
+			0, []common.Hash{backend.chain.CurrentBlock().Hash()}, []bool{true}, 1,
+		}, // The chains head block should be retrievable
+		{
+			0, []common.Hash{{}}, []bool{false}, 0,
+		}, // A non existent block should not be returned
 
 		// Existing and non-existing blocks interleaved should not cause problems
-		{0, []common.Hash{
-			{},
-			backend.chain.GetBlockByNumber(1).Hash(),
-			{},
-			backend.chain.GetBlockByNumber(10).Hash(),
-			{},
-			backend.chain.GetBlockByNumber(100).Hash(),
-			{},
-		}, []bool{false, true, false, true, false, true, false}, 3},
+		{
+			0, []common.Hash{
+				{},
+				backend.chain.GetBlockByNumber(1).Hash(),
+				{},
+				backend.chain.GetBlockByNumber(10).Hash(),
+				{},
+				backend.chain.GetBlockByNumber(100).Hash(),
+				{},
+			}, []bool{false, true, false, true, false, true, false}, 3,
+		},
 	}
 	// Run each of the tests and verify the results against the chain
 	for i, tt := range tests {
@@ -400,7 +434,12 @@ func testGetBlockBodies(t *testing.T, protocol uint) {
 					block := backend.chain.GetBlockByNumber(uint64(num))
 					hashes = append(hashes, block.Hash())
 					if len(bodies) < tt.expected {
-						bodies = append(bodies, &BlockBody{Transactions: block.Transactions(), Uncles: block.Uncles(), Withdrawals: block.Withdrawals()})
+						bodies = append(
+							bodies, &BlockBody{
+								Transactions: block.Transactions(), Uncles: block.Uncles(),
+								Withdrawals: block.Withdrawals(),
+							},
+						)
 					}
 					break
 				}
@@ -410,19 +449,27 @@ func testGetBlockBodies(t *testing.T, protocol uint) {
 			hashes = append(hashes, hash)
 			if tt.available[j] && len(bodies) < tt.expected {
 				block := backend.chain.GetBlockByHash(hash)
-				bodies = append(bodies, &BlockBody{Transactions: block.Transactions(), Uncles: block.Uncles(), Withdrawals: block.Withdrawals()})
+				bodies = append(
+					bodies, &BlockBody{
+						Transactions: block.Transactions(), Uncles: block.Uncles(), Withdrawals: block.Withdrawals(),
+					},
+				)
 			}
 		}
 
 		// Send the hash request and verify the response
-		p2p.Send(peer.app, GetBlockBodiesMsg, &GetBlockBodiesPacket{
-			RequestId:             123,
-			GetBlockBodiesRequest: hashes,
-		})
-		if err := p2p.ExpectMsg(peer.app, BlockBodiesMsg, &BlockBodiesPacket{
-			RequestId:           123,
-			BlockBodiesResponse: bodies,
-		}); err != nil {
+		p2p.Send(
+			peer.app, GetBlockBodiesMsg, &GetBlockBodiesPacket{
+				RequestId:             123,
+				GetBlockBodiesRequest: hashes,
+			},
+		)
+		if err := p2p.ExpectMsg(
+			peer.app, BlockBodiesMsg, &BlockBodiesPacket{
+				RequestId:           123,
+				BlockBodiesResponse: bodies,
+			},
+		); err != nil {
 			t.Fatalf("test %d: bodies mismatch: %v", i, err)
 		}
 	}
@@ -446,13 +493,28 @@ func testGetBlockReceipts(t *testing.T, protocol uint) {
 		switch i {
 		case 0:
 			// In block 1, the test bank sends account #1 some ether.
-			tx, _ := types.SignTx(types.NewTransaction(block.TxNonce(testAddr), acc1Addr, big.NewInt(10_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, testKey)
+			tx, _ := types.SignTx(
+				types.NewTransaction(
+					block.TxNonce(testAddr), acc1Addr, big.NewInt(10_000_000_000_000_000), params.TxGas,
+					block.BaseFee(), nil,
+				), signer, testKey,
+			)
 			block.AddTx(tx)
 		case 1:
 			// In block 2, the test bank sends some more ether to account #1.
 			// acc1Addr passes it on to account #2.
-			tx1, _ := types.SignTx(types.NewTransaction(block.TxNonce(testAddr), acc1Addr, big.NewInt(1_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, testKey)
-			tx2, _ := types.SignTx(types.NewTransaction(block.TxNonce(acc1Addr), acc2Addr, big.NewInt(1_000_000_000_000_000), params.TxGas, block.BaseFee(), nil), signer, acc1Key)
+			tx1, _ := types.SignTx(
+				types.NewTransaction(
+					block.TxNonce(testAddr), acc1Addr, big.NewInt(1_000_000_000_000_000), params.TxGas, block.BaseFee(),
+					nil,
+				), signer, testKey,
+			)
+			tx2, _ := types.SignTx(
+				types.NewTransaction(
+					block.TxNonce(acc1Addr), acc2Addr, big.NewInt(1_000_000_000_000_000), params.TxGas, block.BaseFee(),
+					nil,
+				), signer, acc1Key,
+			)
 			block.AddTx(tx1)
 			block.AddTx(tx2)
 		case 2:
@@ -488,14 +550,18 @@ func testGetBlockReceipts(t *testing.T, protocol uint) {
 		receipts = append(receipts, backend.chain.GetReceiptsByHash(block.Hash()))
 	}
 	// Send the hash request and verify the response
-	p2p.Send(peer.app, GetReceiptsMsg, &GetReceiptsPacket{
-		RequestId:          123,
-		GetReceiptsRequest: hashes,
-	})
-	if err := p2p.ExpectMsg(peer.app, ReceiptsMsg, &ReceiptsPacket{
-		RequestId:        123,
-		ReceiptsResponse: receipts,
-	}); err != nil {
+	p2p.Send(
+		peer.app, GetReceiptsMsg, &GetReceiptsPacket{
+			RequestId:          123,
+			GetReceiptsRequest: hashes,
+		},
+	)
+	if err := p2p.ExpectMsg(
+		peer.app, ReceiptsMsg, &ReceiptsPacket{
+			RequestId:        123,
+			ReceiptsResponse: receipts,
+		},
+	); err != nil {
 		t.Errorf("receipts mismatch: %v", err)
 	}
 }

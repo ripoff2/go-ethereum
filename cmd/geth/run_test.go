@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/internal/cmdtest"
-	"github.com/ethereum/go-ethereum/internal/reexec"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum/internal/cmdtest"
+	"github.com/ripoff2/go-ethereum/internal/reexec"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 type testgeth struct {
@@ -38,13 +38,15 @@ type testgeth struct {
 
 func init() {
 	// Run the app if we've been exec'd as "geth-test" in runGeth.
-	reexec.Register("geth-test", func() {
-		if err := app.Run(os.Args); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		os.Exit(0)
-	})
+	reexec.Register(
+		"geth-test", func() {
+			if err := app.Run(os.Args); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			os.Exit(0)
+		},
+	)
 }
 
 func TestMain(m *testing.M) {

@@ -21,11 +21,11 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/consensus/misc"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/consensus/misc"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 // VerifyEIP1559Header verifies some header attributes which were changed in EIP-1559,
@@ -47,8 +47,10 @@ func VerifyEIP1559Header(config *params.ChainConfig, parent, header *types.Heade
 	// Verify the baseFee is correct based on the parent header.
 	expectedBaseFee := CalcBaseFee(config, parent)
 	if header.BaseFee.Cmp(expectedBaseFee) != 0 {
-		return fmt.Errorf("invalid baseFee: have %s, want %s, parentBaseFee %s, parentGasUsed %d",
-			header.BaseFee, expectedBaseFee, parent.BaseFee, parent.GasUsed)
+		return fmt.Errorf(
+			"invalid baseFee: have %s, want %s, parentBaseFee %s, parentGasUsed %d",
+			header.BaseFee, expectedBaseFee, parent.BaseFee, parent.GasUsed,
+		)
 	}
 	return nil
 }

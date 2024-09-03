@@ -21,10 +21,10 @@ import (
 	"sync"
 
 	"github.com/crate-crypto/go-ipa/bandersnatch/fr"
-	"github.com/ethereum/go-ethereum/common/lru"
-	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-verkle"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common/lru"
+	"github.com/ripoff2/go-ethereum/metrics"
 )
 
 const (
@@ -65,7 +65,12 @@ func init() {
 	//	verkle.FromLEBytes(&fr, []byte{2, 64})
 	//	point := config.CommitToPoly([]verkle.Fr{fr}, 1)
 	index0Point = new(verkle.Point)
-	err := index0Point.SetBytes([]byte{34, 25, 109, 242, 193, 5, 144, 224, 76, 52, 189, 92, 197, 126, 9, 145, 27, 152, 199, 130, 165, 3, 210, 27, 193, 131, 142, 28, 110, 26, 16, 191})
+	err := index0Point.SetBytes(
+		[]byte{
+			34, 25, 109, 242, 193, 5, 144, 224, 76, 52, 189, 92, 197, 126, 9, 145, 27, 152, 199, 130, 165, 3, 210, 27,
+			193, 131, 142, 28, 110, 26, 16, 191,
+		},
+	)
 	if err != nil {
 		panic(err)
 	}

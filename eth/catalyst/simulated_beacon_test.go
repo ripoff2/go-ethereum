@@ -22,34 +22,41 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/eth"
-	"github.com/ethereum/go-ethereum/eth/downloader"
-	"github.com/ethereum/go-ethereum/eth/ethconfig"
-	"github.com/ethereum/go-ethereum/miner"
-	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/eth"
+	"github.com/ripoff2/go-ethereum/eth/downloader"
+	"github.com/ripoff2/go-ethereum/eth/ethconfig"
+	"github.com/ripoff2/go-ethereum/miner"
+	"github.com/ripoff2/go-ethereum/node"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
-func startSimulatedBeaconEthService(t *testing.T, genesis *core.Genesis, period uint64) (*node.Node, *eth.Ethereum, *SimulatedBeacon) {
+func startSimulatedBeaconEthService(t *testing.T, genesis *core.Genesis, period uint64) (
+	*node.Node, *eth.Ethereum, *SimulatedBeacon,
+) {
 	t.Helper()
 
-	n, err := node.New(&node.Config{
-		P2P: p2p.Config{
-			ListenAddr:  "127.0.0.1:8545",
-			NoDiscovery: true,
-			MaxPeers:    0,
+	n, err := node.New(
+		&node.Config{
+			P2P: p2p.Config{
+				ListenAddr:  "127.0.0.1:8545",
+				NoDiscovery: true,
+				MaxPeers:    0,
+			},
 		},
-	})
+	)
 	if err != nil {
 		t.Fatal("can't create node:", err)
 	}
 
-	ethcfg := &ethconfig.Config{Genesis: genesis, SyncMode: downloader.FullSync, TrieTimeout: time.Minute, TrieDirtyCache: 256, TrieCleanCache: 256, Miner: miner.DefaultConfig}
+	ethcfg := &ethconfig.Config{
+		Genesis: genesis, SyncMode: downloader.FullSync, TrieTimeout: time.Minute, TrieDirtyCache: 256,
+		TrieCleanCache: 256, Miner: miner.DefaultConfig,
+	}
 	ethservice, err := eth.New(n, ethcfg)
 	if err != nil {
 		t.Fatal("can't create eth service:", err)
@@ -106,7 +113,11 @@ func TestSimulatedBeaconSendWithdrawals(t *testing.T) {
 	// generate a bunch of transactions
 	signer := types.NewEIP155Signer(ethService.BlockChain().Config().ChainID)
 	for i := 0; i < 20; i++ {
-		tx, err := types.SignTx(types.NewTransaction(uint64(i), common.Address{}, big.NewInt(1000), params.TxGas, big.NewInt(params.InitialBaseFee), nil), signer, testKey)
+		tx, err := types.SignTx(
+			types.NewTransaction(
+				uint64(i), common.Address{}, big.NewInt(1000), params.TxGas, big.NewInt(params.InitialBaseFee), nil,
+			), signer, testKey,
+		)
 		if err != nil {
 			t.Fatalf("error signing transaction, err=%v", err)
 		}
@@ -170,7 +181,12 @@ func TestOnDemandSpam(t *testing.T) {
 
 	// generate a bunch of transactions
 	for i := 0; i < 20000; i++ {
-		tx, err := types.SignTx(types.NewTransaction(uint64(i), common.Address{byte(i), byte(1)}, big.NewInt(1000), params.TxGas, big.NewInt(params.InitialBaseFee*2), nil), signer, testKey)
+		tx, err := types.SignTx(
+			types.NewTransaction(
+				uint64(i), common.Address{byte(i), byte(1)}, big.NewInt(1000), params.TxGas,
+				big.NewInt(params.InitialBaseFee*2), nil,
+			), signer, testKey,
+		)
 		if err != nil {
 			t.Fatal("error signing transaction", err)
 		}
@@ -198,7 +214,10 @@ func TestOnDemandSpam(t *testing.T) {
 				return
 			}
 		case <-time.After(10 * time.Second):
-			t.Fatalf("timed out without including all withdrawals/txs: have txs %d, want %d, have wxs %d, want %d", len(includedTxs), len(txs), len(includedWxs), len(withdrawals))
+			t.Fatalf(
+				"timed out without including all withdrawals/txs: have txs %d, want %d, have wxs %d, want %d",
+				len(includedTxs), len(txs), len(includedWxs), len(withdrawals),
+			)
 		}
 	}
 }

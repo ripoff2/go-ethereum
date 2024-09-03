@@ -22,15 +22,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/triedb"
 )
 
 // Test chain parameters.
@@ -160,29 +160,38 @@ func (tc *testChain) copy(newlen int) *testChain {
 // contains a transaction and every 5th an uncle to allow testing correct block
 // reassembly.
 func (tc *testChain) generate(n int, seed byte, parent *types.Block, heavy bool) {
-	blocks, _ := core.GenerateChain(testGspec.Config, parent, ethash.NewFaker(), testDB, n, func(i int, block *core.BlockGen) {
-		block.SetCoinbase(common.Address{seed})
-		// If a heavy chain is requested, delay blocks to raise difficulty
-		if heavy {
-			block.OffsetTime(-9)
-		}
-		// Include transactions to the miner to make blocks more interesting.
-		if parent == tc.blocks[0] && i%22 == 0 {
-			signer := types.MakeSigner(params.TestChainConfig, block.Number(), block.Timestamp())
-			tx, err := types.SignTx(types.NewTransaction(block.TxNonce(testAddress), common.Address{seed}, big.NewInt(1000), params.TxGas, block.BaseFee(), nil), signer, testKey)
-			if err != nil {
-				panic(err)
+	blocks, _ := core.GenerateChain(
+		testGspec.Config, parent, ethash.NewFaker(), testDB, n, func(i int, block *core.BlockGen) {
+			block.SetCoinbase(common.Address{seed})
+			// If a heavy chain is requested, delay blocks to raise difficulty
+			if heavy {
+				block.OffsetTime(-9)
 			}
-			block.AddTx(tx)
-		}
-		// if the block number is a multiple of 5, add a bonus uncle to the block
-		if i > 0 && i%5 == 0 {
-			block.AddUncle(&types.Header{
-				ParentHash: block.PrevBlock(i - 2).Hash(),
-				Number:     big.NewInt(block.Number().Int64() - 1),
-			})
-		}
-	})
+			// Include transactions to the miner to make blocks more interesting.
+			if parent == tc.blocks[0] && i%22 == 0 {
+				signer := types.MakeSigner(params.TestChainConfig, block.Number(), block.Timestamp())
+				tx, err := types.SignTx(
+					types.NewTransaction(
+						block.TxNonce(testAddress), common.Address{seed}, big.NewInt(1000), params.TxGas,
+						block.BaseFee(), nil,
+					), signer, testKey,
+				)
+				if err != nil {
+					panic(err)
+				}
+				block.AddTx(tx)
+			}
+			// if the block number is a multiple of 5, add a bonus uncle to the block
+			if i > 0 && i%5 == 0 {
+				block.AddUncle(
+					&types.Header{
+						ParentHash: block.PrevBlock(i - 2).Hash(),
+						Number:     big.NewInt(block.Number().Int64() - 1),
+					},
+				)
+			}
+		},
+	)
 	tc.blocks = append(tc.blocks, blocks...)
 }
 
@@ -213,18 +222,22 @@ func newTestBlockchain(blocks []*types.Block) *core.BlockChain {
 	testBlockchainsLock.Unlock()
 
 	// Ensure that the database is generated
-	tbc.gen.Do(func() {
-		if pregenerated {
-			panic("Requested chain generation outside of init")
-		}
-		chain, err := core.NewBlockChain(rawdb.NewMemoryDatabase(), nil, testGspec, nil, ethash.NewFaker(), vm.Config{}, nil, nil)
-		if err != nil {
-			panic(err)
-		}
-		if n, err := chain.InsertChain(blocks); err != nil {
-			panic(fmt.Sprintf("block %d: %v", n, err))
-		}
-		tbc.chain = chain
-	})
+	tbc.gen.Do(
+		func() {
+			if pregenerated {
+				panic("Requested chain generation outside of init")
+			}
+			chain, err := core.NewBlockChain(
+				rawdb.NewMemoryDatabase(), nil, testGspec, nil, ethash.NewFaker(), vm.Config{}, nil, nil,
+			)
+			if err != nil {
+				panic(err)
+			}
+			if n, err := chain.InsertChain(blocks); err != nil {
+				panic(fmt.Sprintf("block %d: %v", n, err))
+			}
+			tbc.chain = chain
+		},
+	)
 	return tbc.chain
 }

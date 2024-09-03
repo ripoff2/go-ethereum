@@ -20,9 +20,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/beacon/light"
-	"github.com/ethereum/go-ethereum/beacon/light/request"
-	"github.com/ethereum/go-ethereum/beacon/types"
+	"github.com/ripoff2/go-ethereum/beacon/light"
+	"github.com/ripoff2/go-ethereum/beacon/light/request"
+	"github.com/ripoff2/go-ethereum/beacon/types"
 )
 
 type requestWithID struct {
@@ -79,7 +79,9 @@ func (ts *TestScheduler) Run(testIndex int, exp ...any) {
 	}
 
 	if !reflect.DeepEqual(ts.sent[testIndex], expReqs) {
-		ts.t.Errorf("Wrong sent requests in test case #%d (expected %v, got %v)", testIndex, expReqs, ts.sent[testIndex])
+		ts.t.Errorf(
+			"Wrong sent requests in test case #%d (expected %v, got %v)", testIndex, expReqs, ts.sent[testIndex],
+		)
 	}
 }
 
@@ -94,10 +96,12 @@ func (ts *TestScheduler) CanSendTo() (cs []request.Server) {
 
 func (ts *TestScheduler) Send(server request.Server, req request.Request) request.ID {
 	ts.lastId++
-	ts.sent[ts.testIndex] = append(ts.sent[ts.testIndex], requestWithID{
-		sid:     request.ServerAndID{Server: server, ID: ts.lastId},
-		request: req,
-	})
+	ts.sent[ts.testIndex] = append(
+		ts.sent[ts.testIndex], requestWithID{
+			sid:     request.ServerAndID{Server: server, ID: ts.lastId},
+			request: req,
+		},
+	)
 	ts.allowance[server]--
 	return ts.lastId
 }
@@ -119,26 +123,30 @@ func (ts *TestScheduler) Request(testIndex, reqIndex int) requestWithID {
 }
 
 func (ts *TestScheduler) ServerEvent(evType *request.EventType, server request.Server, data any) {
-	ts.events = append(ts.events, request.Event{
-		Type:   evType,
-		Server: server,
-		Data:   data,
-	})
+	ts.events = append(
+		ts.events, request.Event{
+			Type:   evType,
+			Server: server,
+			Data:   data,
+		},
+	)
 }
 
 func (ts *TestScheduler) RequestEvent(evType *request.EventType, req requestWithID, resp request.Response) {
 	if req.request == nil {
 		return
 	}
-	ts.events = append(ts.events, request.Event{
-		Type:   evType,
-		Server: req.sid.Server,
-		Data: request.RequestResponse{
-			ID:       req.sid.ID,
-			Request:  req.request,
-			Response: resp,
+	ts.events = append(
+		ts.events, request.Event{
+			Type:   evType,
+			Server: req.sid.Server,
+			Data: request.RequestResponse{
+				ID:       req.sid.ID,
+				Request:  req.request,
+				Response: resp,
+			},
 		},
-	})
+	)
 }
 
 func (ts *TestScheduler) AddServer(server request.Server, allowance int) {
@@ -178,7 +186,9 @@ func (tc *TestCommitteeChain) CheckpointInit(bootstrap types.BootstrapData) erro
 	return nil
 }
 
-func (tc *TestCommitteeChain) InsertUpdate(update *types.LightClientUpdate, nextCommittee *types.SerializedSyncCommittee) error {
+func (tc *TestCommitteeChain) InsertUpdate(
+	update *types.LightClientUpdate, nextCommittee *types.SerializedSyncCommittee,
+) error {
 	period := update.AttestedHeader.Header.SyncPeriod()
 	if period < tc.fsp || period > tc.nsp || !tc.init {
 		return light.ErrInvalidPeriod
@@ -233,17 +243,26 @@ func (ht *TestHeadTracker) ValidatedFinality() (types.FinalityUpdate, bool) {
 func (ht *TestHeadTracker) ExpValidated(t *testing.T, tci int, expHeads []types.OptimisticUpdate) {
 	for i, expHead := range expHeads {
 		if i >= len(ht.validated) {
-			t.Errorf("Missing validated head in test case #%d index #%d (expected {slot %d blockRoot %x}, got none)", tci, i, expHead.Attested.Header.Slot, expHead.Attested.Header.Hash())
+			t.Errorf(
+				"Missing validated head in test case #%d index #%d (expected {slot %d blockRoot %x}, got none)", tci, i,
+				expHead.Attested.Header.Slot, expHead.Attested.Header.Hash(),
+			)
 			continue
 		}
 		if !reflect.DeepEqual(ht.validated[i], expHead) {
 			vhead := ht.validated[i].Attested.Header
-			t.Errorf("Wrong validated head in test case #%d index #%d (expected {slot %d blockRoot %x}, got {slot %d blockRoot %x})", tci, i, expHead.Attested.Header.Slot, expHead.Attested.Header.Hash(), vhead.Slot, vhead.Hash())
+			t.Errorf(
+				"Wrong validated head in test case #%d index #%d (expected {slot %d blockRoot %x}, got {slot %d blockRoot %x})",
+				tci, i, expHead.Attested.Header.Slot, expHead.Attested.Header.Hash(), vhead.Slot, vhead.Hash(),
+			)
 		}
 	}
 	for i := len(expHeads); i < len(ht.validated); i++ {
 		vhead := ht.validated[i].Attested.Header
-		t.Errorf("Unexpected validated head in test case #%d index #%d (expected none, got {slot %d blockRoot %x})", tci, i, vhead.Slot, vhead.Hash())
+		t.Errorf(
+			"Unexpected validated head in test case #%d index #%d (expected none, got {slot %d blockRoot %x})", tci, i,
+			vhead.Slot, vhead.Hash(),
+		)
 	}
 	ht.validated = nil
 }
@@ -254,6 +273,9 @@ func (ht *TestHeadTracker) SetPrefetchHead(head types.HeadInfo) {
 
 func (ht *TestHeadTracker) ExpPrefetch(t *testing.T, tci int, exp types.HeadInfo) {
 	if ht.phead != exp {
-		t.Errorf("Wrong prefetch head in test case #%d (expected {slot %d blockRoot %x}, got {slot %d blockRoot %x})", tci, exp.Slot, exp.BlockRoot, ht.phead.Slot, ht.phead.BlockRoot)
+		t.Errorf(
+			"Wrong prefetch head in test case #%d (expected {slot %d blockRoot %x}, got {slot %d blockRoot %x})", tci,
+			exp.Slot, exp.BlockRoot, ht.phead.Slot, ht.phead.BlockRoot,
+		)
 	}
 }

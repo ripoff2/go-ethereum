@@ -20,15 +20,15 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/eth/tracers/logger"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/tests"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/eth/tracers/logger"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/tests"
 )
 
 func BenchmarkTransactionTrace(b *testing.B) {
@@ -37,13 +37,15 @@ func BenchmarkTransactionTrace(b *testing.B) {
 	gas := uint64(1000000) // 1M gas
 	to := common.HexToAddress("0x00000000000000000000000000000000deadbeef")
 	signer := types.LatestSignerForChainID(big.NewInt(1337))
-	tx, err := types.SignNewTx(key, signer,
+	tx, err := types.SignNewTx(
+		key, signer,
 		&types.LegacyTx{
 			Nonce:    1,
 			GasPrice: big.NewInt(500),
 			Gas:      gas,
 			To:       &to,
-		})
+		},
+	)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -83,13 +85,17 @@ func BenchmarkTransactionTrace(b *testing.B) {
 	defer state.Close()
 
 	// Create the tracer, the EVM environment and run it
-	tracer := logger.NewStructLogger(&logger.Config{
-		Debug: false,
-		//DisableStorage: true,
-		//EnableMemory: false,
-		//EnableReturnData: false,
-	})
-	evm := vm.NewEVM(context, txContext, state.StateDB, params.AllEthashProtocolChanges, vm.Config{Tracer: tracer.Hooks()})
+	tracer := logger.NewStructLogger(
+		&logger.Config{
+			Debug: false,
+			//DisableStorage: true,
+			//EnableMemory: false,
+			//EnableReturnData: false,
+		},
+	)
+	evm := vm.NewEVM(
+		context, txContext, state.StateDB, params.AllEthashProtocolChanges, vm.Config{Tracer: tracer.Hooks()},
+	)
 	msg, err := core.TransactionToMessage(tx, signer, context.BaseFee)
 	if err != nil {
 		b.Fatalf("failed to prepare transaction for tracing: %v", err)

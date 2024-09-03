@@ -21,8 +21,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/math"
 )
 
 func TestBlockNumberJSONUnmarshal(t *testing.T) {
@@ -94,17 +94,40 @@ func TestBlockNumberOrHash_UnmarshalJSON(t *testing.T) {
 		16: {`someString`, true, BlockNumberOrHash{}},
 		17: {`""`, true, BlockNumberOrHash{}},
 		18: {``, true, BlockNumberOrHash{}},
-		19: {`"0x0000000000000000000000000000000000000000000000000000000000000000"`, false, BlockNumberOrHashWithHash(common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"), false)},
-		20: {`{"blockHash":"0x0000000000000000000000000000000000000000000000000000000000000000"}`, false, BlockNumberOrHashWithHash(common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"), false)},
-		21: {`{"blockHash":"0x0000000000000000000000000000000000000000000000000000000000000000","requireCanonical":false}`, false, BlockNumberOrHashWithHash(common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"), false)},
-		22: {`{"blockHash":"0x0000000000000000000000000000000000000000000000000000000000000000","requireCanonical":true}`, false, BlockNumberOrHashWithHash(common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"), true)},
+		19: {
+			`"0x0000000000000000000000000000000000000000000000000000000000000000"`, false,
+			BlockNumberOrHashWithHash(
+				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"), false,
+			),
+		},
+		20: {
+			`{"blockHash":"0x0000000000000000000000000000000000000000000000000000000000000000"}`, false,
+			BlockNumberOrHashWithHash(
+				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"), false,
+			),
+		},
+		21: {
+			`{"blockHash":"0x0000000000000000000000000000000000000000000000000000000000000000","requireCanonical":false}`,
+			false, BlockNumberOrHashWithHash(
+				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"), false,
+			),
+		},
+		22: {
+			`{"blockHash":"0x0000000000000000000000000000000000000000000000000000000000000000","requireCanonical":true}`,
+			false, BlockNumberOrHashWithHash(
+				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"), true,
+			),
+		},
 		23: {`{"blockNumber":"0x1"}`, false, BlockNumberOrHashWithNumber(1)},
 		24: {`{"blockNumber":"pending"}`, false, BlockNumberOrHashWithNumber(PendingBlockNumber)},
 		25: {`{"blockNumber":"latest"}`, false, BlockNumberOrHashWithNumber(LatestBlockNumber)},
 		26: {`{"blockNumber":"earliest"}`, false, BlockNumberOrHashWithNumber(EarliestBlockNumber)},
 		27: {`{"blockNumber":"safe"}`, false, BlockNumberOrHashWithNumber(SafeBlockNumber)},
 		28: {`{"blockNumber":"finalized"}`, false, BlockNumberOrHashWithNumber(FinalizedBlockNumber)},
-		29: {`{"blockNumber":"0x1", "blockHash":"0x0000000000000000000000000000000000000000000000000000000000000000"}`, true, BlockNumberOrHash{}},
+		29: {
+			`{"blockNumber":"0x1", "blockHash":"0x0000000000000000000000000000000000000000000000000000000000000000"}`,
+			true, BlockNumberOrHash{},
+		},
 	}
 
 	for i, test := range tests {
@@ -144,21 +167,23 @@ func TestBlockNumberOrHash_WithNumber_MarshalAndUnmarshal(t *testing.T) {
 	}
 	for _, test := range tests {
 		test := test
-		t.Run(test.name, func(t *testing.T) {
-			bnh := BlockNumberOrHashWithNumber(BlockNumber(test.number))
-			marshalled, err := json.Marshal(bnh)
-			if err != nil {
-				t.Fatal("cannot marshal:", err)
-			}
-			var unmarshalled BlockNumberOrHash
-			err = json.Unmarshal(marshalled, &unmarshalled)
-			if err != nil {
-				t.Fatal("cannot unmarshal:", err)
-			}
-			if !reflect.DeepEqual(bnh, unmarshalled) {
-				t.Fatalf("wrong result: expected %v, got %v", bnh, unmarshalled)
-			}
-		})
+		t.Run(
+			test.name, func(t *testing.T) {
+				bnh := BlockNumberOrHashWithNumber(BlockNumber(test.number))
+				marshalled, err := json.Marshal(bnh)
+				if err != nil {
+					t.Fatal("cannot marshal:", err)
+				}
+				var unmarshalled BlockNumberOrHash
+				err = json.Unmarshal(marshalled, &unmarshalled)
+				if err != nil {
+					t.Fatal("cannot unmarshal:", err)
+				}
+				if !reflect.DeepEqual(bnh, unmarshalled) {
+					t.Fatalf("wrong result: expected %v, got %v", bnh, unmarshalled)
+				}
+			},
+		)
 	}
 }
 

@@ -23,8 +23,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
 )
 
 func TestChainIterator(t *testing.T) {
@@ -34,33 +34,42 @@ func TestChainIterator(t *testing.T) {
 	var block *types.Block
 	var txs []*types.Transaction
 	to := common.BytesToAddress([]byte{0x11})
-	block = types.NewBlock(&types.Header{Number: big.NewInt(int64(0))}, nil, nil, newTestHasher()) // Empty genesis block
+	block = types.NewBlock(
+		&types.Header{Number: big.NewInt(int64(0))}, nil, nil, newTestHasher(),
+	) // Empty genesis block
 	WriteBlock(chainDb, block)
 	WriteCanonicalHash(chainDb, block.Hash(), block.NumberU64())
 	for i := uint64(1); i <= 10; i++ {
 		var tx *types.Transaction
 		if i%2 == 0 {
-			tx = types.NewTx(&types.LegacyTx{
-				Nonce:    i,
-				GasPrice: big.NewInt(11111),
-				Gas:      1111,
-				To:       &to,
-				Value:    big.NewInt(111),
-				Data:     []byte{0x11, 0x11, 0x11},
-			})
+			tx = types.NewTx(
+				&types.LegacyTx{
+					Nonce:    i,
+					GasPrice: big.NewInt(11111),
+					Gas:      1111,
+					To:       &to,
+					Value:    big.NewInt(111),
+					Data:     []byte{0x11, 0x11, 0x11},
+				},
+			)
 		} else {
-			tx = types.NewTx(&types.AccessListTx{
-				ChainID:  big.NewInt(1337),
-				Nonce:    i,
-				GasPrice: big.NewInt(11111),
-				Gas:      1111,
-				To:       &to,
-				Value:    big.NewInt(111),
-				Data:     []byte{0x11, 0x11, 0x11},
-			})
+			tx = types.NewTx(
+				&types.AccessListTx{
+					ChainID:  big.NewInt(1337),
+					Nonce:    i,
+					GasPrice: big.NewInt(11111),
+					Gas:      1111,
+					To:       &to,
+					Value:    big.NewInt(111),
+					Data:     []byte{0x11, 0x11, 0x11},
+				},
+			)
 		}
 		txs = append(txs, tx)
-		block = types.NewBlock(&types.Header{Number: big.NewInt(int64(i))}, &types.Body{Transactions: types.Transactions{tx}}, nil, newTestHasher())
+		block = types.NewBlock(
+			&types.Header{Number: big.NewInt(int64(i))}, &types.Body{Transactions: types.Transactions{tx}}, nil,
+			newTestHasher(),
+		)
 		WriteBlock(chainDb, block)
 		WriteCanonicalHash(chainDb, block.Hash(), block.NumberU64())
 	}
@@ -118,27 +127,34 @@ func TestIndexTransactions(t *testing.T) {
 	for i := uint64(1); i <= 10; i++ {
 		var tx *types.Transaction
 		if i%2 == 0 {
-			tx = types.NewTx(&types.LegacyTx{
-				Nonce:    i,
-				GasPrice: big.NewInt(11111),
-				Gas:      1111,
-				To:       &to,
-				Value:    big.NewInt(111),
-				Data:     []byte{0x11, 0x11, 0x11},
-			})
+			tx = types.NewTx(
+				&types.LegacyTx{
+					Nonce:    i,
+					GasPrice: big.NewInt(11111),
+					Gas:      1111,
+					To:       &to,
+					Value:    big.NewInt(111),
+					Data:     []byte{0x11, 0x11, 0x11},
+				},
+			)
 		} else {
-			tx = types.NewTx(&types.AccessListTx{
-				ChainID:  big.NewInt(1337),
-				Nonce:    i,
-				GasPrice: big.NewInt(11111),
-				Gas:      1111,
-				To:       &to,
-				Value:    big.NewInt(111),
-				Data:     []byte{0x11, 0x11, 0x11},
-			})
+			tx = types.NewTx(
+				&types.AccessListTx{
+					ChainID:  big.NewInt(1337),
+					Nonce:    i,
+					GasPrice: big.NewInt(11111),
+					Gas:      1111,
+					To:       &to,
+					Value:    big.NewInt(111),
+					Data:     []byte{0x11, 0x11, 0x11},
+				},
+			)
 		}
 		txs = append(txs, tx)
-		block = types.NewBlock(&types.Header{Number: big.NewInt(int64(i))}, &types.Body{Transactions: types.Transactions{tx}}, nil, newTestHasher())
+		block = types.NewBlock(
+			&types.Header{Number: big.NewInt(int64(i))}, &types.Body{Transactions: types.Transactions{tx}}, nil,
+			newTestHasher(),
+		)
 		WriteBlock(chainDb, block)
 		WriteCanonicalHash(chainDb, block.Hash(), block.NumberU64())
 	}
@@ -179,30 +195,38 @@ func TestIndexTransactions(t *testing.T) {
 	// Testing corner cases
 	signal := make(chan struct{})
 	var once sync.Once
-	indexTransactionsForTesting(chainDb, 5, 11, signal, func(n uint64) bool {
-		if n <= 8 {
-			once.Do(func() {
-				close(signal)
-			})
-			return false
-		}
-		return true
-	})
+	indexTransactionsForTesting(
+		chainDb, 5, 11, signal, func(n uint64) bool {
+			if n <= 8 {
+				once.Do(
+					func() {
+						close(signal)
+					},
+				)
+				return false
+			}
+			return true
+		},
+	)
 	verify(9, 11, true, 9)
 	verify(0, 9, false, 9)
 	IndexTransactions(chainDb, 0, 9, nil, false)
 
 	signal = make(chan struct{})
 	var once2 sync.Once
-	unindexTransactionsForTesting(chainDb, 0, 11, signal, func(n uint64) bool {
-		if n >= 8 {
-			once2.Do(func() {
-				close(signal)
-			})
-			return false
-		}
-		return true
-	})
+	unindexTransactionsForTesting(
+		chainDb, 0, 11, signal, func(n uint64) bool {
+			if n >= 8 {
+				once2.Do(
+					func() {
+						close(signal)
+					},
+				)
+				return false
+			}
+			return true
+		},
+	)
 	verify(8, 11, true, 8)
 	verify(0, 8, false, 8)
 }

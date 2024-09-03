@@ -27,20 +27,20 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state/snapshot"
-	"github.com/ethereum/go-ethereum/core/stateless"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/trie/trienode"
-	"github.com/ethereum/go-ethereum/trie/triestate"
-	"github.com/ethereum/go-ethereum/trie/utils"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state/snapshot"
+	"github.com/ripoff2/go-ethereum/core/stateless"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
+	"github.com/ripoff2/go-ethereum/trie/triestate"
+	"github.com/ripoff2/go-ethereum/trie/utils"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -224,7 +224,7 @@ func (s *StateDB) StartPrefetcher(namespace string, witness *stateless.Witness) 
 		//
 		// To prevent this, the account trie is always scheduled for prefetching once
 		// the prefetcher is constructed. For more details, see:
-		// https://github.com/ethereum/go-ethereum/issues/29880
+		// https://github.com/ripoff2/go-ethereum/issues/29880
 		if err := s.prefetcher.prefetch(common.Hash{}, s.originalRoot, common.Address{}, nil, false); err != nil {
 			log.Error("Failed to prefetch account trie", "root", s.originalRoot, "err", err)
 		}
@@ -628,7 +628,9 @@ func (s *StateDB) getStateObject(addr common.Address) *stateObject {
 	// Whilst this would be a bit weird if snapshots are disabled, but we still
 	// want the trie nodes to end up in the prefetcher too, so just push through.
 	if s.prefetcher != nil {
-		if err := s.prefetcher.prefetch(common.Hash{}, s.originalRoot, common.Address{}, [][]byte{addr[:]}, true); err != nil {
+		if err := s.prefetcher.prefetch(
+			common.Hash{}, s.originalRoot, common.Address{}, [][]byte{addr[:]}, true,
+		); err != nil {
 			log.Error("Failed to prefetch account", "addr", addr, "err", err)
 		}
 	}
@@ -785,7 +787,9 @@ func (s *StateDB) Finalise(deleteEmptyObjects bool) {
 
 			// If ether was sent to account post-selfdestruct it is burnt.
 			if bal := obj.Balance(); s.logger != nil && s.logger.OnBalanceChange != nil && obj.selfDestructed && bal.Sign() != 0 {
-				s.logger.OnBalanceChange(obj.address, bal.ToBig(), new(big.Int), tracing.BalanceDecreaseSelfdestructBurn)
+				s.logger.OnBalanceChange(
+					obj.address, bal.ToBig(), new(big.Int), tracing.BalanceDecreaseSelfdestructBurn,
+				)
 			}
 			// We need to maintain account deletions explicitly (will remain
 			// set indefinitely). Note only the first occurred self-destruct
@@ -803,7 +807,9 @@ func (s *StateDB) Finalise(deleteEmptyObjects bool) {
 		addressesToPrefetch = append(addressesToPrefetch, common.CopyBytes(addr[:])) // Copy needed for closure
 	}
 	if s.prefetcher != nil && len(addressesToPrefetch) > 0 {
-		if err := s.prefetcher.prefetch(common.Hash{}, s.originalRoot, common.Address{}, addressesToPrefetch, false); err != nil {
+		if err := s.prefetcher.prefetch(
+			common.Hash{}, s.originalRoot, common.Address{}, addressesToPrefetch, false,
+		); err != nil {
 			log.Error("Failed to prefetch addresses", "addresses", len(addressesToPrefetch), "err", err)
 		}
 	}
@@ -847,20 +853,22 @@ func (s *StateDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
 			continue
 		}
 		obj := s.stateObjects[addr] // closure for the task runner below
-		workers.Go(func() error {
-			if s.db.TrieDB().IsVerkle() {
-				obj.updateTrie()
-			} else {
-				obj.updateRoot()
+		workers.Go(
+			func() error {
+				if s.db.TrieDB().IsVerkle() {
+					obj.updateTrie()
+				} else {
+					obj.updateRoot()
 
-				// If witness building is enabled and the state object has a trie,
-				// gather the witnesses for its specific storage trie
-				if s.witness != nil && obj.trie != nil {
-					s.witness.AddState(obj.trie.Witness())
+					// If witness building is enabled and the state object has a trie,
+					// gather the witnesses for its specific storage trie
+					if s.witness != nil && obj.trie != nil {
+						s.witness.AddState(obj.trie.Witness())
+					}
 				}
-			}
-			return nil
-		})
+				return nil
+			},
+		)
 	}
 	// If witness building is enabled, gather all the read-only accesses.
 	// Skip witness collection in Verkle mode, they will be gathered
@@ -979,7 +987,9 @@ func (s *StateDB) clearJournalAndRefund() {
 // of a specific account. It leverages the associated state snapshot for fast
 // storage iteration and constructs trie node deletion markers by creating
 // stack trie with iterated slots.
-func (s *StateDB) fastDeleteStorage(addrHash common.Hash, root common.Hash) (map[common.Hash][]byte, *trienode.NodeSet, error) {
+func (s *StateDB) fastDeleteStorage(addrHash common.Hash, root common.Hash) (
+	map[common.Hash][]byte, *trienode.NodeSet, error,
+) {
 	iter, err := s.snaps.StorageIterator(s.originalRoot, addrHash, common.Hash{})
 	if err != nil {
 		return nil, nil, err
@@ -990,9 +1000,11 @@ func (s *StateDB) fastDeleteStorage(addrHash common.Hash, root common.Hash) (map
 		nodes = trienode.NewNodeSet(addrHash)
 		slots = make(map[common.Hash][]byte)
 	)
-	stack := trie.NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
-		nodes.AddNode(path, trienode.NewDeleted())
-	})
+	stack := trie.NewStackTrie(
+		func(path []byte, hash common.Hash, blob []byte) {
+			nodes.AddNode(path, trienode.NewDeleted())
+		},
+	)
 	for iter.Next() {
 		slot := common.CopyBytes(iter.Slot())
 		if err := iter.Error(); err != nil { // error might occur after Slot function
@@ -1016,7 +1028,9 @@ func (s *StateDB) fastDeleteStorage(addrHash common.Hash, root common.Hash) (map
 // slowDeleteStorage serves as a less-efficient alternative to "fastDeleteStorage,"
 // employed when the associated state snapshot is not available. It iterates the
 // storage slots along with all internal trie nodes via trie directly.
-func (s *StateDB) slowDeleteStorage(addr common.Address, addrHash common.Hash, root common.Hash) (map[common.Hash][]byte, *trienode.NodeSet, error) {
+func (s *StateDB) slowDeleteStorage(
+	addr common.Address, addrHash common.Hash, root common.Hash,
+) (map[common.Hash][]byte, *trienode.NodeSet, error) {
 	tr, err := s.db.OpenStorageTrie(s.originalRoot, addr, root, s.trie)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to open storage trie, err: %w", err)
@@ -1049,7 +1063,9 @@ func (s *StateDB) slowDeleteStorage(addr common.Address, addrHash common.Hash, r
 // The function will make an attempt to utilize an efficient strategy if the
 // associated state snapshot is reachable; otherwise, it will resort to a less
 // efficient approach.
-func (s *StateDB) deleteStorage(addr common.Address, addrHash common.Hash, root common.Hash) (map[common.Hash][]byte, *trienode.NodeSet, error) {
+func (s *StateDB) deleteStorage(addr common.Address, addrHash common.Hash, root common.Hash) (
+	map[common.Hash][]byte, *trienode.NodeSet, error,
+) {
 	var (
 		err   error
 		slots map[common.Hash][]byte
@@ -1217,17 +1233,19 @@ func (s *StateDB) commit(deleteEmptyObjects bool) (*stateUpdate, error) {
 	// We need to investigate what's happening as it seems something's wonky.
 	// Obviously it's not an end of the world issue, just something the original
 	// code didn't anticipate for.
-	workers.Go(func() error {
-		// Write the account trie changes, measuring the amount of wasted time
-		newroot, set := s.trie.Commit(true)
-		root = newroot
+	workers.Go(
+		func() error {
+			// Write the account trie changes, measuring the amount of wasted time
+			newroot, set := s.trie.Commit(true)
+			root = newroot
 
-		if err := merge(set); err != nil {
-			return err
-		}
-		s.AccountCommits = time.Since(start)
-		return nil
-	})
+			if err := merge(set); err != nil {
+				return err
+			}
+			s.AccountCommits = time.Since(start)
+			return nil
+		},
+	)
 	// Schedule each of the storage tries that need to be updated, so they can
 	// run concurrently to one another.
 	//
@@ -1245,21 +1263,23 @@ func (s *StateDB) commit(deleteEmptyObjects bool) (*stateUpdate, error) {
 			return nil, errors.New("missing state object")
 		}
 		// Run the storage updates concurrently to one another
-		workers.Go(func() error {
-			// Write any storage changes in the state object to its storage trie
-			update, set, err := obj.commit()
-			if err != nil {
-				return err
-			}
-			if err := merge(set); err != nil {
-				return err
-			}
-			lock.Lock()
-			updates[obj.addrHash] = update
-			s.StorageCommits = time.Since(start) // overwrite with the longest storage commit runtime
-			lock.Unlock()
-			return nil
-		})
+		workers.Go(
+			func() error {
+				// Write any storage changes in the state object to its storage trie
+				update, set, err := obj.commit()
+				if err != nil {
+					return err
+				}
+				if err := merge(set); err != nil {
+					return err
+				}
+				lock.Lock()
+				updates[obj.addrHash] = update
+				s.StorageCommits = time.Since(start) // overwrite with the longest storage commit runtime
+				lock.Unlock()
+				return nil
+			},
+		)
 	}
 	// Wait for everything to finish and update the metrics
 	if err := workers.Wait(); err != nil {
@@ -1369,7 +1389,10 @@ func (s *StateDB) Commit(block uint64, deleteEmptyObjects bool) (common.Hash, er
 // - Reset access list (Berlin)
 // - Add coinbase to access list (EIP-3651)
 // - Reset transient storage (EIP-1153)
-func (s *StateDB) Prepare(rules params.Rules, sender, coinbase common.Address, dst *common.Address, precompiles []common.Address, list types.AccessList) {
+func (s *StateDB) Prepare(
+	rules params.Rules, sender, coinbase common.Address, dst *common.Address, precompiles []common.Address,
+	list types.AccessList,
+) {
 	if rules.IsEIP2929 && rules.IsEIP4762 {
 		panic("eip2929 and eip4762 are both activated")
 	}

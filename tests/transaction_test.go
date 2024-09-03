@@ -19,7 +19,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 func TestTransaction(t *testing.T) {
@@ -42,10 +42,12 @@ func TestTransaction(t *testing.T) {
 	// Geth accepts it, which is not a consensus issue since we use big.Int's
 	// internally to calculate the cost
 	txt.skipLoad("^ttValue/TransactionWithHighValueOverflow.json")
-	txt.walk(t, transactionTestDir, func(t *testing.T, name string, test *TransactionTest) {
-		cfg := params.MainnetChainConfig
-		if err := txt.checkFailure(t, test.Run(cfg)); err != nil {
-			t.Error(err)
-		}
-	})
+	txt.walk(
+		t, transactionTestDir, func(t *testing.T, name string, test *TransactionTest) {
+			cfg := params.MainnetChainConfig
+			if err := txt.checkFailure(t, test.Run(cfg)); err != nil {
+				t.Error(err)
+			}
+		},
+	)
 }

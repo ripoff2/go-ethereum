@@ -29,23 +29,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/misc/eip1559"
-	"github.com/ethereum/go-ethereum/consensus/misc/eip4844"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/txpool"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/crypto/kzg4844"
-	"github.com/ethereum/go-ethereum/ethdb/memorydb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/holiman/billy"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus/misc/eip1559"
+	"github.com/ripoff2/go-ethereum/consensus/misc/eip4844"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/txpool"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/crypto/kzg4844"
+	"github.com/ripoff2/go-ethereum/ethdb/memorydb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 var (
@@ -98,12 +98,14 @@ func (bc *testBlockChain) CurrentBlock() *types.Header {
 		mid := new(big.Int).Add(lo, hi)
 		mid.Div(mid, big.NewInt(2))
 
-		if eip1559.CalcBaseFee(bc.config, &types.Header{
-			Number:   blockNumber,
-			GasLimit: gasLimit,
-			GasUsed:  0,
-			BaseFee:  mid,
-		}).Cmp(bc.basefee.ToBig()) > 0 {
+		if eip1559.CalcBaseFee(
+			bc.config, &types.Header{
+				Number:   blockNumber,
+				GasLimit: gasLimit,
+				GasUsed:  0,
+				BaseFee:  mid,
+			},
+		).Cmp(bc.basefee.ToBig()) > 0 {
 			hi = mid
 		} else {
 			lo = mid
@@ -181,7 +183,9 @@ func makeAddressReserver() txpool.AddressReserver {
 // makeTx is a utility method to construct a random blob transaction and sign it
 // with a valid key, only setting the interesting fields from the perspective of
 // the blob pool.
-func makeTx(nonce uint64, gasTipCap uint64, gasFeeCap uint64, blobFeeCap uint64, key *ecdsa.PrivateKey) *types.Transaction {
+func makeTx(
+	nonce uint64, gasTipCap uint64, gasFeeCap uint64, blobFeeCap uint64, key *ecdsa.PrivateKey,
+) *types.Transaction {
 	blobtx := makeUnsignedTx(nonce, gasTipCap, gasFeeCap, blobFeeCap)
 	return types.MustSignNewTx(key, types.LatestSigner(testChainConfig), blobtx)
 }
@@ -242,13 +246,22 @@ func verifyPoolInternals(t *testing.T, pool *BlobPool) {
 	// Verify that calculated evacuation thresholds are correct
 	for addr, txs := range pool.index {
 		if !txs[0].evictionExecTip.Eq(txs[0].execTipCap) {
-			t.Errorf("addr %v, tx %d eviction execution tip mismatch: have %d, want %d", addr, 0, txs[0].evictionExecTip, txs[0].execTipCap)
+			t.Errorf(
+				"addr %v, tx %d eviction execution tip mismatch: have %d, want %d", addr, 0, txs[0].evictionExecTip,
+				txs[0].execTipCap,
+			)
 		}
 		if math.Abs(txs[0].evictionExecFeeJumps-txs[0].basefeeJumps) > 0.001 {
-			t.Errorf("addr %v, tx %d eviction execution fee jumps mismatch: have %f, want %f", addr, 0, txs[0].evictionExecFeeJumps, txs[0].basefeeJumps)
+			t.Errorf(
+				"addr %v, tx %d eviction execution fee jumps mismatch: have %f, want %f", addr, 0,
+				txs[0].evictionExecFeeJumps, txs[0].basefeeJumps,
+			)
 		}
 		if math.Abs(txs[0].evictionBlobFeeJumps-txs[0].blobfeeJumps) > 0.001 {
-			t.Errorf("addr %v, tx %d eviction blob fee jumps mismatch: have %f, want %f", addr, 0, txs[0].evictionBlobFeeJumps, txs[0].blobfeeJumps)
+			t.Errorf(
+				"addr %v, tx %d eviction blob fee jumps mismatch: have %f, want %f", addr, 0,
+				txs[0].evictionBlobFeeJumps, txs[0].blobfeeJumps,
+			)
 		}
 		for i := 1; i < len(txs); i++ {
 			wantExecTip := txs[i-1].evictionExecTip
@@ -256,7 +269,10 @@ func verifyPoolInternals(t *testing.T, pool *BlobPool) {
 				wantExecTip = txs[i].execTipCap
 			}
 			if !txs[i].evictionExecTip.Eq(wantExecTip) {
-				t.Errorf("addr %v, tx %d eviction execution tip mismatch: have %d, want %d", addr, i, txs[i].evictionExecTip, wantExecTip)
+				t.Errorf(
+					"addr %v, tx %d eviction execution tip mismatch: have %d, want %d", addr, i, txs[i].evictionExecTip,
+					wantExecTip,
+				)
 			}
 
 			wantExecFeeJumps := txs[i-1].evictionExecFeeJumps
@@ -264,7 +280,10 @@ func verifyPoolInternals(t *testing.T, pool *BlobPool) {
 				wantExecFeeJumps = txs[i].basefeeJumps
 			}
 			if math.Abs(txs[i].evictionExecFeeJumps-wantExecFeeJumps) > 0.001 {
-				t.Errorf("addr %v, tx %d eviction execution fee jumps mismatch: have %f, want %f", addr, i, txs[i].evictionExecFeeJumps, wantExecFeeJumps)
+				t.Errorf(
+					"addr %v, tx %d eviction execution fee jumps mismatch: have %f, want %f", addr, i,
+					txs[i].evictionExecFeeJumps, wantExecFeeJumps,
+				)
 			}
 
 			wantBlobFeeJumps := txs[i-1].evictionBlobFeeJumps
@@ -272,7 +291,10 @@ func verifyPoolInternals(t *testing.T, pool *BlobPool) {
 				wantBlobFeeJumps = txs[i].blobfeeJumps
 			}
 			if math.Abs(txs[i].evictionBlobFeeJumps-wantBlobFeeJumps) > 0.001 {
-				t.Errorf("addr %v, tx %d eviction blob fee jumps mismatch: have %f, want %f", addr, i, txs[i].evictionBlobFeeJumps, wantBlobFeeJumps)
+				t.Errorf(
+					"addr %v, tx %d eviction blob fee jumps mismatch: have %f, want %f", addr, i,
+					txs[i].evictionBlobFeeJumps, wantBlobFeeJumps,
+				)
 			}
 		}
 	}
@@ -332,18 +354,20 @@ func TestOpenDrops(t *testing.T) {
 
 	// Insert a transaction with a bad signature to verify that stale junk after
 	// potential hard-forks can get evicted (case 2)
-	tx := types.NewTx(&types.BlobTx{
-		ChainID:    uint256.MustFromBig(testChainConfig.ChainID),
-		GasTipCap:  new(uint256.Int),
-		GasFeeCap:  new(uint256.Int),
-		Gas:        0,
-		Value:      new(uint256.Int),
-		Data:       nil,
-		BlobFeeCap: new(uint256.Int),
-		V:          new(uint256.Int),
-		R:          new(uint256.Int),
-		S:          new(uint256.Int),
-	})
+	tx := types.NewTx(
+		&types.BlobTx{
+			ChainID:    uint256.MustFromBig(testChainConfig.ChainID),
+			GasTipCap:  new(uint256.Int),
+			GasFeeCap:  new(uint256.Int),
+			Gas:        0,
+			Value:      new(uint256.Int),
+			Data:       nil,
+			BlobFeeCap: new(uint256.Int),
+			V:          new(uint256.Int),
+			R:          new(uint256.Int),
+			S:          new(uint256.Int),
+		},
+	)
 	blob, _ := rlp.EncodeToBytes(tx)
 	badsig, _ := store.Put(blob)
 
@@ -546,19 +570,41 @@ func TestOpenDrops(t *testing.T) {
 
 	// Create a blob pool out of the pre-seeded data
 	statedb, _ := state.New(types.EmptyRootHash, state.NewDatabase(rawdb.NewDatabase(memorydb.New())), nil)
-	statedb.AddBalance(crypto.PubkeyToAddress(gapper.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified)
-	statedb.AddBalance(crypto.PubkeyToAddress(dangler.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified)
-	statedb.AddBalance(crypto.PubkeyToAddress(filler.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified)
+	statedb.AddBalance(
+		crypto.PubkeyToAddress(gapper.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified,
+	)
+	statedb.AddBalance(
+		crypto.PubkeyToAddress(dangler.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified,
+	)
+	statedb.AddBalance(
+		crypto.PubkeyToAddress(filler.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified,
+	)
 	statedb.SetNonce(crypto.PubkeyToAddress(filler.PublicKey), 3)
-	statedb.AddBalance(crypto.PubkeyToAddress(overlapper.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified)
+	statedb.AddBalance(
+		crypto.PubkeyToAddress(overlapper.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified,
+	)
 	statedb.SetNonce(crypto.PubkeyToAddress(overlapper.PublicKey), 2)
-	statedb.AddBalance(crypto.PubkeyToAddress(underpayer.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified)
-	statedb.AddBalance(crypto.PubkeyToAddress(outpricer.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified)
-	statedb.AddBalance(crypto.PubkeyToAddress(exceeder.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified)
-	statedb.AddBalance(crypto.PubkeyToAddress(overdrafter.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified)
-	statedb.AddBalance(crypto.PubkeyToAddress(overcapper.PublicKey), uint256.NewInt(10000000), tracing.BalanceChangeUnspecified)
-	statedb.AddBalance(crypto.PubkeyToAddress(duplicater.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified)
-	statedb.AddBalance(crypto.PubkeyToAddress(repeater.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified)
+	statedb.AddBalance(
+		crypto.PubkeyToAddress(underpayer.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified,
+	)
+	statedb.AddBalance(
+		crypto.PubkeyToAddress(outpricer.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified,
+	)
+	statedb.AddBalance(
+		crypto.PubkeyToAddress(exceeder.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified,
+	)
+	statedb.AddBalance(
+		crypto.PubkeyToAddress(overdrafter.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified,
+	)
+	statedb.AddBalance(
+		crypto.PubkeyToAddress(overcapper.PublicKey), uint256.NewInt(10000000), tracing.BalanceChangeUnspecified,
+	)
+	statedb.AddBalance(
+		crypto.PubkeyToAddress(duplicater.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified,
+	)
+	statedb.AddBalance(
+		crypto.PubkeyToAddress(repeater.PublicKey), uint256.NewInt(1000000), tracing.BalanceChangeUnspecified,
+	)
 	statedb.Commit(0, true)
 
 	chain := &testBlockChain{
@@ -706,12 +752,18 @@ func TestOpenIndex(t *testing.T) {
 	}
 	for i, jumps := range evictExecFeeJumps {
 		if math.Abs(pool.index[addr][i].evictionExecFeeJumps-jumps) > 0.001 {
-			t.Errorf("eviction fee cap jumps %d mismatch: have %f, want %f", i, pool.index[addr][i].evictionExecFeeJumps, jumps)
+			t.Errorf(
+				"eviction fee cap jumps %d mismatch: have %f, want %f", i, pool.index[addr][i].evictionExecFeeJumps,
+				jumps,
+			)
 		}
 	}
 	for i, jumps := range evictBlobFeeJumps {
 		if math.Abs(pool.index[addr][i].evictionBlobFeeJumps-jumps) > 0.001 {
-			t.Errorf("eviction blob fee cap jumps %d mismatch: have %f, want %f", i, pool.index[addr][i].evictionBlobFeeJumps, jumps)
+			t.Errorf(
+				"eviction blob fee cap jumps %d mismatch: have %f, want %f", i,
+				pool.index[addr][i].evictionBlobFeeJumps, jumps,
+			)
 		}
 	}
 	// Verify that the balance usage has been correctly calculated (case 3)
@@ -939,27 +991,32 @@ func TestAdd(t *testing.T) {
 				"dave":   {balance: 21100 + blobSize, nonce: 1},
 			},
 			adds: []addtx{
-				{ // New account, no previous txs: accept nonce 0
+				{
+					// New account, no previous txs: accept nonce 0
 					from: "alice",
 					tx:   makeUnsignedTx(0, 1, 1, 1),
 					err:  nil,
 				},
-				{ // Old account, 1 tx in chain, 0 pending: accept nonce 1
+				{
+					// Old account, 1 tx in chain, 0 pending: accept nonce 1
 					from: "bob",
 					tx:   makeUnsignedTx(1, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, no previous txs: reject nonce 1
+				{
+					// New account, no previous txs: reject nonce 1
 					from: "claire",
 					tx:   makeUnsignedTx(1, 1, 1, 1),
 					err:  core.ErrNonceTooHigh,
 				},
-				{ // Old account, 1 tx in chain, 0 pending: reject nonce 0
+				{
+					// Old account, 1 tx in chain, 0 pending: reject nonce 0
 					from: "dave",
 					tx:   makeUnsignedTx(0, 1, 1, 1),
 					err:  core.ErrNonceTooLow,
 				},
-				{ // Old account, 1 tx in chain, 0 pending: reject nonce 2
+				{
+					// Old account, 1 tx in chain, 0 pending: reject nonce 2
 					from: "dave",
 					tx:   makeUnsignedTx(2, 1, 1, 1),
 					err:  core.ErrNonceTooHigh,
@@ -985,42 +1042,50 @@ func TestAdd(t *testing.T) {
 				},
 			},
 			adds: []addtx{
-				{ // New account, 1 tx pending: reject duplicate nonce 0
+				{
+					// New account, 1 tx pending: reject duplicate nonce 0
 					from: "alice",
 					tx:   makeUnsignedTx(0, 1, 1, 1),
 					err:  txpool.ErrAlreadyKnown,
 				},
-				{ // New account, 1 tx pending: reject replacement nonce 0 (ignore price for now)
+				{
+					// New account, 1 tx pending: reject replacement nonce 0 (ignore price for now)
 					from: "alice",
 					tx:   makeUnsignedTx(0, 1, 1, 2),
 					err:  txpool.ErrReplaceUnderpriced,
 				},
-				{ // New account, 1 tx pending: accept nonce 1
+				{
+					// New account, 1 tx pending: accept nonce 1
 					from: "alice",
 					tx:   makeUnsignedTx(1, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 2 txs pending: reject nonce 3
+				{
+					// New account, 2 txs pending: reject nonce 3
 					from: "alice",
 					tx:   makeUnsignedTx(3, 1, 1, 1),
 					err:  core.ErrNonceTooHigh,
 				},
-				{ // New account, 2 txs pending: accept nonce 2
+				{
+					// New account, 2 txs pending: accept nonce 2
 					from: "alice",
 					tx:   makeUnsignedTx(2, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 3 txs pending: accept nonce 3 now
+				{
+					// New account, 3 txs pending: accept nonce 3 now
 					from: "alice",
 					tx:   makeUnsignedTx(3, 1, 1, 1),
 					err:  nil,
 				},
-				{ // Old account, 1 tx in chain, 1 tx pending: reject duplicate nonce 1
+				{
+					// Old account, 1 tx in chain, 1 tx pending: reject duplicate nonce 1
 					from: "bob",
 					tx:   makeUnsignedTx(1, 1, 1, 1),
 					err:  txpool.ErrAlreadyKnown,
 				},
-				{ // Old account, 1 tx in chain, 1 tx pending: accept nonce 2 (ignore price for now)
+				{
+					// Old account, 1 tx in chain, 1 tx pending: accept nonce 2 (ignore price for now)
 					from: "bob",
 					tx:   makeUnsignedTx(2, 1, 1, 1),
 					err:  nil,
@@ -1034,17 +1099,20 @@ func TestAdd(t *testing.T) {
 				"alice": {balance: 63299 + 3*blobSize}, // 3 tx - 1 wei
 			},
 			adds: []addtx{
-				{ // New account, no previous txs: accept nonce 0 with 21100 wei spend
+				{
+					// New account, no previous txs: accept nonce 0 with 21100 wei spend
 					from: "alice",
 					tx:   makeUnsignedTx(0, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 1 pooled tx with 21100 wei spent: accept nonce 1 with 21100 wei spend
+				{
+					// New account, 1 pooled tx with 21100 wei spent: accept nonce 1 with 21100 wei spend
 					from: "alice",
 					tx:   makeUnsignedTx(1, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 2 pooled tx with 42200 wei spent: reject nonce 2 with 21100 wei spend (1 wei overflow)
+				{
+					// New account, 2 pooled tx with 42200 wei spent: reject nonce 2 with 21100 wei spend (1 wei overflow)
 					from: "alice",
 					tx:   makeUnsignedTx(2, 1, 1, 1),
 					err:  core.ErrInsufficientFunds,
@@ -1058,92 +1126,110 @@ func TestAdd(t *testing.T) {
 				"alice": {balance: 10000000},
 			},
 			adds: []addtx{
-				{ // New account, no previous txs, 16 slots left: accept nonce 0
+				{
+					// New account, no previous txs, 16 slots left: accept nonce 0
 					from: "alice",
 					tx:   makeUnsignedTx(0, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 1 pooled tx, 15 slots left: accept nonce 1
+				{
+					// New account, 1 pooled tx, 15 slots left: accept nonce 1
 					from: "alice",
 					tx:   makeUnsignedTx(1, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 2 pooled tx, 14 slots left: accept nonce 2
+				{
+					// New account, 2 pooled tx, 14 slots left: accept nonce 2
 					from: "alice",
 					tx:   makeUnsignedTx(2, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 3 pooled tx, 13 slots left: accept nonce 3
+				{
+					// New account, 3 pooled tx, 13 slots left: accept nonce 3
 					from: "alice",
 					tx:   makeUnsignedTx(3, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 4 pooled tx, 12 slots left: accept nonce 4
+				{
+					// New account, 4 pooled tx, 12 slots left: accept nonce 4
 					from: "alice",
 					tx:   makeUnsignedTx(4, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 5 pooled tx, 11 slots left: accept nonce 5
+				{
+					// New account, 5 pooled tx, 11 slots left: accept nonce 5
 					from: "alice",
 					tx:   makeUnsignedTx(5, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 6 pooled tx, 10 slots left: accept nonce 6
+				{
+					// New account, 6 pooled tx, 10 slots left: accept nonce 6
 					from: "alice",
 					tx:   makeUnsignedTx(6, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 7 pooled tx, 9 slots left: accept nonce 7
+				{
+					// New account, 7 pooled tx, 9 slots left: accept nonce 7
 					from: "alice",
 					tx:   makeUnsignedTx(7, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 8 pooled tx, 8 slots left: accept nonce 8
+				{
+					// New account, 8 pooled tx, 8 slots left: accept nonce 8
 					from: "alice",
 					tx:   makeUnsignedTx(8, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 9 pooled tx, 7 slots left: accept nonce 9
+				{
+					// New account, 9 pooled tx, 7 slots left: accept nonce 9
 					from: "alice",
 					tx:   makeUnsignedTx(9, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 10 pooled tx, 6 slots left: accept nonce 10
+				{
+					// New account, 10 pooled tx, 6 slots left: accept nonce 10
 					from: "alice",
 					tx:   makeUnsignedTx(10, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 11 pooled tx, 5 slots left: accept nonce 11
+				{
+					// New account, 11 pooled tx, 5 slots left: accept nonce 11
 					from: "alice",
 					tx:   makeUnsignedTx(11, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 12 pooled tx, 4 slots left: accept nonce 12
+				{
+					// New account, 12 pooled tx, 4 slots left: accept nonce 12
 					from: "alice",
 					tx:   makeUnsignedTx(12, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 13 pooled tx, 3 slots left: accept nonce 13
+				{
+					// New account, 13 pooled tx, 3 slots left: accept nonce 13
 					from: "alice",
 					tx:   makeUnsignedTx(13, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 14 pooled tx, 2 slots left: accept nonce 14
+				{
+					// New account, 14 pooled tx, 2 slots left: accept nonce 14
 					from: "alice",
 					tx:   makeUnsignedTx(14, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 15 pooled tx, 1 slots left: accept nonce 15
+				{
+					// New account, 15 pooled tx, 1 slots left: accept nonce 15
 					from: "alice",
 					tx:   makeUnsignedTx(15, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 16 pooled tx, 0 slots left: accept nonce 15 replacement
+				{
+					// New account, 16 pooled tx, 0 slots left: accept nonce 15 replacement
 					from: "alice",
 					tx:   makeUnsignedTx(15, 10, 10, 10),
 					err:  nil,
 				},
-				{ // New account, 16 pooled tx, 0 slots left: reject nonce 16 with overcap
+				{
+					// New account, 16 pooled tx, 0 slots left: reject nonce 16 with overcap
 					from: "alice",
 					tx:   makeUnsignedTx(16, 1, 1, 1),
 					err:  txpool.ErrAccountLimitExceeded,
@@ -1158,42 +1244,50 @@ func TestAdd(t *testing.T) {
 				"alice": {balance: 2*100 + 5*21000 + 3*blobSize},
 			},
 			adds: []addtx{
-				{ // New account, no previous txs: reject nonce 0 with 341172 wei spend
+				{
+					// New account, no previous txs: reject nonce 0 with 341172 wei spend
 					from: "alice",
 					tx:   makeUnsignedTx(0, 1, 20, 1),
 					err:  core.ErrInsufficientFunds,
 				},
-				{ // New account, no previous txs: accept nonce 0 with 173172 wei spend
+				{
+					// New account, no previous txs: accept nonce 0 with 173172 wei spend
 					from: "alice",
 					tx:   makeUnsignedTx(0, 1, 2, 1),
 					err:  nil,
 				},
-				{ // New account, 1 pooled tx with 173172 wei spent: accept nonce 1 with 152172 wei spend
+				{
+					// New account, 1 pooled tx with 173172 wei spent: accept nonce 1 with 152172 wei spend
 					from: "alice",
 					tx:   makeUnsignedTx(1, 1, 1, 1),
 					err:  nil,
 				},
-				{ // New account, 2 pooled tx with 325344 wei spent: reject nonce 0 with 599684 wei spend (173072 extra) (would overflow balance at nonce 1)
+				{
+					// New account, 2 pooled tx with 325344 wei spent: reject nonce 0 with 599684 wei spend (173072 extra) (would overflow balance at nonce 1)
 					from: "alice",
 					tx:   makeUnsignedTx(0, 2, 5, 2),
 					err:  core.ErrInsufficientFunds,
 				},
-				{ // New account, 2 pooled tx with 325344 wei spent: reject nonce 0 with no-gastip-bump
+				{
+					// New account, 2 pooled tx with 325344 wei spent: reject nonce 0 with no-gastip-bump
 					from: "alice",
 					tx:   makeUnsignedTx(0, 1, 3, 2),
 					err:  txpool.ErrReplaceUnderpriced,
 				},
-				{ // New account, 2 pooled tx with 325344 wei spent: reject nonce 0 with no-gascap-bump
+				{
+					// New account, 2 pooled tx with 325344 wei spent: reject nonce 0 with no-gascap-bump
 					from: "alice",
 					tx:   makeUnsignedTx(0, 2, 2, 2),
 					err:  txpool.ErrReplaceUnderpriced,
 				},
-				{ // New account, 2 pooled tx with 325344 wei spent: reject nonce 0 with no-blobcap-bump
+				{
+					// New account, 2 pooled tx with 325344 wei spent: reject nonce 0 with no-blobcap-bump
 					from: "alice",
 					tx:   makeUnsignedTx(0, 2, 4, 1),
 					err:  txpool.ErrReplaceUnderpriced,
 				},
-				{ // New account, 2 pooled tx with 325344 wei spent: accept nonce 0 with 84100 wei spend (42000 extra)
+				{
+					// New account, 2 pooled tx with 325344 wei spent: accept nonce 0 with 84100 wei spend (42000 extra)
 					from: "alice",
 					tx:   makeUnsignedTx(0, 2, 4, 2),
 					err:  nil,
@@ -1207,27 +1301,32 @@ func TestAdd(t *testing.T) {
 				"alice": {balance: 100 + 8*21000 + 4*blobSize},
 			},
 			adds: []addtx{
-				{ // New account, no previous txs: accept nonce 0
+				{
+					// New account, no previous txs: accept nonce 0
 					from: "alice",
 					tx:   makeUnsignedTx(0, 2, 4, 2),
 					err:  nil,
 				},
-				{ // New account, 1 pooled tx: reject nonce 0 with low-gastip-bump
+				{
+					// New account, 1 pooled tx: reject nonce 0 with low-gastip-bump
 					from: "alice",
 					tx:   makeUnsignedTx(0, 3, 8, 4),
 					err:  txpool.ErrReplaceUnderpriced,
 				},
-				{ // New account, 1 pooled tx: reject nonce 0 with low-gascap-bump
+				{
+					// New account, 1 pooled tx: reject nonce 0 with low-gascap-bump
 					from: "alice",
 					tx:   makeUnsignedTx(0, 4, 6, 4),
 					err:  txpool.ErrReplaceUnderpriced,
 				},
-				{ // New account, 1 pooled tx: reject nonce 0 with low-blobcap-bump
+				{
+					// New account, 1 pooled tx: reject nonce 0 with low-blobcap-bump
 					from: "alice",
 					tx:   makeUnsignedTx(0, 4, 8, 3),
 					err:  txpool.ErrReplaceUnderpriced,
 				},
-				{ // New account, 1 pooled tx: accept nonce 0 with all-bumps
+				{
+					// New account, 1 pooled tx: accept nonce 0 with all-bumps
 					from: "alice",
 					tx:   makeUnsignedTx(0, 4, 8, 4),
 					err:  nil,
@@ -1240,12 +1339,14 @@ func TestAdd(t *testing.T) {
 				"alice": {balance: 10000000},
 			},
 			adds: []addtx{
-				{ // New account, no previous txs, nonce 0, but blob fee cap too low
+				{
+					// New account, no previous txs, nonce 0, but blob fee cap too low
 					from: "alice",
 					tx:   makeUnsignedTx(0, 1, 1, 0),
 					err:  txpool.ErrUnderpriced,
 				},
-				{ // Same as above but blob fee cap equals minimum, should be accepted
+				{
+					// Same as above but blob fee cap equals minimum, should be accepted
 					from: "alice",
 					tx:   makeUnsignedTx(0, 1, 1, params.BlobTxMinBlobGasprice),
 					err:  nil,
@@ -1364,11 +1465,13 @@ func benchmarkPoolPending(b *testing.B, datacap uint64) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		p := pool.Pending(txpool.PendingFilter{
-			MinTip:  uint256.NewInt(1),
-			BaseFee: chain.basefee,
-			BlobFee: chain.blobfee,
-		})
+		p := pool.Pending(
+			txpool.PendingFilter{
+				MinTip:  uint256.NewInt(1),
+				BaseFee: chain.basefee,
+				BlobFee: chain.blobfee,
+			},
+		)
 		if len(p) != int(capacity) {
 			b.Fatalf("have %d want %d", len(p), capacity)
 		}

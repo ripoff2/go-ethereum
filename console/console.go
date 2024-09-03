@@ -30,14 +30,14 @@ import (
 	"syscall"
 
 	"github.com/dop251/goja"
-	"github.com/ethereum/go-ethereum/console/prompt"
-	"github.com/ethereum/go-ethereum/internal/jsre"
-	"github.com/ethereum/go-ethereum/internal/jsre/deps"
-	"github.com/ethereum/go-ethereum/internal/web3ext"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/mattn/go-colorable"
 	"github.com/peterh/liner"
+	"github.com/ripoff2/go-ethereum/console/prompt"
+	"github.com/ripoff2/go-ethereum/internal/jsre"
+	"github.com/ripoff2/go-ethereum/internal/jsre/deps"
+	"github.com/ripoff2/go-ethereum/internal/web3ext"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 var (
@@ -140,10 +140,12 @@ func (c *Console) init(preload []string) error {
 	}
 
 	// Add bridge overrides for web3.js functionality.
-	c.jsre.Do(func(vm *goja.Runtime) {
-		c.initAdmin(vm, bridge)
-		c.initPersonal(vm, bridge)
-	})
+	c.jsre.Do(
+		func(vm *goja.Runtime) {
+			c.initAdmin(vm, bridge)
+			c.initPersonal(vm, bridge)
+		},
+	)
 
 	// Preload JavaScript files.
 	for _, path := range preload {
@@ -170,12 +172,14 @@ func (c *Console) init(preload []string) error {
 }
 
 func (c *Console) initConsoleObject() {
-	c.jsre.Do(func(vm *goja.Runtime) {
-		console := vm.NewObject()
-		console.Set("log", c.consoleOutput)
-		console.Set("error", c.consoleOutput)
-		vm.Set("console", console)
-	})
+	c.jsre.Do(
+		func(vm *goja.Runtime) {
+			console := vm.NewObject()
+			console.Set("log", c.consoleOutput)
+			console.Set("error", c.consoleOutput)
+			vm.Set("console", console)
+		},
+	)
 }
 
 func (c *Console) initWeb3(bridge *bridge) error {
@@ -189,13 +193,15 @@ func (c *Console) initWeb3(bridge *bridge) error {
 		return fmt.Errorf("web3 require: %v", err)
 	}
 	var err error
-	c.jsre.Do(func(vm *goja.Runtime) {
-		transport := vm.NewObject()
-		transport.Set("send", jsre.MakeCallback(vm, bridge.Send))
-		transport.Set("sendAsync", jsre.MakeCallback(vm, bridge.Send))
-		vm.Set("_consoleWeb3Transport", transport)
-		_, err = vm.RunString("var web3 = new Web3(_consoleWeb3Transport)")
-	})
+	c.jsre.Do(
+		func(vm *goja.Runtime) {
+			transport := vm.NewObject()
+			transport.Set("send", jsre.MakeCallback(vm, bridge.Send))
+			transport.Set("sendAsync", jsre.MakeCallback(vm, bridge.Send))
+			vm.Set("_consoleWeb3Transport", transport)
+			_, err = vm.RunString("var web3 = new Web3(_consoleWeb3Transport)")
+		},
+	)
 	return err
 }
 
@@ -229,14 +235,16 @@ func (c *Console) initExtensions() error {
 	}
 
 	// Apply aliases.
-	c.jsre.Do(func(vm *goja.Runtime) {
-		web3 := getObject(vm, "web3")
-		for name := range aliases {
-			if v := web3.Get(name); v != nil {
-				vm.Set(name, v)
+	c.jsre.Do(
+		func(vm *goja.Runtime) {
+			web3 := getObject(vm, "web3")
+			for name := range aliases {
+				if v := web3.Get(name); v != nil {
+					vm.Set(name, v)
+				}
 			}
-		}
-	})
+		},
+	)
 	return nil
 }
 
@@ -323,14 +331,16 @@ func (c *Console) Welcome() {
 	message := "Welcome to the Geth JavaScript console!\n\n"
 
 	// Print some generic Geth metadata
-	if res, err := c.jsre.Run(`
+	if res, err := c.jsre.Run(
+		`
 		var message = "instance: " + web3.version.node + "\n";
 		message += "at block: " + eth.blockNumber + " (" + new Date(1000 * eth.getBlock(eth.blockNumber).timestamp) + ")\n";
 		try {
 			message += " datadir: " + admin.datadir + "\n";
 		} catch (err) {}
 		message
-	`); err == nil {
+	`,
+	); err == nil {
 		message += res.String()
 	}
 	// List all the supported modules for the user to call
@@ -546,11 +556,13 @@ func countIndents(input string) int {
 
 // Stop cleans up the console and terminates the runtime environment.
 func (c *Console) Stop(graceful bool) error {
-	c.stopOnce.Do(func() {
-		// Stop the interrupt handler.
-		close(c.stopped)
-		c.wg.Wait()
-	})
+	c.stopOnce.Do(
+		func() {
+			// Stop the interrupt handler.
+			close(c.stopped)
+			c.wg.Wait()
+		},
+	)
 
 	c.jsre.Stop(graceful)
 	return nil

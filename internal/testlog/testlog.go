@@ -25,7 +25,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 const (
@@ -183,10 +183,12 @@ func (h *bufHandler) terminalFormat(r slog.Record) string {
 	buf := &bytes.Buffer{}
 	lvl := log.LevelAlignedString(r.Level)
 	attrs := []slog.Attr{}
-	r.Attrs(func(attr slog.Attr) bool {
-		attrs = append(attrs, attr)
-		return true
-	})
+	r.Attrs(
+		func(attr slog.Attr) bool {
+			attrs = append(attrs, attr)
+			return true
+		},
+	)
 
 	attrs = append(h.attrs, attrs...)
 

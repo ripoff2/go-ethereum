@@ -20,10 +20,10 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common/lru"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/common/lru"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 // canonicalStore stores instances of the given type in a database and caches
@@ -59,7 +59,9 @@ func newCanonicalStore[T any](db ethdb.Iteratee, keyPrefix []byte) (*canonicalSt
 		if first {
 			cs.periods.Start = period
 		} else if cs.periods.End != period {
-			return nil, fmt.Errorf("gap in the canonical chain database between periods %d and %d", cs.periods.End, period-1)
+			return nil, fmt.Errorf(
+				"gap in the canonical chain database between periods %d and %d", cs.periods.End, period-1,
+			)
 		}
 		first = false
 		cs.periods.End = period + 1
@@ -76,7 +78,9 @@ func (cs *canonicalStore[T]) databaseKey(period uint64) []byte {
 // continuous. Can be used either with a batch or database backend.
 func (cs *canonicalStore[T]) add(backend ethdb.KeyValueWriter, period uint64, value T) error {
 	if !cs.periods.canExpand(period) {
-		return fmt.Errorf("period expansion is not allowed, first: %d, next: %d, period: %d", cs.periods.Start, cs.periods.End, period)
+		return fmt.Errorf(
+			"period expansion is not allowed, first: %d, next: %d, period: %d", cs.periods.Start, cs.periods.End, period,
+		)
 	}
 	enc, err := rlp.EncodeToBytes(value)
 	if err != nil {
@@ -93,10 +97,12 @@ func (cs *canonicalStore[T]) add(backend ethdb.KeyValueWriter, period uint64, va
 // deleteFrom removes items starting from the given period.
 func (cs *canonicalStore[T]) deleteFrom(db ethdb.KeyValueWriter, fromPeriod uint64) (deleted periodRange) {
 	keepRange, deleteRange := cs.periods.split(fromPeriod)
-	deleteRange.each(func(period uint64) {
-		db.Delete(cs.databaseKey(period))
-		cs.cache.Remove(period)
-	})
+	deleteRange.each(
+		func(period uint64) {
+			db.Delete(cs.databaseKey(period))
+			cs.cache.Remove(period)
+		},
+	)
 	cs.periods = keepRange
 	return deleteRange
 }

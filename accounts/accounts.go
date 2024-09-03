@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/event"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -150,7 +150,9 @@ type Wallet interface {
 	SignTx(account Account, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error)
 
 	// SignTxWithPassphrase is identical to SignTx, but also takes a password
-	SignTxWithPassphrase(account Account, passphrase string, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error)
+	SignTxWithPassphrase(
+		account Account, passphrase string, tx *types.Transaction, chainID *big.Int,
+	) (*types.Transaction, error)
 }
 
 // Backend is a "wallet provider" that may contain a batch of accounts they can

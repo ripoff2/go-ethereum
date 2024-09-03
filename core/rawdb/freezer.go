@@ -25,10 +25,10 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/gofrs/flock"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
 )
 
 var (
@@ -79,7 +79,9 @@ type Freezer struct {
 //
 // The 'tables' argument defines the data tables. If the value of a map
 // entry is true, snappy compression is disabled for the table.
-func NewFreezer(datadir string, namespace string, readonly bool, maxTableSize uint32, tables map[string]bool) (*Freezer, error) {
+func NewFreezer(datadir string, namespace string, readonly bool, maxTableSize uint32, tables map[string]bool) (
+	*Freezer, error,
+) {
 	// Create the initial freezer object
 	var (
 		readMeter  = metrics.NewRegisteredMeter(namespace+"ancient/read", nil)
@@ -158,16 +160,18 @@ func (f *Freezer) Close() error {
 	defer f.writeLock.Unlock()
 
 	var errs []error
-	f.closeOnce.Do(func() {
-		for _, table := range f.tables {
-			if err := table.Close(); err != nil {
+	f.closeOnce.Do(
+		func() {
+			for _, table := range f.tables {
+				if err := table.Close(); err != nil {
+					errs = append(errs, err)
+				}
+			}
+			if err := f.instanceLock.Unlock(); err != nil {
 				errs = append(errs, err)
 			}
-		}
-		if err := f.instanceLock.Unlock(); err != nil {
-			errs = append(errs, err)
-		}
-	})
+		},
+	)
 	if errs != nil {
 		return fmt.Errorf("%v", errs)
 	}
@@ -348,10 +352,14 @@ func (f *Freezer) validate() error {
 	// Now check every table against those boundaries.
 	for kind, table := range f.tables {
 		if head != table.items.Load() {
-			return fmt.Errorf("freezer tables %s and %s have differing head: %d != %d", kind, name, table.items.Load(), head)
+			return fmt.Errorf(
+				"freezer tables %s and %s have differing head: %d != %d", kind, name, table.items.Load(), head,
+			)
 		}
 		if tail != table.itemHidden.Load() {
-			return fmt.Errorf("freezer tables %s and %s have differing tail: %d != %d", kind, name, table.itemHidden.Load(), tail)
+			return fmt.Errorf(
+				"freezer tables %s and %s have differing tail: %d != %d", kind, name, table.itemHidden.Load(), tail,
+			)
 		}
 	}
 	f.frozen.Store(head)

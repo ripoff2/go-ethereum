@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 // LegacyTx is the transaction data of the original Ethereum transactions.
@@ -36,27 +36,33 @@ type LegacyTx struct {
 
 // NewTransaction creates an unsigned legacy transaction.
 // Deprecated: use NewTx instead.
-func NewTransaction(nonce uint64, to common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte) *Transaction {
-	return NewTx(&LegacyTx{
-		Nonce:    nonce,
-		To:       &to,
-		Value:    amount,
-		Gas:      gasLimit,
-		GasPrice: gasPrice,
-		Data:     data,
-	})
+func NewTransaction(
+	nonce uint64, to common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte,
+) *Transaction {
+	return NewTx(
+		&LegacyTx{
+			Nonce:    nonce,
+			To:       &to,
+			Value:    amount,
+			Gas:      gasLimit,
+			GasPrice: gasPrice,
+			Data:     data,
+		},
+	)
 }
 
 // NewContractCreation creates an unsigned legacy transaction.
 // Deprecated: use NewTx instead.
 func NewContractCreation(nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte) *Transaction {
-	return NewTx(&LegacyTx{
-		Nonce:    nonce,
-		Value:    amount,
-		Gas:      gasLimit,
-		GasPrice: gasPrice,
-		Data:     data,
-	})
+	return NewTx(
+		&LegacyTx{
+			Nonce:    nonce,
+			Value:    amount,
+			Gas:      gasLimit,
+			GasPrice: gasPrice,
+			Data:     data,
+		},
+	)
 }
 
 // copy creates a deep copy of the transaction data and initializes all fields.

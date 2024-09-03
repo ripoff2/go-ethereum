@@ -23,13 +23,13 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/accounts/external"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/accounts/external"
+	"github.com/ripoff2/go-ethereum/accounts/keystore"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // ErrNoChainID is returned whenever the user failed to specify a chain id.
@@ -118,7 +118,9 @@ func NewTransactorWithChainID(keyin io.Reader, passphrase string, chainID *big.I
 
 // NewKeyStoreTransactorWithChainID is a utility method to easily create a transaction signer from
 // a decrypted key from a keystore.
-func NewKeyStoreTransactorWithChainID(keystore *keystore.KeyStore, account accounts.Account, chainID *big.Int) (*TransactOpts, error) {
+func NewKeyStoreTransactorWithChainID(
+	keystore *keystore.KeyStore, account accounts.Account, chainID *big.Int,
+) (*TransactOpts, error) {
 	if chainID == nil {
 		return nil, ErrNoChainID
 	}

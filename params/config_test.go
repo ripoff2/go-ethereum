@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/common/math"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,7 +35,10 @@ func TestCheckCompatible(t *testing.T) {
 	}
 	tests := []test{
 		{stored: AllEthashProtocolChanges, new: AllEthashProtocolChanges, headBlock: 0, headTimestamp: 0, wantErr: nil},
-		{stored: AllEthashProtocolChanges, new: AllEthashProtocolChanges, headBlock: 0, headTimestamp: uint64(time.Now().Unix()), wantErr: nil},
+		{
+			stored: AllEthashProtocolChanges, new: AllEthashProtocolChanges, headBlock: 0,
+			headTimestamp: uint64(time.Now().Unix()), wantErr: nil,
+		},
 		{stored: AllEthashProtocolChanges, new: AllEthashProtocolChanges, headBlock: 100, wantErr: nil},
 		{
 			stored:    &ChainConfig{EIP150Block: big.NewInt(10)},
@@ -115,7 +118,10 @@ func TestCheckCompatible(t *testing.T) {
 	for _, test := range tests {
 		err := test.stored.CheckCompatible(test.new, test.headBlock, test.headTimestamp)
 		if !reflect.DeepEqual(err, test.wantErr) {
-			t.Errorf("error mismatch:\nstored: %v\nnew: %v\nheadBlock: %v\nheadTimestamp: %v\nerr: %v\nwant: %v", test.stored, test.new, test.headBlock, test.headTimestamp, err, test.wantErr)
+			t.Errorf(
+				"error mismatch:\nstored: %v\nnew: %v\nheadBlock: %v\nheadTimestamp: %v\nerr: %v\nwant: %v",
+				test.stored, test.new, test.headBlock, test.headTimestamp, err, test.wantErr,
+			)
 		}
 	}
 }
@@ -143,15 +149,23 @@ func TestTimestampCompatError(t *testing.T) {
 	require.Equal(t, new(ConfigCompatError).Error(), "")
 
 	errWhat := "Shanghai fork timestamp"
-	require.Equal(t, newTimestampCompatError(errWhat, nil, newUint64(1681338455)).Error(),
-		"mismatching Shanghai fork timestamp in database (have timestamp nil, want timestamp 1681338455, rewindto timestamp 1681338454)")
+	require.Equal(
+		t, newTimestampCompatError(errWhat, nil, newUint64(1681338455)).Error(),
+		"mismatching Shanghai fork timestamp in database (have timestamp nil, want timestamp 1681338455, rewindto timestamp 1681338454)",
+	)
 
-	require.Equal(t, newTimestampCompatError(errWhat, newUint64(1681338455), nil).Error(),
-		"mismatching Shanghai fork timestamp in database (have timestamp 1681338455, want timestamp nil, rewindto timestamp 1681338454)")
+	require.Equal(
+		t, newTimestampCompatError(errWhat, newUint64(1681338455), nil).Error(),
+		"mismatching Shanghai fork timestamp in database (have timestamp 1681338455, want timestamp nil, rewindto timestamp 1681338454)",
+	)
 
-	require.Equal(t, newTimestampCompatError(errWhat, newUint64(1681338455), newUint64(600624000)).Error(),
-		"mismatching Shanghai fork timestamp in database (have timestamp 1681338455, want timestamp 600624000, rewindto timestamp 600623999)")
+	require.Equal(
+		t, newTimestampCompatError(errWhat, newUint64(1681338455), newUint64(600624000)).Error(),
+		"mismatching Shanghai fork timestamp in database (have timestamp 1681338455, want timestamp 600624000, rewindto timestamp 600623999)",
+	)
 
-	require.Equal(t, newTimestampCompatError(errWhat, newUint64(0), newUint64(1681338455)).Error(),
-		"mismatching Shanghai fork timestamp in database (have timestamp 0, want timestamp 1681338455, rewindto timestamp 0)")
+	require.Equal(
+		t, newTimestampCompatError(errWhat, newUint64(0), newUint64(1681338455)).Error(),
+		"mismatching Shanghai fork timestamp in database (have timestamp 0, want timestamp 1681338455, rewindto timestamp 0)",
+	)
 }

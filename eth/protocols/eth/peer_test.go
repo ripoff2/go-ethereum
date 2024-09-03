@@ -23,9 +23,9 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
 )
 
 // testPeer is a simulated peer to allow testing direct network calls.
@@ -50,9 +50,11 @@ func newTestPeer(name string, version uint, backend Backend) (*testPeer, <-chan 
 	go func() {
 		defer app.Close()
 
-		errc <- backend.RunPeer(peer, func(peer *Peer) error {
-			return Handle(backend, peer)
-		})
+		errc <- backend.RunPeer(
+			peer, func(peer *Peer) error {
+				return Handle(backend, peer)
+			},
+		)
 	}()
 	return &testPeer{app: app, net: net, Peer: peer}, errc
 }

@@ -21,16 +21,16 @@ import (
 	"math/big"
 	"reflect"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/misc/eip4844"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/crypto/kzg4844"
-	"github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/internal/utesting"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus/misc/eip4844"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/crypto/kzg4844"
+	"github.com/ripoff2/go-ethereum/eth/protocols/eth"
+	"github.com/ripoff2/go-ethereum/internal/utesting"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
 )
 
 // Suite represents a structure used to test a node's conformance
@@ -155,8 +155,10 @@ func (s *Suite) TestGetBlockHeaders(t *utesting.T) {
 }
 
 func (s *Suite) TestSimultaneousRequests(t *utesting.T) {
-	t.Log(`This test requests blocks headers from the node, performing two requests
-concurrently, with different request IDs.`)
+	t.Log(
+		`This test requests blocks headers from the node, performing two requests
+concurrently, with different request IDs.`,
+	)
 
 	conn, err := s.dial()
 	if err != nil {
@@ -229,8 +231,10 @@ concurrently, with different request IDs.`)
 }
 
 func (s *Suite) TestSameRequestID(t *utesting.T) {
-	t.Log(`This test requests block headers, performing two concurrent requests with the
-same request ID. The node should handle the request by responding to both requests.`)
+	t.Log(
+		`This test requests block headers, performing two concurrent requests with the
+same request ID. The node should handle the request by responding to both requests.`,
+	)
 
 	conn, err := s.dial()
 	if err != nil {
@@ -300,8 +304,10 @@ same request ID. The node should handle the request by responding to both reques
 }
 
 func (s *Suite) TestZeroRequestID(t *utesting.T) {
-	t.Log(`This test sends a GetBlockHeaders message with a request-id of zero,
-and expects a response.`)
+	t.Log(
+		`This test sends a GetBlockHeaders message with a request-id of zero,
+and expects a response.`,
+	)
 
 	conn, err := s.dial()
 	if err != nil {
@@ -490,8 +496,10 @@ func (s *Suite) TestMaliciousStatus(t *utesting.T) {
 }
 
 func (s *Suite) TestTransaction(t *utesting.T) {
-	t.Log(`This test sends a valid transaction to the node and checks if the
-transaction gets propagated.`)
+	t.Log(
+		`This test sends a valid transaction to the node and checks if the
+transaction gets propagated.`,
+	)
 
 	// Nudge client out of syncing mode to accept pending txs.
 	if err := s.engine.sendForkchoiceUpdated(); err != nil {
@@ -518,8 +526,10 @@ transaction gets propagated.`)
 }
 
 func (s *Suite) TestInvalidTxs(t *utesting.T) {
-	t.Log(`This test sends several kinds of invalid transactions and checks that the node
-does not propagate them.`)
+	t.Log(
+		`This test sends several kinds of invalid transactions and checks that the node
+does not propagate them.`,
+	)
 
 	// Nudge client out of syncing mode to accept pending txs.
 	if err := s.engine.sendForkchoiceUpdated(); err != nil {
@@ -601,8 +611,10 @@ does not propagate them.`)
 }
 
 func (s *Suite) TestLargeTxRequest(t *utesting.T) {
-	t.Log(`This test first send ~2000 transactions to the node, then requests them
-on another peer connection using GetPooledTransactions.`)
+	t.Log(
+		`This test first send ~2000 transactions to the node, then requests them
+on another peer connection using GetPooledTransactions.`,
+	)
 
 	// Nudge client out of syncing mode to accept pending txs.
 	if err := s.engine.sendForkchoiceUpdated(); err != nil {
@@ -674,8 +686,10 @@ on another peer connection using GetPooledTransactions.`)
 }
 
 func (s *Suite) TestNewPooledTxs(t *utesting.T) {
-	t.Log(`This test announces transaction hashes to the node and expects it to fetch
-the transactions using a GetPooledTransactions request.`)
+	t.Log(
+		`This test announces transaction hashes to the node and expects it to fetch
+the transactions using a GetPooledTransactions request.`,
+	)
 
 	// Nudge client out of syncing mode to accept pending txs.
 	if err := s.engine.sendForkchoiceUpdated(); err != nil {
@@ -733,7 +747,10 @@ the transactions using a GetPooledTransactions request.`)
 		switch msg := msg.(type) {
 		case *eth.GetPooledTransactionsPacket:
 			if len(msg.GetPooledTransactionsRequest) != len(hashes) {
-				t.Fatalf("unexpected number of txs requested: wanted %d, got %d", len(hashes), len(msg.GetPooledTransactionsRequest))
+				t.Fatalf(
+					"unexpected number of txs requested: wanted %d, got %d", len(hashes),
+					len(msg.GetPooledTransactionsRequest),
+				)
 			}
 			return
 		case *eth.NewPooledTransactionHashesPacket:

@@ -17,9 +17,9 @@
 package snap
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p"
 )
 
 // Peer is a collection of relevant information we have about a `snap` peer.
@@ -74,36 +74,51 @@ func (p *Peer) Log() log.Logger {
 // RequestAccountRange fetches a batch of accounts rooted in a specific account
 // trie, starting with the origin.
 func (p *Peer) RequestAccountRange(id uint64, root common.Hash, origin, limit common.Hash, bytes uint64) error {
-	p.logger.Trace("Fetching range of accounts", "reqid", id, "root", root, "origin", origin, "limit", limit, "bytes", common.StorageSize(bytes))
+	p.logger.Trace(
+		"Fetching range of accounts", "reqid", id, "root", root, "origin", origin, "limit", limit, "bytes",
+		common.StorageSize(bytes),
+	)
 
 	requestTracker.Track(p.id, p.version, GetAccountRangeMsg, AccountRangeMsg, id)
-	return p2p.Send(p.rw, GetAccountRangeMsg, &GetAccountRangePacket{
-		ID:     id,
-		Root:   root,
-		Origin: origin,
-		Limit:  limit,
-		Bytes:  bytes,
-	})
+	return p2p.Send(
+		p.rw, GetAccountRangeMsg, &GetAccountRangePacket{
+			ID:     id,
+			Root:   root,
+			Origin: origin,
+			Limit:  limit,
+			Bytes:  bytes,
+		},
+	)
 }
 
 // RequestStorageRanges fetches a batch of storage slots belonging to one or more
 // accounts. If slots from only one account is requested, an origin marker may also
 // be used to retrieve from there.
-func (p *Peer) RequestStorageRanges(id uint64, root common.Hash, accounts []common.Hash, origin, limit []byte, bytes uint64) error {
+func (p *Peer) RequestStorageRanges(
+	id uint64, root common.Hash, accounts []common.Hash, origin, limit []byte, bytes uint64,
+) error {
 	if len(accounts) == 1 && origin != nil {
-		p.logger.Trace("Fetching range of large storage slots", "reqid", id, "root", root, "account", accounts[0], "origin", common.BytesToHash(origin), "limit", common.BytesToHash(limit), "bytes", common.StorageSize(bytes))
+		p.logger.Trace(
+			"Fetching range of large storage slots", "reqid", id, "root", root, "account", accounts[0], "origin",
+			common.BytesToHash(origin), "limit", common.BytesToHash(limit), "bytes", common.StorageSize(bytes),
+		)
 	} else {
-		p.logger.Trace("Fetching ranges of small storage slots", "reqid", id, "root", root, "accounts", len(accounts), "first", accounts[0], "bytes", common.StorageSize(bytes))
+		p.logger.Trace(
+			"Fetching ranges of small storage slots", "reqid", id, "root", root, "accounts", len(accounts), "first",
+			accounts[0], "bytes", common.StorageSize(bytes),
+		)
 	}
 	requestTracker.Track(p.id, p.version, GetStorageRangesMsg, StorageRangesMsg, id)
-	return p2p.Send(p.rw, GetStorageRangesMsg, &GetStorageRangesPacket{
-		ID:       id,
-		Root:     root,
-		Accounts: accounts,
-		Origin:   origin,
-		Limit:    limit,
-		Bytes:    bytes,
-	})
+	return p2p.Send(
+		p.rw, GetStorageRangesMsg, &GetStorageRangesPacket{
+			ID:       id,
+			Root:     root,
+			Accounts: accounts,
+			Origin:   origin,
+			Limit:    limit,
+			Bytes:    bytes,
+		},
+	)
 }
 
 // RequestByteCodes fetches a batch of bytecodes by hash.
@@ -111,23 +126,30 @@ func (p *Peer) RequestByteCodes(id uint64, hashes []common.Hash, bytes uint64) e
 	p.logger.Trace("Fetching set of byte codes", "reqid", id, "hashes", len(hashes), "bytes", common.StorageSize(bytes))
 
 	requestTracker.Track(p.id, p.version, GetByteCodesMsg, ByteCodesMsg, id)
-	return p2p.Send(p.rw, GetByteCodesMsg, &GetByteCodesPacket{
-		ID:     id,
-		Hashes: hashes,
-		Bytes:  bytes,
-	})
+	return p2p.Send(
+		p.rw, GetByteCodesMsg, &GetByteCodesPacket{
+			ID:     id,
+			Hashes: hashes,
+			Bytes:  bytes,
+		},
+	)
 }
 
 // RequestTrieNodes fetches a batch of account or storage trie nodes rooted in
 // a specific state trie.
 func (p *Peer) RequestTrieNodes(id uint64, root common.Hash, paths []TrieNodePathSet, bytes uint64) error {
-	p.logger.Trace("Fetching set of trie nodes", "reqid", id, "root", root, "pathsets", len(paths), "bytes", common.StorageSize(bytes))
+	p.logger.Trace(
+		"Fetching set of trie nodes", "reqid", id, "root", root, "pathsets", len(paths), "bytes",
+		common.StorageSize(bytes),
+	)
 
 	requestTracker.Track(p.id, p.version, GetTrieNodesMsg, TrieNodesMsg, id)
-	return p2p.Send(p.rw, GetTrieNodesMsg, &GetTrieNodesPacket{
-		ID:    id,
-		Root:  root,
-		Paths: paths,
-		Bytes: bytes,
-	})
+	return p2p.Send(
+		p.rw, GetTrieNodesMsg, &GetTrieNodesPacket{
+			ID:    id,
+			Root:  root,
+			Paths: paths,
+			Bytes: bytes,
+		},
+	)
 }

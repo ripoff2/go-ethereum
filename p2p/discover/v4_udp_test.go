@@ -32,11 +32,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/internal/testlog"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/discover/v4wire"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/internal/testlog"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p/discover/v4wire"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
 )
 
 // shared test variables
@@ -70,10 +70,12 @@ func newUDPTest(t *testing.T) *udpTest {
 
 	test.db, _ = enode.OpenDB("")
 	ln := enode.NewLocalNode(test.db, test.localkey)
-	test.udp, _ = ListenV4(test.pipe, ln, Config{
-		PrivateKey: test.localkey,
-		Log:        testlog.Logger(t, log.LvlTrace),
-	})
+	test.udp, _ = ListenV4(
+		test.pipe, ln, Config{
+			PrivateKey: test.localkey,
+			Log:        testlog.Logger(t, log.LvlTrace),
+		},
+	)
 	test.table = test.udp.tab
 	// Wait for initial refresh so the table doesn't send unexpected findnode.
 	<-test.table.initDone
@@ -193,11 +195,13 @@ func TestUDPv4_responseTimeouts(t *testing.T) {
 		} else {
 			p.errc = nilErr
 			test.udp.addReplyMatcher <- p
-			time.AfterFunc(randomDuration(60*time.Millisecond), func() {
-				if !test.udp.handleReply(p.from, p.ip, testPacket(p.ptype)) {
-					t.Logf("not matched: %v", p)
-				}
-			})
+			time.AfterFunc(
+				randomDuration(60*time.Millisecond), func() {
+					if !test.udp.handleReply(p.from, p.ip, testPacket(p.ptype)) {
+						t.Logf("not matched: %v", p)
+					}
+				},
+			)
 		}
 		time.Sleep(randomDuration(30 * time.Millisecond))
 	}
@@ -280,20 +284,22 @@ func TestUDPv4_findnode(t *testing.T) {
 	expected := test.table.findnodeByID(testTarget.ID(), bucketSize, true)
 	test.packetIn(nil, &v4wire.Findnode{Target: testTarget, Expiration: futureExp})
 	waitNeighbors := func(want []*enode.Node) {
-		test.waitPacketOut(func(p *v4wire.Neighbors, to netip.AddrPort, hash []byte) {
-			if len(p.Nodes) != len(want) {
-				t.Errorf("wrong number of results: got %d, want %d", len(p.Nodes), len(want))
-				return
-			}
-			for i, n := range p.Nodes {
-				if n.ID.ID() != want[i].ID() {
-					t.Errorf("result mismatch at %d:\n  got: %v\n  want: %v", i, n, expected.entries[i])
+		test.waitPacketOut(
+			func(p *v4wire.Neighbors, to netip.AddrPort, hash []byte) {
+				if len(p.Nodes) != len(want) {
+					t.Errorf("wrong number of results: got %d, want %d", len(p.Nodes), len(want))
+					return
 				}
-				if !live[n.ID.ID()] {
-					t.Errorf("result includes dead node %v", n.ID.ID())
+				for i, n := range p.Nodes {
+					if n.ID.ID() != want[i].ID() {
+						t.Errorf("result mismatch at %d:\n  got: %v\n  want: %v", i, n, expected.entries[i])
+					}
+					if !live[n.ID.ID()] {
+						t.Errorf("result includes dead node %v", n.ID.ID())
+					}
 				}
-			}
-		})
+			},
+		)
 	}
 	// Receive replies.
 	want := expected.entries
@@ -325,11 +331,13 @@ func TestUDPv4_findnodeMultiReply(t *testing.T) {
 
 	// wait for the findnode to be sent.
 	// after it is sent, the transport is waiting for a reply
-	test.waitPacketOut(func(p *v4wire.Findnode, to netip.AddrPort, hash []byte) {
-		if p.Target != testTarget {
-			t.Errorf("wrong target: got %v, want %v", p.Target, testTarget)
-		}
-	})
+	test.waitPacketOut(
+		func(p *v4wire.Findnode, to netip.AddrPort, hash []byte) {
+			if p.Target != testTarget {
+				t.Errorf("wrong target: got %v, want %v", p.Target, testTarget)
+			}
+		},
+	)
 
 	// send the reply as two packets.
 	list := []*enode.Node{
@@ -381,14 +389,18 @@ func TestUDPv4_pingMatchIP(t *testing.T) {
 	test.packetIn(nil, &v4wire.Ping{From: testRemote, To: testLocalAnnounced, Version: 4, Expiration: futureExp})
 	test.waitPacketOut(func(*v4wire.Pong, netip.AddrPort, []byte) {})
 
-	test.waitPacketOut(func(p *v4wire.Ping, to netip.AddrPort, hash []byte) {
-		wrongAddr := netip.MustParseAddrPort("33.44.1.2:30000")
-		test.packetInFrom(errUnsolicitedReply, test.remotekey, wrongAddr, &v4wire.Pong{
-			ReplyTok:   hash,
-			To:         testLocalAnnounced,
-			Expiration: futureExp,
-		})
-	})
+	test.waitPacketOut(
+		func(p *v4wire.Ping, to netip.AddrPort, hash []byte) {
+			wrongAddr := netip.MustParseAddrPort("33.44.1.2:30000")
+			test.packetInFrom(
+				errUnsolicitedReply, test.remotekey, wrongAddr, &v4wire.Pong{
+					ReplyTok:   hash,
+					To:         testLocalAnnounced,
+					Expiration: futureExp,
+				},
+			)
+		},
+	)
 }
 
 func TestUDPv4_successfulPing(t *testing.T) {
@@ -401,33 +413,37 @@ func TestUDPv4_successfulPing(t *testing.T) {
 	go test.packetIn(nil, &v4wire.Ping{From: testRemote, To: testLocalAnnounced, Version: 4, Expiration: futureExp})
 
 	// The ping is replied to.
-	test.waitPacketOut(func(p *v4wire.Pong, to netip.AddrPort, hash []byte) {
-		pinghash := test.sent[0][:32]
-		if !bytes.Equal(p.ReplyTok, pinghash) {
-			t.Errorf("got pong.ReplyTok %x, want %x", p.ReplyTok, pinghash)
-		}
-		// The mirrored UDP address is the UDP packet sender.
-		// The mirrored TCP port is the one from the ping packet.
-		wantTo := v4wire.NewEndpoint(test.remoteaddr, testRemote.TCP)
-		if !reflect.DeepEqual(p.To, wantTo) {
-			t.Errorf("got pong.To %v, want %v", p.To, wantTo)
-		}
-	})
+	test.waitPacketOut(
+		func(p *v4wire.Pong, to netip.AddrPort, hash []byte) {
+			pinghash := test.sent[0][:32]
+			if !bytes.Equal(p.ReplyTok, pinghash) {
+				t.Errorf("got pong.ReplyTok %x, want %x", p.ReplyTok, pinghash)
+			}
+			// The mirrored UDP address is the UDP packet sender.
+			// The mirrored TCP port is the one from the ping packet.
+			wantTo := v4wire.NewEndpoint(test.remoteaddr, testRemote.TCP)
+			if !reflect.DeepEqual(p.To, wantTo) {
+				t.Errorf("got pong.To %v, want %v", p.To, wantTo)
+			}
+		},
+	)
 
 	// Remote is unknown, the table pings back.
-	test.waitPacketOut(func(p *v4wire.Ping, to netip.AddrPort, hash []byte) {
-		wantFrom := test.udp.ourEndpoint()
-		wantFrom.IP = net.IP{}
-		if !reflect.DeepEqual(p.From, wantFrom) {
-			t.Errorf("got ping.From %#v, want %#v", p.From, test.udp.ourEndpoint())
-		}
-		// The mirrored UDP address is the UDP packet sender.
-		wantTo := v4wire.NewEndpoint(test.remoteaddr, 0)
-		if !reflect.DeepEqual(p.To, wantTo) {
-			t.Errorf("got ping.To %v, want %v", p.To, wantTo)
-		}
-		test.packetIn(nil, &v4wire.Pong{ReplyTok: hash, Expiration: futureExp})
-	})
+	test.waitPacketOut(
+		func(p *v4wire.Ping, to netip.AddrPort, hash []byte) {
+			wantFrom := test.udp.ourEndpoint()
+			wantFrom.IP = net.IP{}
+			if !reflect.DeepEqual(p.From, wantFrom) {
+				t.Errorf("got ping.From %#v, want %#v", p.From, test.udp.ourEndpoint())
+			}
+			// The mirrored UDP address is the UDP packet sender.
+			wantTo := v4wire.NewEndpoint(test.remoteaddr, 0)
+			if !reflect.DeepEqual(p.To, wantTo) {
+				t.Errorf("got ping.To %v, want %v", p.To, wantTo)
+			}
+			test.packetIn(nil, &v4wire.Pong{ReplyTok: hash, Expiration: futureExp})
+		},
+	)
 
 	// The node should be added to the table shortly after getting the
 	// pong packet.
@@ -464,29 +480,35 @@ func TestUDPv4_EIP868(t *testing.T) {
 
 	// Perform endpoint proof and check for sequence number in packet tail.
 	test.packetIn(nil, &v4wire.Ping{Expiration: futureExp})
-	test.waitPacketOut(func(p *v4wire.Pong, addr netip.AddrPort, hash []byte) {
-		if p.ENRSeq != wantNode.Seq() {
-			t.Errorf("wrong sequence number in pong: %d, want %d", p.ENRSeq, wantNode.Seq())
-		}
-	})
-	test.waitPacketOut(func(p *v4wire.Ping, addr netip.AddrPort, hash []byte) {
-		if p.ENRSeq != wantNode.Seq() {
-			t.Errorf("wrong sequence number in ping: %d, want %d", p.ENRSeq, wantNode.Seq())
-		}
-		test.packetIn(nil, &v4wire.Pong{Expiration: futureExp, ReplyTok: hash})
-	})
+	test.waitPacketOut(
+		func(p *v4wire.Pong, addr netip.AddrPort, hash []byte) {
+			if p.ENRSeq != wantNode.Seq() {
+				t.Errorf("wrong sequence number in pong: %d, want %d", p.ENRSeq, wantNode.Seq())
+			}
+		},
+	)
+	test.waitPacketOut(
+		func(p *v4wire.Ping, addr netip.AddrPort, hash []byte) {
+			if p.ENRSeq != wantNode.Seq() {
+				t.Errorf("wrong sequence number in ping: %d, want %d", p.ENRSeq, wantNode.Seq())
+			}
+			test.packetIn(nil, &v4wire.Pong{Expiration: futureExp, ReplyTok: hash})
+		},
+	)
 
 	// Request should work now.
 	test.packetIn(nil, &v4wire.ENRRequest{Expiration: futureExp})
-	test.waitPacketOut(func(p *v4wire.ENRResponse, addr netip.AddrPort, hash []byte) {
-		n, err := enode.New(enode.ValidSchemes, &p.Record)
-		if err != nil {
-			t.Fatalf("invalid record: %v", err)
-		}
-		if !reflect.DeepEqual(n, wantNode) {
-			t.Fatalf("wrong node in ENRResponse: %v", n)
-		}
-	})
+	test.waitPacketOut(
+		func(p *v4wire.ENRResponse, addr netip.AddrPort, hash []byte) {
+			n, err := enode.New(enode.ValidSchemes, &p.Record)
+			if err != nil {
+				t.Fatalf("invalid record: %v", err)
+			}
+			if !reflect.DeepEqual(n, wantNode) {
+				t.Fatalf("wrong node in ENRResponse: %v", n)
+			}
+		},
+	)
 }
 
 // This test verifies that a small network of nodes can boot up into a healthy state.
@@ -632,12 +654,14 @@ func (c *dgramPipe) receive() (dgram, error) {
 	defer c.mu.Unlock()
 
 	var timedOut bool
-	timer := time.AfterFunc(3*time.Second, func() {
-		c.mu.Lock()
-		timedOut = true
-		c.mu.Unlock()
-		c.cond.Broadcast()
-	})
+	timer := time.AfterFunc(
+		3*time.Second, func() {
+			c.mu.Lock()
+			timedOut = true
+			c.mu.Unlock()
+			c.cond.Broadcast()
+		},
+	)
 	defer timer.Stop()
 
 	for len(c.queue) == 0 && !c.closed && !timedOut {

@@ -20,10 +20,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/forkid"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/forkid"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
 )
 
 // Tests that handshake failures are detected and reported correctly.
@@ -40,7 +40,10 @@ func testHandshake(t *testing.T, protocol uint) {
 		genesis = backend.chain.Genesis()
 		head    = backend.chain.CurrentBlock()
 		td      = backend.chain.GetTd(head.Hash(), head.Number.Uint64())
-		forkID  = forkid.NewID(backend.chain.Config(), backend.chain.Genesis(), backend.chain.CurrentHeader().Number.Uint64(), backend.chain.CurrentHeader().Time)
+		forkID  = forkid.NewID(
+			backend.chain.Config(), backend.chain.Genesis(), backend.chain.CurrentHeader().Number.Uint64(),
+			backend.chain.CurrentHeader().Time,
+		)
 	)
 	tests := []struct {
 		code uint64
@@ -64,7 +67,9 @@ func testHandshake(t *testing.T, protocol uint) {
 			want: errGenesisMismatch,
 		},
 		{
-			code: StatusMsg, data: StatusPacket{uint32(protocol), 1, td, head.Hash(), genesis.Hash(), forkid.ID{Hash: [4]byte{0x00, 0x01, 0x02, 0x03}}},
+			code: StatusMsg, data: StatusPacket{
+				uint32(protocol), 1, td, head.Hash(), genesis.Hash(), forkid.ID{Hash: [4]byte{0x00, 0x01, 0x02, 0x03}},
+			},
 			want: errForkIDRejected,
 		},
 	}

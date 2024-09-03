@@ -23,12 +23,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum/consensus"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/triedb"
 )
 
 func verifyUnbrokenCanonchain(hc *HeaderChain) error {
@@ -36,8 +36,10 @@ func verifyUnbrokenCanonchain(hc *HeaderChain) error {
 	for {
 		canonHash := rawdb.ReadCanonicalHash(hc.chainDb, h.Number.Uint64())
 		if exp := h.Hash(); canonHash != exp {
-			return fmt.Errorf("Canon hash chain broken, block %d got %x, expected %x",
-				h.Number, canonHash[:8], exp[:8])
+			return fmt.Errorf(
+				"Canon hash chain broken, block %d got %x, expected %x",
+				h.Number, canonHash[:8], exp[:8],
+			)
 		}
 		// Verify that we have the TD
 		if td := rawdb.ReadTd(hc.chainDb, canonHash, h.Number.Uint64()); td == nil {
@@ -51,7 +53,9 @@ func verifyUnbrokenCanonchain(hc *HeaderChain) error {
 	return nil
 }
 
-func testInsert(t *testing.T, hc *HeaderChain, chain []*types.Header, wantStatus WriteStatus, wantErr error, forker *ForkChoice) {
+func testInsert(
+	t *testing.T, hc *HeaderChain, chain []*types.Header, wantStatus WriteStatus, wantErr error, forker *ForkChoice,
+) {
 	t.Helper()
 
 	status, err := hc.InsertHeaderChain(chain, time.Now(), forker)

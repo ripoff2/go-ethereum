@@ -26,17 +26,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/internal/era"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/internal/era"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/triedb"
 )
 
 var (
@@ -56,26 +56,30 @@ func TestHistoryImportAndExport(t *testing.T) {
 	)
 
 	// Generate chain.
-	db, blocks, _ := core.GenerateChainWithGenesis(genesis, ethash.NewFaker(), int(count), func(i int, g *core.BlockGen) {
-		if i == 0 {
-			return
-		}
-		tx, err := types.SignNewTx(key, signer, &types.DynamicFeeTx{
-			ChainID:    genesis.Config.ChainID,
-			Nonce:      uint64(i - 1),
-			GasTipCap:  common.Big0,
-			GasFeeCap:  g.PrevBlock(0).BaseFee(),
-			Gas:        50000,
-			To:         &common.Address{0xaa},
-			Value:      big.NewInt(int64(i)),
-			Data:       nil,
-			AccessList: nil,
-		})
-		if err != nil {
-			t.Fatalf("error creating tx: %v", err)
-		}
-		g.AddTx(tx)
-	})
+	db, blocks, _ := core.GenerateChainWithGenesis(
+		genesis, ethash.NewFaker(), int(count), func(i int, g *core.BlockGen) {
+			if i == 0 {
+				return
+			}
+			tx, err := types.SignNewTx(
+				key, signer, &types.DynamicFeeTx{
+					ChainID:    genesis.Config.ChainID,
+					Nonce:      uint64(i - 1),
+					GasTipCap:  common.Big0,
+					GasFeeCap:  g.PrevBlock(0).BaseFee(),
+					Gas:        50000,
+					To:         &common.Address{0xaa},
+					Value:      big.NewInt(int64(i)),
+					Data:       nil,
+					AccessList: nil,
+				},
+			)
+			if err != nil {
+				t.Fatalf("error creating tx: %v", err)
+			}
+			g.AddTx(tx)
+		},
+	)
 
 	// Initialize BlockChain.
 	chain, err := core.NewBlockChain(db, nil, genesis, nil, ethash.NewFaker(), vm.Config{}, nil, nil)
@@ -166,9 +170,11 @@ func TestHistoryImportAndExport(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	t.Cleanup(func() {
-		db2.Close()
-	})
+	t.Cleanup(
+		func() {
+			db2.Close()
+		},
+	)
 
 	genesis.MustCommit(db2, triedb.NewDatabase(db, triedb.HashDefaults))
 	imported, err := core.NewBlockChain(db2, nil, genesis, nil, ethash.NewFaker(), vm.Config{}, nil, nil)
@@ -179,6 +185,9 @@ func TestHistoryImportAndExport(t *testing.T) {
 		t.Fatalf("failed to import chain: %v", err)
 	}
 	if have, want := imported.CurrentHeader(), chain.CurrentHeader(); have.Hash() != want.Hash() {
-		t.Fatalf("imported chain does not match expected, have (%d, %s) want (%d, %s)", have.Number, have.Hash(), want.Number, want.Hash())
+		t.Fatalf(
+			"imported chain does not match expected, have (%d, %s) want (%d, %s)", have.Number, have.Hash(),
+			want.Number, want.Hash(),
+		)
 	}
 }

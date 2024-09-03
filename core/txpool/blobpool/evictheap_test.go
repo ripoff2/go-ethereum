@@ -21,9 +21,9 @@ import (
 	mrand "math/rand"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 var rand = mrand.New(mrand.NewSource(1))
@@ -144,19 +144,21 @@ func TestPriceHeapSorting(t *testing.T) {
 				basefeeJumps = dynamicFeeJumps(execFee)
 				blobfeeJumps = dynamicFeeJumps(blobFee)
 			)
-			index[addr] = []*blobTxMeta{{
-				id:                   uint64(j),
-				size:                 128 * 1024,
-				nonce:                0,
-				execTipCap:           execTip,
-				execFeeCap:           execFee,
-				blobFeeCap:           blobFee,
-				basefeeJumps:         basefeeJumps,
-				blobfeeJumps:         blobfeeJumps,
-				evictionExecTip:      execTip,
-				evictionExecFeeJumps: basefeeJumps,
-				evictionBlobFeeJumps: blobfeeJumps,
-			}}
+			index[addr] = []*blobTxMeta{
+				{
+					id:                   uint64(j),
+					size:                 128 * 1024,
+					nonce:                0,
+					execTipCap:           execTip,
+					execFeeCap:           execFee,
+					blobFeeCap:           blobFee,
+					basefeeJumps:         basefeeJumps,
+					blobfeeJumps:         blobfeeJumps,
+					evictionExecTip:      execTip,
+					evictionExecFeeJumps: basefeeJumps,
+					evictionBlobFeeJumps: blobfeeJumps,
+				},
+			}
 		}
 		// Create a price heap and check the pop order
 		priceheap := newPriceHeap(uint256.NewInt(tt.basefee), uint256.NewInt(tt.blobfee), index)
@@ -164,7 +166,9 @@ func TestPriceHeapSorting(t *testing.T) {
 
 		for j := 0; j < len(tt.order); j++ {
 			if next := heap.Pop(priceheap); int(next.(common.Address)[0]) != tt.order[j] {
-				t.Errorf("test %d, item %d: order mismatch: have %d, want %d", i, j, next.(common.Address)[0], tt.order[j])
+				t.Errorf(
+					"test %d, item %d: order mismatch: have %d, want %d", i, j, next.(common.Address)[0], tt.order[j],
+				)
 			} else {
 				delete(index, next.(common.Address)) // remove to simulate a correct pool for the test
 			}
@@ -203,19 +207,21 @@ func benchmarkPriceHeapReinit(b *testing.B, datacap uint64) {
 			basefeeJumps = dynamicFeeJumps(execFee)
 			blobfeeJumps = dynamicFeeJumps(blobFee)
 		)
-		index[addr] = []*blobTxMeta{{
-			id:                   uint64(i),
-			size:                 128 * 1024,
-			nonce:                0,
-			execTipCap:           execTip,
-			execFeeCap:           execFee,
-			blobFeeCap:           blobFee,
-			basefeeJumps:         basefeeJumps,
-			blobfeeJumps:         blobfeeJumps,
-			evictionExecTip:      execTip,
-			evictionExecFeeJumps: basefeeJumps,
-			evictionBlobFeeJumps: blobfeeJumps,
-		}}
+		index[addr] = []*blobTxMeta{
+			{
+				id:                   uint64(i),
+				size:                 128 * 1024,
+				nonce:                0,
+				execTipCap:           execTip,
+				execFeeCap:           execFee,
+				blobFeeCap:           blobFee,
+				basefeeJumps:         basefeeJumps,
+				blobfeeJumps:         blobfeeJumps,
+				evictionExecTip:      execTip,
+				evictionExecFeeJumps: basefeeJumps,
+				evictionBlobFeeJumps: blobfeeJumps,
+			},
+		}
 	}
 	// Create a price heap and reinit it over and over
 	heap := newPriceHeap(uint256.NewInt(rand.Uint64()), uint256.NewInt(rand.Uint64()), index)
@@ -263,19 +269,21 @@ func benchmarkPriceHeapOverflow(b *testing.B, datacap uint64) {
 			basefeeJumps = dynamicFeeJumps(execFee)
 			blobfeeJumps = dynamicFeeJumps(blobFee)
 		)
-		index[addr] = []*blobTxMeta{{
-			id:                   uint64(i),
-			size:                 128 * 1024,
-			nonce:                0,
-			execTipCap:           execTip,
-			execFeeCap:           execFee,
-			blobFeeCap:           blobFee,
-			basefeeJumps:         basefeeJumps,
-			blobfeeJumps:         blobfeeJumps,
-			evictionExecTip:      execTip,
-			evictionExecFeeJumps: basefeeJumps,
-			evictionBlobFeeJumps: blobfeeJumps,
-		}}
+		index[addr] = []*blobTxMeta{
+			{
+				id:                   uint64(i),
+				size:                 128 * 1024,
+				nonce:                0,
+				execTipCap:           execTip,
+				execFeeCap:           execFee,
+				blobFeeCap:           blobFee,
+				basefeeJumps:         basefeeJumps,
+				blobfeeJumps:         blobfeeJumps,
+				evictionExecTip:      execTip,
+				evictionExecFeeJumps: basefeeJumps,
+				evictionBlobFeeJumps: blobfeeJumps,
+			},
+		}
 	}
 	// Create a price heap and overflow it over and over
 	evict := newPriceHeap(uint256.NewInt(rand.Uint64()), uint256.NewInt(rand.Uint64()), index)

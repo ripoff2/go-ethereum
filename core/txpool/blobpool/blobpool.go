@@ -29,20 +29,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/misc/eip1559"
-	"github.com/ethereum/go-ethereum/consensus/misc/eip4844"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/txpool"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/holiman/billy"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus/misc/eip1559"
+	"github.com/ripoff2/go-ethereum/consensus/misc/eip4844"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/txpool"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 const (
@@ -510,9 +510,11 @@ func (p *BlobPool) recheck(addr common.Address, inclusions map[common.Hash]uint6
 	if inclusions != nil && txs == nil { // during reorgs, we might find new accounts
 		return
 	}
-	sort.Slice(txs, func(i, j int) bool {
-		return txs[i].nonce < txs[j].nonce
-	})
+	sort.Slice(
+		txs, func(i, j int) bool {
+			return txs[i].nonce < txs[j].nonce
+		},
+	)
 	// If there is a gap between the chain state and the blob pool, drop
 	// all the transactions as they are non-executable. Similarly, if the
 	// entire tx range was included, drop all.
@@ -580,7 +582,9 @@ func (p *BlobPool) recheck(addr common.Address, inclusions map[common.Hash]uint6
 			}
 			txs = txs[1:]
 		}
-		log.Trace("Dropping overlapped blob transactions", "from", addr, "overlapped", nonces, "ids", ids, "left", len(txs))
+		log.Trace(
+			"Dropping overlapped blob transactions", "from", addr, "overlapped", nonces, "ids", ids, "left", len(txs),
+		)
 		dropOverlappedMeter.Mark(int64(len(ids)))
 
 		for _, id := range ids {
@@ -654,7 +658,9 @@ func (p *BlobPool) recheck(addr common.Address, inclusions map[common.Hash]uint6
 		}
 		txs = txs[:i]
 
-		log.Error("Dropping gapped blob transactions", "from", addr, "missing", txs[i-1].nonce+1, "drop", nonces, "ids", ids)
+		log.Error(
+			"Dropping gapped blob transactions", "from", addr, "missing", txs[i-1].nonce+1, "drop", nonces, "ids", ids,
+		)
 		dropGappedMeter.Mark(int64(len(ids)))
 
 		for _, id := range ids {
@@ -700,7 +706,10 @@ func (p *BlobPool) recheck(addr common.Address, inclusions map[common.Hash]uint6
 		} else {
 			p.index[addr] = txs
 		}
-		log.Warn("Dropping overdrafted blob transactions", "from", addr, "balance", balance, "spent", spent, "drop", nonces, "ids", ids)
+		log.Warn(
+			"Dropping overdrafted blob transactions", "from", addr, "balance", balance, "spent", spent, "drop", nonces,
+			"ids", ids,
+		)
 		dropOverdraftedMeter.Mark(int64(len(ids)))
 
 		for _, id := range ids {
@@ -841,7 +850,9 @@ func (p *BlobPool) Reset(oldHead, newHead *types.Header) {
 //
 // The transactionblock inclusion infos are also returned to allow tracking any
 // just-included blocks by block number in the limbo.
-func (p *BlobPool) reorg(oldHead, newHead *types.Header) (map[common.Address][]*types.Transaction, map[common.Hash]uint64) {
+func (p *BlobPool) reorg(oldHead, newHead *types.Header) (
+	map[common.Address][]*types.Transaction, map[common.Hash]uint64,
+) {
 	// If the pool was not yet initialized, don't do anything
 	if oldHead == nil {
 		return nil, nil
@@ -878,14 +889,18 @@ func (p *BlobPool) reorg(oldHead, newHead *types.Header) (map[common.Address][]*
 		if newNum >= oldNum {
 			// If we reorged to a same or higher number, then it's not a case
 			// of setHead
-			log.Warn("Blobpool reset with missing old head",
-				"old", oldHead.Hash(), "oldnum", oldNum, "new", newHead.Hash(), "newnum", newNum)
+			log.Warn(
+				"Blobpool reset with missing old head",
+				"old", oldHead.Hash(), "oldnum", oldNum, "new", newHead.Hash(), "newnum", newNum,
+			)
 			return nil, nil
 		}
 		// If the reorg ended up on a lower number, it's indicative of setHead
 		// being the cause
-		log.Debug("Skipping blobpool reset caused by setHead",
-			"old", oldHead.Hash(), "oldnum", oldNum, "new", newHead.Hash(), "newnum", newNum)
+		log.Debug(
+			"Skipping blobpool reset caused by setHead",
+			"old", oldHead.Hash(), "oldnum", oldNum, "new", newHead.Hash(), "newnum", newNum,
+		)
 		return nil, nil
 	}
 	// Both old and new blocks exist, traverse through the progression chain
@@ -1058,7 +1073,10 @@ func (p *BlobPool) SetGasTip(tip *big.Int) {
 						p.reserve(addr, false)
 					}
 					// Clear out the transactions from the data store
-					log.Warn("Dropping underpriced blob transaction", "from", addr, "rejected", tx.nonce, "tip", tx.execTipCap, "want", tip, "drop", nonces, "ids", ids)
+					log.Warn(
+						"Dropping underpriced blob transaction", "from", addr, "rejected", tx.nonce, "tip",
+						tx.execTipCap, "want", tip, "drop", nonces, "ids", ids,
+					)
 					dropUnderpricedMeter.Mark(int64(len(ids)))
 
 					for _, id := range ids {
@@ -1139,11 +1157,18 @@ func (p *BlobPool) validateTx(tx *types.Transaction) error {
 		// Account can support the replacement, but the price bump must also be met
 		switch {
 		case tx.GasFeeCapIntCmp(prev.execFeeCap.ToBig()) <= 0:
-			return fmt.Errorf("%w: new tx gas fee cap %v <= %v queued", txpool.ErrReplaceUnderpriced, tx.GasFeeCap(), prev.execFeeCap)
+			return fmt.Errorf(
+				"%w: new tx gas fee cap %v <= %v queued", txpool.ErrReplaceUnderpriced, tx.GasFeeCap(), prev.execFeeCap,
+			)
 		case tx.GasTipCapIntCmp(prev.execTipCap.ToBig()) <= 0:
-			return fmt.Errorf("%w: new tx gas tip cap %v <= %v queued", txpool.ErrReplaceUnderpriced, tx.GasTipCap(), prev.execTipCap)
+			return fmt.Errorf(
+				"%w: new tx gas tip cap %v <= %v queued", txpool.ErrReplaceUnderpriced, tx.GasTipCap(), prev.execTipCap,
+			)
 		case tx.BlobGasFeeCapIntCmp(prev.blobFeeCap.ToBig()) <= 0:
-			return fmt.Errorf("%w: new tx blob gas fee cap %v <= %v queued", txpool.ErrReplaceUnderpriced, tx.BlobGasFeeCap(), prev.blobFeeCap)
+			return fmt.Errorf(
+				"%w: new tx blob gas fee cap %v <= %v queued", txpool.ErrReplaceUnderpriced, tx.BlobGasFeeCap(),
+				prev.blobFeeCap,
+			)
 		}
 		var (
 			multiplier = uint256.NewInt(100 + p.config.PriceBump)
@@ -1155,11 +1180,20 @@ func (p *BlobPool) validateTx(tx *types.Transaction) error {
 		)
 		switch {
 		case tx.GasFeeCapIntCmp(minGasFeeCap.ToBig()) < 0:
-			return fmt.Errorf("%w: new tx gas fee cap %v < %v queued + %d%% replacement penalty", txpool.ErrReplaceUnderpriced, tx.GasFeeCap(), prev.execFeeCap, p.config.PriceBump)
+			return fmt.Errorf(
+				"%w: new tx gas fee cap %v < %v queued + %d%% replacement penalty", txpool.ErrReplaceUnderpriced,
+				tx.GasFeeCap(), prev.execFeeCap, p.config.PriceBump,
+			)
 		case tx.GasTipCapIntCmp(minGasTipCap.ToBig()) < 0:
-			return fmt.Errorf("%w: new tx gas tip cap %v < %v queued + %d%% replacement penalty", txpool.ErrReplaceUnderpriced, tx.GasTipCap(), prev.execTipCap, p.config.PriceBump)
+			return fmt.Errorf(
+				"%w: new tx gas tip cap %v < %v queued + %d%% replacement penalty", txpool.ErrReplaceUnderpriced,
+				tx.GasTipCap(), prev.execTipCap, p.config.PriceBump,
+			)
 		case tx.BlobGasFeeCapIntCmp(minBlobGasFeeCap.ToBig()) < 0:
-			return fmt.Errorf("%w: new tx blob gas fee cap %v < %v queued + %d%% replacement penalty", txpool.ErrReplaceUnderpriced, tx.BlobGasFeeCap(), prev.blobFeeCap, p.config.PriceBump)
+			return fmt.Errorf(
+				"%w: new tx blob gas fee cap %v < %v queued + %d%% replacement penalty", txpool.ErrReplaceUnderpriced,
+				tx.BlobGasFeeCap(), prev.blobFeeCap, p.config.PriceBump,
+			)
 		}
 	}
 	return nil
@@ -1493,15 +1527,17 @@ func (p *BlobPool) Pending(filter txpool.PendingFilter) map[common.Address][]*tx
 				}
 			}
 			// Transaction was accepted according to the filter, append to the pending list
-			lazies = append(lazies, &txpool.LazyTransaction{
-				Pool:      p,
-				Hash:      tx.hash,
-				Time:      execStart, // TODO(karalabe): Maybe save these and use that?
-				GasFeeCap: tx.execFeeCap,
-				GasTipCap: tx.execTipCap,
-				Gas:       tx.execGas,
-				BlobGas:   tx.blobGas,
-			})
+			lazies = append(
+				lazies, &txpool.LazyTransaction{
+					Pool:      p,
+					Hash:      tx.hash,
+					Time:      execStart, // TODO(karalabe): Maybe save these and use that?
+					GasFeeCap: tx.execFeeCap,
+					GasTipCap: tx.execTipCap,
+					Gas:       tx.execGas,
+					BlobGas:   tx.blobGas,
+				},
+			)
 		}
 		if len(lazies) > 0 {
 			pending[addr] = lazies
@@ -1533,10 +1569,18 @@ func (p *BlobPool) updateStorageMetrics() {
 		datareal += slotDataused + slotDatagaps
 		slotused += shelf.FilledSlots
 
-		metrics.GetOrRegisterGauge(fmt.Sprintf(shelfDatausedGaugeName, shelf.SlotSize/blobSize), nil).Update(int64(slotDataused))
-		metrics.GetOrRegisterGauge(fmt.Sprintf(shelfDatagapsGaugeName, shelf.SlotSize/blobSize), nil).Update(int64(slotDatagaps))
-		metrics.GetOrRegisterGauge(fmt.Sprintf(shelfSlotusedGaugeName, shelf.SlotSize/blobSize), nil).Update(int64(shelf.FilledSlots))
-		metrics.GetOrRegisterGauge(fmt.Sprintf(shelfSlotgapsGaugeName, shelf.SlotSize/blobSize), nil).Update(int64(shelf.GappedSlots))
+		metrics.GetOrRegisterGauge(
+			fmt.Sprintf(shelfDatausedGaugeName, shelf.SlotSize/blobSize), nil,
+		).Update(int64(slotDataused))
+		metrics.GetOrRegisterGauge(
+			fmt.Sprintf(shelfDatagapsGaugeName, shelf.SlotSize/blobSize), nil,
+		).Update(int64(slotDatagaps))
+		metrics.GetOrRegisterGauge(
+			fmt.Sprintf(shelfSlotusedGaugeName, shelf.SlotSize/blobSize), nil,
+		).Update(int64(shelf.FilledSlots))
+		metrics.GetOrRegisterGauge(
+			fmt.Sprintf(shelfSlotgapsGaugeName, shelf.SlotSize/blobSize), nil,
+		).Update(int64(shelf.GappedSlots))
 
 		if shelf.SlotSize/blobSize > maxBlobsPerTransaction {
 			oversizedDataused += slotDataused
@@ -1575,10 +1619,18 @@ func (p *BlobPool) updateLimboMetrics() {
 		datareal += slotDataused + slotDatagaps
 		slotused += shelf.FilledSlots
 
-		metrics.GetOrRegisterGauge(fmt.Sprintf(limboShelfDatausedGaugeName, shelf.SlotSize/blobSize), nil).Update(int64(slotDataused))
-		metrics.GetOrRegisterGauge(fmt.Sprintf(limboShelfDatagapsGaugeName, shelf.SlotSize/blobSize), nil).Update(int64(slotDatagaps))
-		metrics.GetOrRegisterGauge(fmt.Sprintf(limboShelfSlotusedGaugeName, shelf.SlotSize/blobSize), nil).Update(int64(shelf.FilledSlots))
-		metrics.GetOrRegisterGauge(fmt.Sprintf(limboShelfSlotgapsGaugeName, shelf.SlotSize/blobSize), nil).Update(int64(shelf.GappedSlots))
+		metrics.GetOrRegisterGauge(
+			fmt.Sprintf(limboShelfDatausedGaugeName, shelf.SlotSize/blobSize), nil,
+		).Update(int64(slotDataused))
+		metrics.GetOrRegisterGauge(
+			fmt.Sprintf(limboShelfDatagapsGaugeName, shelf.SlotSize/blobSize), nil,
+		).Update(int64(slotDatagaps))
+		metrics.GetOrRegisterGauge(
+			fmt.Sprintf(limboShelfSlotusedGaugeName, shelf.SlotSize/blobSize), nil,
+		).Update(int64(shelf.FilledSlots))
+		metrics.GetOrRegisterGauge(
+			fmt.Sprintf(limboShelfSlotgapsGaugeName, shelf.SlotSize/blobSize), nil,
+		).Update(int64(shelf.GappedSlots))
 	}
 	limboDatausedGauge.Update(int64(dataused))
 	limboDatarealGauge.Update(int64(datareal))

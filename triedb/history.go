@@ -19,8 +19,8 @@ package triedb
 import (
 	"errors"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/triedb/pathdb"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/triedb/pathdb"
 )
 
 // AccountHistory inspects the account history within the specified range.
@@ -51,7 +51,9 @@ func (db *Database) AccountHistory(address common.Address, start, end uint64) (*
 // Note, slot refers to the hash of the raw slot key.
 //
 // This function is only supported by path mode database.
-func (db *Database) StorageHistory(address common.Address, slot common.Hash, start uint64, end uint64) (*pathdb.HistoryStats, error) {
+func (db *Database) StorageHistory(
+	address common.Address, slot common.Hash, start uint64, end uint64,
+) (*pathdb.HistoryStats, error) {
 	pdb, ok := db.backend.(*pathdb.Database)
 	if !ok {
 		return nil, errors.New("not supported")

@@ -27,7 +27,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,26 +35,28 @@ import (
 func TestUnpack(t *testing.T) {
 	t.Parallel()
 	for i, test := range packUnpackTests {
-		t.Run(strconv.Itoa(i)+" "+test.def, func(t *testing.T) {
-			//Unpack
-			def := fmt.Sprintf(`[{ "name" : "method", "type": "function", "outputs": %s}]`, test.def)
-			abi, err := JSON(strings.NewReader(def))
-			if err != nil {
-				t.Fatalf("invalid ABI definition %s: %v", def, err)
-			}
-			encb, err := hex.DecodeString(test.packed)
-			if err != nil {
-				t.Fatalf("invalid hex %s: %v", test.packed, err)
-			}
-			out, err := abi.Unpack("method", encb)
-			if err != nil {
-				t.Errorf("test %d (%v) failed: %v", i, test.def, err)
-				return
-			}
-			if !reflect.DeepEqual(test.unpacked, ConvertType(out[0], test.unpacked)) {
-				t.Errorf("test %d (%v) failed: expected %v, got %v", i, test.def, test.unpacked, out[0])
-			}
-		})
+		t.Run(
+			strconv.Itoa(i)+" "+test.def, func(t *testing.T) {
+				//Unpack
+				def := fmt.Sprintf(`[{ "name" : "method", "type": "function", "outputs": %s}]`, test.def)
+				abi, err := JSON(strings.NewReader(def))
+				if err != nil {
+					t.Fatalf("invalid ABI definition %s: %v", def, err)
+				}
+				encb, err := hex.DecodeString(test.packed)
+				if err != nil {
+					t.Fatalf("invalid hex %s: %v", test.packed, err)
+				}
+				out, err := abi.Unpack("method", encb)
+				if err != nil {
+					t.Errorf("test %d (%v) failed: %v", i, test.def, err)
+					return
+				}
+				if !reflect.DeepEqual(test.unpacked, ConvertType(out[0], test.unpacked)) {
+					t.Errorf("test %d (%v) failed: expected %v, got %v", i, test.def, test.unpacked, out[0])
+				}
+			},
+		)
 	}
 }
 
@@ -227,28 +229,30 @@ var unpackTests = []unpackTest{
 func TestLocalUnpackTests(t *testing.T) {
 	t.Parallel()
 	for i, test := range unpackTests {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			//Unpack
-			def := fmt.Sprintf(`[{ "name" : "method", "type": "function", "outputs": %s}]`, test.def)
-			abi, err := JSON(strings.NewReader(def))
-			if err != nil {
-				t.Fatalf("invalid ABI definition %s: %v", def, err)
-			}
-			encb, err := hex.DecodeString(test.enc)
-			if err != nil {
-				t.Fatalf("invalid hex %s: %v", test.enc, err)
-			}
-			outptr := reflect.New(reflect.TypeOf(test.want))
-			err = abi.UnpackIntoInterface(outptr.Interface(), "method", encb)
-			if err := test.checkError(err); err != nil {
-				t.Errorf("test %d (%v) failed: %v", i, test.def, err)
-				return
-			}
-			out := outptr.Elem().Interface()
-			if !reflect.DeepEqual(test.want, out) {
-				t.Errorf("test %d (%v) failed: expected %v, got %v", i, test.def, test.want, out)
-			}
-		})
+		t.Run(
+			strconv.Itoa(i), func(t *testing.T) {
+				//Unpack
+				def := fmt.Sprintf(`[{ "name" : "method", "type": "function", "outputs": %s}]`, test.def)
+				abi, err := JSON(strings.NewReader(def))
+				if err != nil {
+					t.Fatalf("invalid ABI definition %s: %v", def, err)
+				}
+				encb, err := hex.DecodeString(test.enc)
+				if err != nil {
+					t.Fatalf("invalid hex %s: %v", test.enc, err)
+				}
+				outptr := reflect.New(reflect.TypeOf(test.want))
+				err = abi.UnpackIntoInterface(outptr.Interface(), "method", encb)
+				if err := test.checkError(err); err != nil {
+					t.Errorf("test %d (%v) failed: %v", i, test.def, err)
+					return
+				}
+				out := outptr.Elem().Interface()
+				if !reflect.DeepEqual(test.want, out) {
+					t.Errorf("test %d (%v) failed: expected %v, got %v", i, test.def, test.want, out)
+				}
+			},
+		)
 	}
 }
 
@@ -342,64 +346,68 @@ func TestMethodMultiReturn(t *testing.T) {
 		expected interface{}
 		error    string
 		name     string
-	}{{
-		&methodMultiOutput{},
-		&expected,
-		"",
-		"Can unpack into structure",
-	}, {
-		&reversed{},
-		&reversed{expected.String, expected.Int},
-		"",
-		"Can unpack into reversed structure",
-	}, {
-		&[]interface{}{&bigint, new(string)},
-		&[]interface{}{&expected.Int, &expected.String},
-		"",
-		"Can unpack into a slice",
-	}, {
-		&[]interface{}{&bigint, ""},
-		&[]interface{}{&expected.Int, expected.String},
-		"",
-		"Can unpack into a slice without indirection",
-	}, {
-		&[2]interface{}{&bigint, new(string)},
-		&[2]interface{}{&expected.Int, &expected.String},
-		"",
-		"Can unpack into an array",
-	}, {
-		&[2]interface{}{},
-		&[2]interface{}{expected.Int, expected.String},
-		"",
-		"Can unpack into interface array",
-	}, {
-		newInterfaceSlice(2),
-		&[]interface{}{expected.Int, expected.String},
-		"",
-		"Can unpack into interface slice",
-	}, {
-		&[]interface{}{new(int), new(int)},
-		&[]interface{}{&expected.Int, &expected.String},
-		"abi: cannot unmarshal *big.Int in to int",
-		"Can not unpack into a slice with wrong types",
-	}, {
-		&[]interface{}{new(int)},
-		&[]interface{}{},
-		"abi: insufficient number of arguments for unpack, want 2, got 1",
-		"Can not unpack into a slice with wrong types",
-	}}
+	}{
+		{
+			&methodMultiOutput{},
+			&expected,
+			"",
+			"Can unpack into structure",
+		}, {
+			&reversed{},
+			&reversed{expected.String, expected.Int},
+			"",
+			"Can unpack into reversed structure",
+		}, {
+			&[]interface{}{&bigint, new(string)},
+			&[]interface{}{&expected.Int, &expected.String},
+			"",
+			"Can unpack into a slice",
+		}, {
+			&[]interface{}{&bigint, ""},
+			&[]interface{}{&expected.Int, expected.String},
+			"",
+			"Can unpack into a slice without indirection",
+		}, {
+			&[2]interface{}{&bigint, new(string)},
+			&[2]interface{}{&expected.Int, &expected.String},
+			"",
+			"Can unpack into an array",
+		}, {
+			&[2]interface{}{},
+			&[2]interface{}{expected.Int, expected.String},
+			"",
+			"Can unpack into interface array",
+		}, {
+			newInterfaceSlice(2),
+			&[]interface{}{expected.Int, expected.String},
+			"",
+			"Can unpack into interface slice",
+		}, {
+			&[]interface{}{new(int), new(int)},
+			&[]interface{}{&expected.Int, &expected.String},
+			"abi: cannot unmarshal *big.Int in to int",
+			"Can not unpack into a slice with wrong types",
+		}, {
+			&[]interface{}{new(int)},
+			&[]interface{}{},
+			"abi: insufficient number of arguments for unpack, want 2, got 1",
+			"Can not unpack into a slice with wrong types",
+		},
+	}
 	for _, tc := range testCases {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			require := require.New(t)
-			err := abi.UnpackIntoInterface(tc.dest, "multi", data)
-			if tc.error == "" {
-				require.Nil(err, "Should be able to unpack method outputs.")
-				require.Equal(tc.expected, tc.dest)
-			} else {
-				require.EqualError(err, tc.error)
-			}
-		})
+		t.Run(
+			tc.name, func(t *testing.T) {
+				require := require.New(t)
+				err := abi.UnpackIntoInterface(tc.dest, "multi", data)
+				if tc.error == "" {
+					require.Nil(err, "Should be able to unpack method outputs.")
+					require.Equal(tc.expected, tc.dest)
+				} else {
+					require.EqualError(err, tc.error)
+				}
+			},
+		)
 	}
 }
 
@@ -505,13 +513,19 @@ func TestMultiReturnWithDeeplyNestedArray(t *testing.T) {
 	buff := new(bytes.Buffer)
 	// construct the test array, each 3 char element is joined with 61 '0' chars,
 	// to from the ((3 + 61) * 0.5) = 32 byte elements in the array.
-	buff.Write(common.Hex2Bytes(strings.Join([]string{
-		"", //empty, to apply the 61-char separator to the first element as well.
-		"111", "112", "113", "121", "122", "123",
-		"211", "212", "213", "221", "222", "223",
-		"311", "312", "313", "321", "322", "323",
-		"411", "412", "413", "421", "422", "423",
-	}, "0000000000000000000000000000000000000000000000000000000000000")))
+	buff.Write(
+		common.Hex2Bytes(
+			strings.Join(
+				[]string{
+					"", //empty, to apply the 61-char separator to the first element as well.
+					"111", "112", "113", "121", "122", "123",
+					"211", "212", "213", "221", "222", "223",
+					"311", "312", "313", "321", "322", "323",
+					"411", "412", "413", "421", "422", "423",
+				}, "0000000000000000000000000000000000000000000000000000000000000",
+			),
+		),
+	)
 	buff.Write(common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000009876"))
 
 	ret1, ret1Exp := new([4][2][3]uint64), [4][2][3]uint64{
@@ -576,7 +590,9 @@ func TestUnmarshal(t *testing.T) {
 
 	// marshal int
 	var Int *big.Int
-	err = abi.UnpackIntoInterface(&Int, "int", common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000001"))
+	err = abi.UnpackIntoInterface(
+		&Int, "int", common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000001"),
+	)
 	if err != nil {
 		t.Error(err)
 	}
@@ -587,7 +603,9 @@ func TestUnmarshal(t *testing.T) {
 
 	// marshal bool
 	var Bool bool
-	err = abi.UnpackIntoInterface(&Bool, "bool", common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000001"))
+	err = abi.UnpackIntoInterface(
+		&Bool, "bool", common.Hex2Bytes("0000000000000000000000000000000000000000000000000000000000000001"),
+	)
 	if err != nil {
 		t.Error(err)
 	}
@@ -895,28 +913,32 @@ func TestOOMMaliciousInput(t *testing.T) {
 				"0000000000000000000000000000000000000000000000000000000000000001" + // elem 1
 				"0000000000000000000000000000000000000000000000000000000000000002", // elem 2
 		},
-		{ // Length larger than 64 bits
+		{
+			// Length larger than 64 bits
 			def: `[{"type": "uint8[]"}]`,
 			enc: "0000000000000000000000000000000000000000000000000000000000000020" + // offset
 				"00ffffffffffffffffffffffffffffffffffffffffffffff0000000000000002" + // num elems
 				"0000000000000000000000000000000000000000000000000000000000000001" + // elem 1
 				"0000000000000000000000000000000000000000000000000000000000000002", // elem 2
 		},
-		{ // Offset very large (over 64 bits)
+		{
+			// Offset very large (over 64 bits)
 			def: `[{"type": "uint8[]"}]`,
 			enc: "00ffffffffffffffffffffffffffffffffffffffffffffff0000000000000020" + // offset
 				"0000000000000000000000000000000000000000000000000000000000000002" + // num elems
 				"0000000000000000000000000000000000000000000000000000000000000001" + // elem 1
 				"0000000000000000000000000000000000000000000000000000000000000002", // elem 2
 		},
-		{ // Offset very large (below 64 bits)
+		{
+			// Offset very large (below 64 bits)
 			def: `[{"type": "uint8[]"}]`,
 			enc: "0000000000000000000000000000000000000000000000007ffffffffff00020" + // offset
 				"0000000000000000000000000000000000000000000000000000000000000002" + // num elems
 				"0000000000000000000000000000000000000000000000000000000000000001" + // elem 1
 				"0000000000000000000000000000000000000000000000000000000000000002", // elem 2
 		},
-		{ // Offset negative (as 64 bit)
+		{
+			// Offset negative (as 64 bit)
 			def: `[{"type": "uint8[]"}]`,
 			enc: "000000000000000000000000000000000000000000000000f000000000000020" + // offset
 				"0000000000000000000000000000000000000000000000000000000000000002" + // num elems
@@ -924,14 +946,16 @@ func TestOOMMaliciousInput(t *testing.T) {
 				"0000000000000000000000000000000000000000000000000000000000000002", // elem 2
 		},
 
-		{ // Negative length
+		{
+			// Negative length
 			def: `[{"type": "uint8[]"}]`,
 			enc: "0000000000000000000000000000000000000000000000000000000000000020" + // offset
 				"000000000000000000000000000000000000000000000000f000000000000002" + // num elems
 				"0000000000000000000000000000000000000000000000000000000000000001" + // elem 1
 				"0000000000000000000000000000000000000000000000000000000000000002", // elem 2
 		},
-		{ // Very large length
+		{
+			// Very large length
 			def: `[{"type": "uint8[]"}]`,
 			enc: "0000000000000000000000000000000000000000000000000000000000000020" + // offset
 				"0000000000000000000000000000000000000000000000007fffffffff000002" + // num elems

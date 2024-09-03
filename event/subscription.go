@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/common/mclock"
 )
 
 // Subscription represents a stream of events. The carrier of the events is typically a
@@ -95,9 +95,11 @@ func (s *funcSub) Err() <-chan error {
 // Resubscribe applies backoff between calls to fn. The time between calls is adapted
 // based on the error rate, but will never exceed backoffMax.
 func Resubscribe(backoffMax time.Duration, fn ResubscribeFunc) Subscription {
-	return ResubscribeErr(backoffMax, func(ctx context.Context, _ error) (Subscription, error) {
-		return fn(ctx)
-	})
+	return ResubscribeErr(
+		backoffMax, func(ctx context.Context, _ error) (Subscription, error) {
+			return fn(ctx)
+		},
+	)
 }
 
 // A ResubscribeFunc attempts to establish a subscription.
@@ -142,10 +144,12 @@ type resubscribeSub struct {
 }
 
 func (s *resubscribeSub) Unsubscribe() {
-	s.unsubOnce.Do(func() {
-		s.unsub <- struct{}{}
-		<-s.err
-	})
+	s.unsubOnce.Do(
+		func() {
+			s.unsub <- struct{}{}
+			<-s.err
+		},
+	)
 }
 
 func (s *resubscribeSub) Err() <-chan error {

@@ -23,8 +23,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 // TestExport does basic sanity checks on the export/import functionality
@@ -165,12 +165,14 @@ func TestImportFutureFormat(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer fh.Close()
-	if err := rlp.Encode(fh, &exportHeader{
-		Magic:    exportMagic,
-		Version:  500,
-		Kind:     "testdata",
-		UnixTime: uint64(time.Now().Unix()),
-	}); err != nil {
+	if err := rlp.Encode(
+		fh, &exportHeader{
+			Magic:    exportMagic,
+			Version:  500,
+			Kind:     "testdata",
+			UnixTime: uint64(time.Now().Unix()),
+		},
+	); err != nil {
 		t.Fatal(err)
 	}
 	db2 := rawdb.NewMemoryDatabase()

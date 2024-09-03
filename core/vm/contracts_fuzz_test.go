@@ -19,7 +19,7 @@ package vm
 import (
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 func FuzzPrecompiledContracts(f *testing.F) {
@@ -28,17 +28,19 @@ func FuzzPrecompiledContracts(f *testing.F) {
 	for k := range allPrecompiles {
 		addrs = append(addrs, k)
 	}
-	f.Fuzz(func(t *testing.T, addr uint8, input []byte) {
-		a := addrs[int(addr)%len(addrs)]
-		p := allPrecompiles[a]
-		gas := p.RequiredGas(input)
-		if gas > 10_000_000 {
-			return
-		}
-		inWant := string(input)
-		RunPrecompiledContract(p, input, gas, nil)
-		if inHave := string(input); inWant != inHave {
-			t.Errorf("Precompiled %v modified input data", a)
-		}
-	})
+	f.Fuzz(
+		func(t *testing.T, addr uint8, input []byte) {
+			a := addrs[int(addr)%len(addrs)]
+			p := allPrecompiles[a]
+			gas := p.RequiredGas(input)
+			if gas > 10_000_000 {
+				return
+			}
+			inWant := string(input)
+			RunPrecompiledContract(p, input, gas, nil)
+			if inHave := string(input); inWant != inHave {
+				t.Errorf("Precompiled %v modified input data", a)
+			}
+		},
+	)
 }

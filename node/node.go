@@ -29,17 +29,17 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/ethdb/memorydb"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/gofrs/flock"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/ethdb/memorydb"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 // Node is a container on which services can be registered.
@@ -338,7 +338,9 @@ func ObtainJWTSecret(fileName string) ([]byte, error) {
 	if data, err := os.ReadFile(fileName); err == nil {
 		jwtSecret := common.FromHex(strings.TrimSpace(string(data)))
 		if len(jwtSecret) == 32 {
-			log.Info("Loaded JWT secret file", "path", fileName, "crc32", fmt.Sprintf("%#x", crc32.ChecksumIEEE(jwtSecret)))
+			log.Info(
+				"Loaded JWT secret file", "path", fileName, "crc32", fmt.Sprintf("%#x", crc32.ChecksumIEEE(jwtSecret)),
+			)
 			return jwtSecret, nil
 		}
 		log.Error("Invalid JWT secret", "path", fileName, "length", len(jwtSecret))
@@ -411,13 +413,15 @@ func (n *Node) startRPC() error {
 		if err := server.setListenAddr(n.config.HTTPHost, port); err != nil {
 			return err
 		}
-		if err := server.enableRPC(openAPIs, httpConfig{
-			CorsAllowedOrigins: n.config.HTTPCors,
-			Vhosts:             n.config.HTTPVirtualHosts,
-			Modules:            n.config.HTTPModules,
-			prefix:             n.config.HTTPPathPrefix,
-			rpcEndpointConfig:  rpcConfig,
-		}); err != nil {
+		if err := server.enableRPC(
+			openAPIs, httpConfig{
+				CorsAllowedOrigins: n.config.HTTPCors,
+				Vhosts:             n.config.HTTPVirtualHosts,
+				Modules:            n.config.HTTPModules,
+				prefix:             n.config.HTTPPathPrefix,
+				rpcEndpointConfig:  rpcConfig,
+			},
+		); err != nil {
 			return err
 		}
 		servers = append(servers, server)
@@ -429,12 +433,14 @@ func (n *Node) startRPC() error {
 		if err := server.setListenAddr(n.config.WSHost, port); err != nil {
 			return err
 		}
-		if err := server.enableWS(openAPIs, wsConfig{
-			Modules:           n.config.WSModules,
-			Origins:           n.config.WSOrigins,
-			prefix:            n.config.WSPathPrefix,
-			rpcEndpointConfig: rpcConfig,
-		}); err != nil {
+		if err := server.enableWS(
+			openAPIs, wsConfig{
+				Modules:           n.config.WSModules,
+				Origins:           n.config.WSOrigins,
+				prefix:            n.config.WSPathPrefix,
+				rpcEndpointConfig: rpcConfig,
+			},
+		); err != nil {
 			return err
 		}
 		servers = append(servers, server)
@@ -453,13 +459,15 @@ func (n *Node) startRPC() error {
 			batchResponseSizeLimit: engineAPIBatchResponseSizeLimit,
 			httpBodyLimit:          engineAPIBodyLimit,
 		}
-		err := server.enableRPC(allAPIs, httpConfig{
-			CorsAllowedOrigins: DefaultAuthCors,
-			Vhosts:             n.config.AuthVirtualHosts,
-			Modules:            DefaultAuthModules,
-			prefix:             DefaultAuthPrefix,
-			rpcEndpointConfig:  sharedConfig,
-		})
+		err := server.enableRPC(
+			allAPIs, httpConfig{
+				CorsAllowedOrigins: DefaultAuthCors,
+				Vhosts:             n.config.AuthVirtualHosts,
+				Modules:            DefaultAuthModules,
+				prefix:             DefaultAuthPrefix,
+				rpcEndpointConfig:  sharedConfig,
+			},
+		)
 		if err != nil {
 			return err
 		}
@@ -470,12 +478,14 @@ func (n *Node) startRPC() error {
 		if err := server.setListenAddr(n.config.AuthAddr, port); err != nil {
 			return err
 		}
-		if err := server.enableWS(allAPIs, wsConfig{
-			Modules:           DefaultAuthModules,
-			Origins:           DefaultAuthOrigins,
-			prefix:            DefaultAuthPrefix,
-			rpcEndpointConfig: sharedConfig,
-		}); err != nil {
+		if err := server.enableWS(
+			allAPIs, wsConfig{
+				Modules:           DefaultAuthModules,
+				Origins:           DefaultAuthOrigins,
+				prefix:            DefaultAuthPrefix,
+				rpcEndpointConfig: sharedConfig,
+			},
+		); err != nil {
 			return err
 		}
 		servers = append(servers, server)
@@ -723,14 +733,16 @@ func (n *Node) OpenDatabase(name string, cache, handles int, namespace string, r
 	if n.config.DataDir == "" {
 		db = rawdb.NewMemoryDatabase()
 	} else {
-		db, err = rawdb.Open(rawdb.OpenOptions{
-			Type:      n.config.DBEngine,
-			Directory: n.ResolvePath(name),
-			Namespace: namespace,
-			Cache:     cache,
-			Handles:   handles,
-			ReadOnly:  readonly,
-		})
+		db, err = rawdb.Open(
+			rawdb.OpenOptions{
+				Type:      n.config.DBEngine,
+				Directory: n.ResolvePath(name),
+				Namespace: namespace,
+				Cache:     cache,
+				Handles:   handles,
+				ReadOnly:  readonly,
+			},
+		)
 	}
 
 	if err == nil {
@@ -744,7 +756,9 @@ func (n *Node) OpenDatabase(name string, cache, handles int, namespace string, r
 // also attaching a chain freezer to it that moves ancient chain data from the
 // database to immutable append-only files. If the node is an ephemeral one, a
 // memory database is returned.
-func (n *Node) OpenDatabaseWithFreezer(name string, cache, handles int, ancient string, namespace string, readonly bool) (ethdb.Database, error) {
+func (n *Node) OpenDatabaseWithFreezer(
+	name string, cache, handles int, ancient string, namespace string, readonly bool,
+) (ethdb.Database, error) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 	if n.state == closedState {
@@ -755,15 +769,17 @@ func (n *Node) OpenDatabaseWithFreezer(name string, cache, handles int, ancient 
 	if n.config.DataDir == "" {
 		db, err = rawdb.NewDatabaseWithFreezer(memorydb.New(), "", namespace, readonly)
 	} else {
-		db, err = rawdb.Open(rawdb.OpenOptions{
-			Type:              n.config.DBEngine,
-			Directory:         n.ResolvePath(name),
-			AncientsDirectory: n.ResolveAncient(name, ancient),
-			Namespace:         namespace,
-			Cache:             cache,
-			Handles:           handles,
-			ReadOnly:          readonly,
-		})
+		db, err = rawdb.Open(
+			rawdb.OpenOptions{
+				Type:              n.config.DBEngine,
+				Directory:         n.ResolvePath(name),
+				AncientsDirectory: n.ResolveAncient(name, ancient),
+				Namespace:         namespace,
+				Cache:             cache,
+				Handles:           handles,
+				ReadOnly:          readonly,
+			},
+		)
 	}
 
 	if err == nil {

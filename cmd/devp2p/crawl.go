@@ -22,8 +22,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
 )
 
 type crawler struct {
@@ -145,12 +145,14 @@ loop:
 		case <-timeoutCh:
 			break loop
 		case <-statusTicker.C:
-			log.Info("Crawling in progress",
+			log.Info(
+				"Crawling in progress",
 				"added", added.Load(),
 				"updated", updated.Load(),
 				"removed", removed.Load(),
 				"ignored(recent)", recent.Load(),
-				"ignored(incompatible)", skipped.Load())
+				"ignored(incompatible)", skipped.Load(),
+			)
 		}
 	}
 

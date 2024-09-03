@@ -19,7 +19,7 @@ package request
 import (
 	"sync"
 
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // Module represents a mechanism which is typically responsible for downloading
@@ -162,10 +162,12 @@ func (s *Scheduler) RegisterServer(server server) {
 	defer s.lock.Unlock()
 
 	s.addEvent(Event{Type: EvRegistered, Server: server})
-	server.subscribe(func(event Event) {
-		event.Server = server
-		s.addEvent(event)
-	})
+	server.subscribe(
+		func(event Event) {
+			event.Server = server
+			s.addEvent(event)
+		},
+	)
 }
 
 // UnregisterServer removes a registered server.
@@ -334,14 +336,16 @@ func (s *Scheduler) filterEvents() map[Module][]Event {
 func (s *Scheduler) closePending(server Server, filteredEvents map[Module][]Event) {
 	for sid, pending := range s.pending {
 		if sid.Server == server {
-			filteredEvents[pending.module] = append(filteredEvents[pending.module], Event{
-				Type:   EvFail,
-				Server: server,
-				Data: RequestResponse{
-					ID:      sid.ID,
-					Request: pending.request,
+			filteredEvents[pending.module] = append(
+				filteredEvents[pending.module], Event{
+					Type:   EvFail,
+					Server: server,
+					Data: RequestResponse{
+						ID:      sid.ID,
+						Request: pending.request,
+					},
 				},
-			})
+			)
 			delete(s.pending, sid)
 		}
 	}

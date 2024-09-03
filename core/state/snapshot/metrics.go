@@ -16,7 +16,7 @@
 
 package snapshot
 
-import "github.com/ethereum/go-ethereum/metrics"
+import "github.com/ripoff2/go-ethereum/metrics"
 
 // Metrics in generation
 var (
@@ -35,17 +35,25 @@ var (
 	// snapAccountProveCounter measures time spent on the account proving
 	snapAccountProveCounter = metrics.NewRegisteredCounter("state/snapshot/generation/duration/account/prove", nil)
 	// snapAccountTrieReadCounter measures time spent on the account trie iteration
-	snapAccountTrieReadCounter = metrics.NewRegisteredCounter("state/snapshot/generation/duration/account/trieread", nil)
+	snapAccountTrieReadCounter = metrics.NewRegisteredCounter(
+		"state/snapshot/generation/duration/account/trieread", nil,
+	)
 	// snapAccountSnapReadCounter measures time spent on the snapshot account iteration
-	snapAccountSnapReadCounter = metrics.NewRegisteredCounter("state/snapshot/generation/duration/account/snapread", nil)
+	snapAccountSnapReadCounter = metrics.NewRegisteredCounter(
+		"state/snapshot/generation/duration/account/snapread", nil,
+	)
 	// snapAccountWriteCounter measures time spent on writing/updating/deleting accounts
 	snapAccountWriteCounter = metrics.NewRegisteredCounter("state/snapshot/generation/duration/account/write", nil)
 	// snapStorageProveCounter measures time spent on storage proving
 	snapStorageProveCounter = metrics.NewRegisteredCounter("state/snapshot/generation/duration/storage/prove", nil)
 	// snapStorageTrieReadCounter measures time spent on the storage trie iteration
-	snapStorageTrieReadCounter = metrics.NewRegisteredCounter("state/snapshot/generation/duration/storage/trieread", nil)
+	snapStorageTrieReadCounter = metrics.NewRegisteredCounter(
+		"state/snapshot/generation/duration/storage/trieread", nil,
+	)
 	// snapStorageSnapReadCounter measures time spent on the snapshot storage iteration
-	snapStorageSnapReadCounter = metrics.NewRegisteredCounter("state/snapshot/generation/duration/storage/snapread", nil)
+	snapStorageSnapReadCounter = metrics.NewRegisteredCounter(
+		"state/snapshot/generation/duration/storage/snapread", nil,
+	)
 	// snapStorageWriteCounter measures time spent on writing/updating storages
 	snapStorageWriteCounter = metrics.NewRegisteredCounter("state/snapshot/generation/duration/storage/write", nil)
 	// snapStorageCleanCounter measures time spent on deleting storages

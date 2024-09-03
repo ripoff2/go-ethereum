@@ -22,10 +22,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 const (
@@ -296,49 +296,51 @@ func (f *chainFreezer) freeze(db ethdb.KeyValueStore) {
 func (f *chainFreezer) freezeRange(nfdb *nofreezedb, number, limit uint64) (hashes []common.Hash, err error) {
 	hashes = make([]common.Hash, 0, limit-number+1)
 
-	_, err = f.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-		for ; number <= limit; number++ {
-			// Retrieve all the components of the canonical block.
-			hash := ReadCanonicalHash(nfdb, number)
-			if hash == (common.Hash{}) {
-				return fmt.Errorf("canonical hash missing, can't freeze block %d", number)
-			}
-			header := ReadHeaderRLP(nfdb, hash, number)
-			if len(header) == 0 {
-				return fmt.Errorf("block header missing, can't freeze block %d", number)
-			}
-			body := ReadBodyRLP(nfdb, hash, number)
-			if len(body) == 0 {
-				return fmt.Errorf("block body missing, can't freeze block %d", number)
-			}
-			receipts := ReadReceiptsRLP(nfdb, hash, number)
-			if len(receipts) == 0 {
-				return fmt.Errorf("block receipts missing, can't freeze block %d", number)
-			}
-			td := ReadTdRLP(nfdb, hash, number)
-			if len(td) == 0 {
-				return fmt.Errorf("total difficulty missing, can't freeze block %d", number)
-			}
+	_, err = f.ModifyAncients(
+		func(op ethdb.AncientWriteOp) error {
+			for ; number <= limit; number++ {
+				// Retrieve all the components of the canonical block.
+				hash := ReadCanonicalHash(nfdb, number)
+				if hash == (common.Hash{}) {
+					return fmt.Errorf("canonical hash missing, can't freeze block %d", number)
+				}
+				header := ReadHeaderRLP(nfdb, hash, number)
+				if len(header) == 0 {
+					return fmt.Errorf("block header missing, can't freeze block %d", number)
+				}
+				body := ReadBodyRLP(nfdb, hash, number)
+				if len(body) == 0 {
+					return fmt.Errorf("block body missing, can't freeze block %d", number)
+				}
+				receipts := ReadReceiptsRLP(nfdb, hash, number)
+				if len(receipts) == 0 {
+					return fmt.Errorf("block receipts missing, can't freeze block %d", number)
+				}
+				td := ReadTdRLP(nfdb, hash, number)
+				if len(td) == 0 {
+					return fmt.Errorf("total difficulty missing, can't freeze block %d", number)
+				}
 
-			// Write to the batch.
-			if err := op.AppendRaw(ChainFreezerHashTable, number, hash[:]); err != nil {
-				return fmt.Errorf("can't write hash to Freezer: %v", err)
+				// Write to the batch.
+				if err := op.AppendRaw(ChainFreezerHashTable, number, hash[:]); err != nil {
+					return fmt.Errorf("can't write hash to Freezer: %v", err)
+				}
+				if err := op.AppendRaw(ChainFreezerHeaderTable, number, header); err != nil {
+					return fmt.Errorf("can't write header to Freezer: %v", err)
+				}
+				if err := op.AppendRaw(ChainFreezerBodiesTable, number, body); err != nil {
+					return fmt.Errorf("can't write body to Freezer: %v", err)
+				}
+				if err := op.AppendRaw(ChainFreezerReceiptTable, number, receipts); err != nil {
+					return fmt.Errorf("can't write receipts to Freezer: %v", err)
+				}
+				if err := op.AppendRaw(ChainFreezerDifficultyTable, number, td); err != nil {
+					return fmt.Errorf("can't write td to Freezer: %v", err)
+				}
+				hashes = append(hashes, hash)
 			}
-			if err := op.AppendRaw(ChainFreezerHeaderTable, number, header); err != nil {
-				return fmt.Errorf("can't write header to Freezer: %v", err)
-			}
-			if err := op.AppendRaw(ChainFreezerBodiesTable, number, body); err != nil {
-				return fmt.Errorf("can't write body to Freezer: %v", err)
-			}
-			if err := op.AppendRaw(ChainFreezerReceiptTable, number, receipts); err != nil {
-				return fmt.Errorf("can't write receipts to Freezer: %v", err)
-			}
-			if err := op.AppendRaw(ChainFreezerDifficultyTable, number, td); err != nil {
-				return fmt.Errorf("can't write td to Freezer: %v", err)
-			}
-			hashes = append(hashes, hash)
-		}
-		return nil
-	})
+			return nil
+		},
+	)
 	return hashes, err
 }

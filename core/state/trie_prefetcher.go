@@ -20,9 +20,9 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
 )
 
 var (
@@ -158,7 +158,9 @@ func (p *triePrefetcher) report() {
 //     upon the same contract, the parameters invoking this method may be
 //     repeated.
 //  2. Finalize of the main account trie. This happens only once per block.
-func (p *triePrefetcher) prefetch(owner common.Hash, root common.Hash, addr common.Address, keys [][]byte, read bool) error {
+func (p *triePrefetcher) prefetch(
+	owner common.Hash, root common.Hash, addr common.Address, keys [][]byte, read bool,
+) error {
 	// If the state item is only being read, but reads are disabled, return
 	if read && p.noreads {
 		return nil
@@ -254,7 +256,9 @@ type subfetcherTask struct {
 
 // newSubfetcher creates a goroutine to prefetch state items belonging to a
 // particular root hash.
-func newSubfetcher(db Database, state common.Hash, owner common.Hash, root common.Hash, addr common.Address) *subfetcher {
+func newSubfetcher(
+	db Database, state common.Hash, owner common.Hash, root common.Hash, addr common.Address,
+) *subfetcher {
 	sf := &subfetcher{
 		db:        db,
 		state:     state,

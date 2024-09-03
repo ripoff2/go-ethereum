@@ -25,12 +25,12 @@ import (
 	"runtime"
 	"runtime/debug"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 // Client is a wrapper around rpc.Client that implements geth-specific functionality.
@@ -47,7 +47,9 @@ func New(c *rpc.Client) *Client {
 
 // CreateAccessList tries to create an access list for a specific transaction based on the
 // current pending state of the blockchain.
-func (ec *Client) CreateAccessList(ctx context.Context, msg ethereum.CallMsg) (*types.AccessList, uint64, string, error) {
+func (ec *Client) CreateAccessList(ctx context.Context, msg ethereum.CallMsg) (
+	*types.AccessList, uint64, string, error,
+) {
 	type accessListResult struct {
 		Accesslist *types.AccessList `json:"accessList"`
 		Error      string            `json:"error,omitempty"`
@@ -80,7 +82,9 @@ type StorageResult struct {
 
 // GetProof returns the account and storage values of the specified account including the Merkle-proof.
 // The block number can be nil, in which case the value is taken from the latest known block.
-func (ec *Client) GetProof(ctx context.Context, account common.Address, keys []string, blockNumber *big.Int) (*AccountResult, error) {
+func (ec *Client) GetProof(
+	ctx context.Context, account common.Address, keys []string, blockNumber *big.Int,
+) (*AccountResult, error) {
 	type storageResult struct {
 		Key   string       `json:"key"`
 		Value *hexutil.Big `json:"value"`
@@ -107,11 +111,13 @@ func (ec *Client) GetProof(ctx context.Context, account common.Address, keys []s
 	// Turn hexutils back to normal datatypes
 	storageResults := make([]StorageResult, 0, len(res.StorageProof))
 	for _, st := range res.StorageProof {
-		storageResults = append(storageResults, StorageResult{
-			Key:   st.Key,
-			Value: st.Value.ToInt(),
-			Proof: st.Proof,
-		})
+		storageResults = append(
+			storageResults, StorageResult{
+				Key:   st.Key,
+				Value: st.Value.ToInt(),
+				Proof: st.Proof,
+			},
+		)
 	}
 	result := AccountResult{
 		Address:      res.Address,
@@ -135,7 +141,9 @@ func (ec *Client) GetProof(ctx context.Context, account common.Address, keys []s
 // overrides specifies a map of contract states that should be overwritten before executing
 // the message call.
 // Please use ethclient.CallContract instead if you don't need the override functionality.
-func (ec *Client) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int, overrides *map[common.Address]OverrideAccount) ([]byte, error) {
+func (ec *Client) CallContract(
+	ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int, overrides *map[common.Address]OverrideAccount,
+) ([]byte, error) {
 	var hex hexutil.Bytes
 	err := ec.c.CallContext(
 		ctx, &hex, "eth_call", toCallArg(msg),
@@ -157,7 +165,10 @@ func (ec *Client) CallContract(ctx context.Context, msg ethereum.CallMsg, blockN
 // blockOverrides specifies block fields exposed to the EVM that can be overridden for the call.
 //
 // Please use ethclient.CallContract instead if you don't need the override functionality.
-func (ec *Client) CallContractWithBlockOverrides(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int, overrides *map[common.Address]OverrideAccount, blockOverrides BlockOverrides) ([]byte, error) {
+func (ec *Client) CallContractWithBlockOverrides(
+	ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int, overrides *map[common.Address]OverrideAccount,
+	blockOverrides BlockOverrides,
+) ([]byte, error) {
 	var hex hexutil.Bytes
 	err := ec.c.CallContext(
 		ctx, &hex, "eth_call", toCallArg(msg),
@@ -195,12 +206,16 @@ func (ec *Client) GetNodeInfo(ctx context.Context) (*p2p.NodeInfo, error) {
 }
 
 // SubscribeFullPendingTransactions subscribes to new pending transactions.
-func (ec *Client) SubscribeFullPendingTransactions(ctx context.Context, ch chan<- *types.Transaction) (*rpc.ClientSubscription, error) {
+func (ec *Client) SubscribeFullPendingTransactions(
+	ctx context.Context, ch chan<- *types.Transaction,
+) (*rpc.ClientSubscription, error) {
 	return ec.c.EthSubscribe(ctx, ch, "newPendingTransactions", true)
 }
 
 // SubscribePendingTransactions subscribes to new pending transaction hashes.
-func (ec *Client) SubscribePendingTransactions(ctx context.Context, ch chan<- common.Hash) (*rpc.ClientSubscription, error) {
+func (ec *Client) SubscribePendingTransactions(ctx context.Context, ch chan<- common.Hash) (
+	*rpc.ClientSubscription, error,
+) {
 	return ec.c.EthSubscribe(ctx, ch, "newPendingTransactions")
 }
 

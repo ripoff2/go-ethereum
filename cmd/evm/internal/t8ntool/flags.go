@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/tests"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/tests"
 	"github.com/urfave/cli/v2"
 )
 
@@ -139,14 +139,16 @@ var (
 	}
 	ForknameFlag = &cli.StringFlag{
 		Name: "state.fork",
-		Usage: fmt.Sprintf("Name of ruleset to use."+
-			"\n\tAvailable forknames:"+
-			"\n\t    %v"+
-			"\n\tAvailable extra eips:"+
-			"\n\t    %v"+
-			"\n\tSyntax <forkname>(+ExtraEip)",
+		Usage: fmt.Sprintf(
+			"Name of ruleset to use."+
+				"\n\tAvailable forknames:"+
+				"\n\t    %v"+
+				"\n\tAvailable extra eips:"+
+				"\n\t    %v"+
+				"\n\tSyntax <forkname>(+ExtraEip)",
 			strings.Join(tests.AvailableForks(), "\n\t    "),
-			strings.Join(vm.ActivateableEips(), ", ")),
+			strings.Join(vm.ActivateableEips(), ", "),
+		),
 		Value: "GrayGlacier",
 	}
 	VerbosityFlag = &cli.IntFlag{

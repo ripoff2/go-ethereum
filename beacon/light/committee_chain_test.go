@@ -21,29 +21,37 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/beacon/params"
-	"github.com/ethereum/go-ethereum/beacon/types"
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/ethdb/memorydb"
+	"github.com/ripoff2/go-ethereum/beacon/params"
+	"github.com/ripoff2/go-ethereum/beacon/types"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/ethdb/memorydb"
 )
 
 var (
 	testGenesis  = newTestGenesis()
 	testGenesis2 = newTestGenesis()
 
-	tfBase = newTestForks(testGenesis, types.Forks{
-		&types.Fork{Epoch: 0, Version: []byte{0}},
-	})
-	tfAlternative = newTestForks(testGenesis, types.Forks{
-		&types.Fork{Epoch: 0, Version: []byte{0}},
-		&types.Fork{Epoch: 0x700, Version: []byte{1}},
-	})
-	tfAnotherGenesis = newTestForks(testGenesis2, types.Forks{
-		&types.Fork{Epoch: 0, Version: []byte{0}},
-	})
+	tfBase = newTestForks(
+		testGenesis, types.Forks{
+			&types.Fork{Epoch: 0, Version: []byte{0}},
+		},
+	)
+	tfAlternative = newTestForks(
+		testGenesis, types.Forks{
+			&types.Fork{Epoch: 0, Version: []byte{0}},
+			&types.Fork{Epoch: 0x700, Version: []byte{1}},
+		},
+	)
+	tfAnotherGenesis = newTestForks(
+		testGenesis2, types.Forks{
+			&types.Fork{Epoch: 0, Version: []byte{0}},
+		},
+	)
 
-	tcBase                      = newTestCommitteeChain(nil, tfBase, true, 0, 10, 400, false)
-	tcBaseWithInvalidUpdates    = newTestCommitteeChain(tcBase, tfBase, false, 5, 10, 200, false) // signer count too low
+	tcBase                   = newTestCommitteeChain(nil, tfBase, true, 0, 10, 400, false)
+	tcBaseWithInvalidUpdates = newTestCommitteeChain(
+		tcBase, tfBase, false, 5, 10, 200, false,
+	) // signer count too low
 	tcBaseWithBetterUpdates     = newTestCommitteeChain(tcBase, tfBase, false, 5, 10, 440, false)
 	tcReorgWithWorseUpdates     = newTestCommitteeChain(tcBase, tfBase, true, 5, 10, 400, false)
 	tcReorgWithWorseUpdates2    = newTestCommitteeChain(tcBase, tfBase, true, 5, 10, 380, false)
@@ -232,7 +240,9 @@ type committeeChainTest struct {
 	chain           *CommitteeChain
 }
 
-func newCommitteeChainTest(t *testing.T, config types.ChainConfig, signerThreshold int, enforceTime bool) *committeeChainTest {
+func newCommitteeChainTest(
+	t *testing.T, config types.ChainConfig, signerThreshold int, enforceTime bool,
+) *committeeChainTest {
 	c := &committeeChainTest{
 		t:               t,
 		db:              memorydb.New(),
@@ -260,7 +270,9 @@ func (c *committeeChainTest) setClockPeriod(period float64) {
 
 func (c *committeeChainTest) addFixedCommitteeRoot(tc *testCommitteeChain, period uint64, expErr error) {
 	if err := c.chain.addFixedCommitteeRoot(period, tc.periods[period].committee.Root()); err != expErr {
-		c.t.Errorf("Incorrect error output from addFixedCommitteeRoot at period %d (expected %v, got %v)", period, expErr, err)
+		c.t.Errorf(
+			"Incorrect error output from addFixedCommitteeRoot at period %d (expected %v, got %v)", period, expErr, err,
+		)
 	}
 }
 
@@ -282,7 +294,9 @@ func (c *committeeChainTest) insertUpdate(tc *testCommitteeChain, period uint64,
 
 func (c *committeeChainTest) verifySignedHeader(tc *testCommitteeChain, period float64, expOk bool) {
 	slot := uint64(period * float64(params.SyncPeriodLength))
-	signedHead := GenerateTestSignedHeader(types.Header{Slot: slot}, &tc.config, tc.periods[types.SyncPeriod(slot)].committee, slot+1, 400)
+	signedHead := GenerateTestSignedHeader(
+		types.Header{Slot: slot}, &tc.config, tc.periods[types.SyncPeriod(slot)].committee, slot+1, 400,
+	)
 	if ok, _, _ := c.chain.VerifySignedHeader(signedHead); ok != expOk {
 		c.t.Errorf("Incorrect output from VerifySignedHeader at period %f (expected %v, got %v)", period, expOk, ok)
 	}
@@ -311,7 +325,10 @@ func newTestForks(config types.ChainConfig, forks types.Forks) types.ChainConfig
 	return config
 }
 
-func newTestCommitteeChain(parent *testCommitteeChain, config types.ChainConfig, newCommittees bool, begin, end int, signerCount int, finalizedHeader bool) *testCommitteeChain {
+func newTestCommitteeChain(
+	parent *testCommitteeChain, config types.ChainConfig, newCommittees bool, begin, end int, signerCount int,
+	finalizedHeader bool,
+) *testCommitteeChain {
 	tc := &testCommitteeChain{
 		config: config,
 	}
@@ -351,6 +368,8 @@ func (tc *testCommitteeChain) fillCommittees(begin, end int) {
 
 func (tc *testCommitteeChain) fillUpdates(begin, end int, signerCount int, finalizedHeader bool) {
 	for i := begin; i <= end; i++ {
-		tc.periods[i].update = GenerateTestUpdate(&tc.config, uint64(i), tc.periods[i].committee, tc.periods[i+1].committee, signerCount, finalizedHeader)
+		tc.periods[i].update = GenerateTestUpdate(
+			&tc.config, uint64(i), tc.periods[i].committee, tc.periods[i+1].committee, signerCount, finalizedHeader,
+		)
 	}
 }

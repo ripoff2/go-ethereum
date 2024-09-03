@@ -22,15 +22,15 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/lru"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/lru"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 const sampleNumber = 3 // Number of transactions sampled in a block
@@ -87,10 +87,14 @@ func NewOracle(backend OracleBackend, params Config, startPrice *big.Int) *Oracl
 	percent := params.Percentile
 	if percent < 0 {
 		percent = 0
-		log.Warn("Sanitizing invalid gasprice oracle sample percentile", "provided", params.Percentile, "updated", percent)
+		log.Warn(
+			"Sanitizing invalid gasprice oracle sample percentile", "provided", params.Percentile, "updated", percent,
+		)
 	} else if percent > 100 {
 		percent = 100
-		log.Warn("Sanitizing invalid gasprice oracle sample percentile", "provided", params.Percentile, "updated", percent)
+		log.Warn(
+			"Sanitizing invalid gasprice oracle sample percentile", "provided", params.Percentile, "updated", percent,
+		)
 	}
 	maxPrice := params.MaxPrice
 	if maxPrice == nil || maxPrice.Int64() <= 0 {
@@ -100,19 +104,27 @@ func NewOracle(backend OracleBackend, params Config, startPrice *big.Int) *Oracl
 	ignorePrice := params.IgnorePrice
 	if ignorePrice == nil || ignorePrice.Int64() <= 0 {
 		ignorePrice = DefaultIgnorePrice
-		log.Warn("Sanitizing invalid gasprice oracle ignore price", "provided", params.IgnorePrice, "updated", ignorePrice)
+		log.Warn(
+			"Sanitizing invalid gasprice oracle ignore price", "provided", params.IgnorePrice, "updated", ignorePrice,
+		)
 	} else if ignorePrice.Int64() > 0 {
 		log.Info("Gasprice oracle is ignoring threshold set", "threshold", ignorePrice)
 	}
 	maxHeaderHistory := params.MaxHeaderHistory
 	if maxHeaderHistory < 1 {
 		maxHeaderHistory = 1
-		log.Warn("Sanitizing invalid gasprice oracle max header history", "provided", params.MaxHeaderHistory, "updated", maxHeaderHistory)
+		log.Warn(
+			"Sanitizing invalid gasprice oracle max header history", "provided", params.MaxHeaderHistory, "updated",
+			maxHeaderHistory,
+		)
 	}
 	maxBlockHistory := params.MaxBlockHistory
 	if maxBlockHistory < 1 {
 		maxBlockHistory = 1
-		log.Warn("Sanitizing invalid gasprice oracle max block history", "provided", params.MaxBlockHistory, "updated", maxBlockHistory)
+		log.Warn(
+			"Sanitizing invalid gasprice oracle max block history", "provided", params.MaxBlockHistory, "updated",
+			maxBlockHistory,
+		)
 	}
 	if startPrice == nil {
 		startPrice = new(big.Int)
@@ -234,7 +246,9 @@ type results struct {
 // and sends it to the result channel. If the block is empty or all transactions
 // are sent by the miner itself(it doesn't make any sense to include this kind of
 // transaction prices for sampling), nil gasprice is returned.
-func (oracle *Oracle) getBlockValues(ctx context.Context, blockNum uint64, limit int, ignoreUnder *big.Int, result chan results, quit chan struct{}) {
+func (oracle *Oracle) getBlockValues(
+	ctx context.Context, blockNum uint64, limit int, ignoreUnder *big.Int, result chan results, quit chan struct{},
+) {
 	block, err := oracle.backend.BlockByNumber(ctx, rpc.BlockNumber(blockNum))
 	if block == nil {
 		select {
@@ -250,13 +264,15 @@ func (oracle *Oracle) getBlockValues(ctx context.Context, blockNum uint64, limit
 	sortedTxs := make([]*types.Transaction, len(txs))
 	copy(sortedTxs, txs)
 	baseFee := block.BaseFee()
-	slices.SortFunc(sortedTxs, func(a, b *types.Transaction) int {
-		// It's okay to discard the error because a tx would never be
-		// accepted into a block with an invalid effective tip.
-		tip1, _ := a.EffectiveGasTip(baseFee)
-		tip2, _ := b.EffectiveGasTip(baseFee)
-		return tip1.Cmp(tip2)
-	})
+	slices.SortFunc(
+		sortedTxs, func(a, b *types.Transaction) int {
+			// It's okay to discard the error because a tx would never be
+			// accepted into a block with an invalid effective tip.
+			tip1, _ := a.EffectiveGasTip(baseFee)
+			tip2, _ := b.EffectiveGasTip(baseFee)
+			return tip1.Cmp(tip2)
+		},
+	)
 
 	var prices []*big.Int
 	for _, tx := range sortedTxs {

@@ -28,7 +28,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // handler handles JSON-RPC messages. There is one handler per connection. Note that
@@ -75,7 +75,10 @@ type callProc struct {
 	notifiers []*Notifier
 }
 
-func newHandler(connCtx context.Context, conn jsonWriter, idgen func() ID, reg *serviceRegistry, batchRequestLimit, batchResponseMaxSize int) *handler {
+func newHandler(
+	connCtx context.Context, conn jsonWriter, idgen func() ID, reg *serviceRegistry,
+	batchRequestLimit, batchResponseMaxSize int,
+) *handler {
 	rootCtx, cancelRoot := context.WithCancel(connCtx)
 	h := &handler{
 		reg:                  reg,
@@ -171,83 +174,93 @@ func (b *batchCallBuffer) doWrite(ctx context.Context, conn jsonWriter, isErrorR
 func (h *handler) handleBatch(msgs []*jsonrpcMessage) {
 	// Emit error response for empty batches:
 	if len(msgs) == 0 {
-		h.startCallProc(func(cp *callProc) {
-			resp := errorMessage(&invalidRequestError{"empty batch"})
-			h.conn.writeJSON(cp.ctx, resp, true)
-		})
+		h.startCallProc(
+			func(cp *callProc) {
+				resp := errorMessage(&invalidRequestError{"empty batch"})
+				h.conn.writeJSON(cp.ctx, resp, true)
+			},
+		)
 		return
 	}
 	// Apply limit on total number of requests.
 	if h.batchRequestLimit != 0 && len(msgs) > h.batchRequestLimit {
-		h.startCallProc(func(cp *callProc) {
-			h.respondWithBatchTooLarge(cp, msgs)
-		})
+		h.startCallProc(
+			func(cp *callProc) {
+				h.respondWithBatchTooLarge(cp, msgs)
+			},
+		)
 		return
 	}
 
 	// Handle non-call messages first.
 	// Here we need to find the requestOp that sent the request batch.
 	calls := make([]*jsonrpcMessage, 0, len(msgs))
-	h.handleResponses(msgs, func(msg *jsonrpcMessage) {
-		calls = append(calls, msg)
-	})
+	h.handleResponses(
+		msgs, func(msg *jsonrpcMessage) {
+			calls = append(calls, msg)
+		},
+	)
 	if len(calls) == 0 {
 		return
 	}
 
 	// Process calls on a goroutine because they may block indefinitely:
-	h.startCallProc(func(cp *callProc) {
-		var (
-			timer      *time.Timer
-			cancel     context.CancelFunc
-			callBuffer = &batchCallBuffer{calls: calls, resp: make([]*jsonrpcMessage, 0, len(calls))}
-		)
+	h.startCallProc(
+		func(cp *callProc) {
+			var (
+				timer      *time.Timer
+				cancel     context.CancelFunc
+				callBuffer = &batchCallBuffer{calls: calls, resp: make([]*jsonrpcMessage, 0, len(calls))}
+			)
 
-		cp.ctx, cancel = context.WithCancel(cp.ctx)
-		defer cancel()
+			cp.ctx, cancel = context.WithCancel(cp.ctx)
+			defer cancel()
 
-		// Cancel the request context after timeout and send an error response. Since the
-		// currently-running method might not return immediately on timeout, we must wait
-		// for the timeout concurrently with processing the request.
-		if timeout, ok := ContextRequestTimeout(cp.ctx); ok {
-			timer = time.AfterFunc(timeout, func() {
-				cancel()
-				err := &internalServerError{errcodeTimeout, errMsgTimeout}
-				callBuffer.respondWithError(cp.ctx, h.conn, err)
-			})
-		}
-
-		responseBytes := 0
-		for {
-			// No need to handle rest of calls if timed out.
-			if cp.ctx.Err() != nil {
-				break
+			// Cancel the request context after timeout and send an error response. Since the
+			// currently-running method might not return immediately on timeout, we must wait
+			// for the timeout concurrently with processing the request.
+			if timeout, ok := ContextRequestTimeout(cp.ctx); ok {
+				timer = time.AfterFunc(
+					timeout, func() {
+						cancel()
+						err := &internalServerError{errcodeTimeout, errMsgTimeout}
+						callBuffer.respondWithError(cp.ctx, h.conn, err)
+					},
+				)
 			}
-			msg := callBuffer.nextCall()
-			if msg == nil {
-				break
-			}
-			resp := h.handleCallMsg(cp, msg)
-			callBuffer.pushResponse(resp)
-			if resp != nil && h.batchResponseMaxSize != 0 {
-				responseBytes += len(resp.Result)
-				if responseBytes > h.batchResponseMaxSize {
-					err := &internalServerError{errcodeResponseTooLarge, errMsgResponseTooLarge}
-					callBuffer.respondWithError(cp.ctx, h.conn, err)
+
+			responseBytes := 0
+			for {
+				// No need to handle rest of calls if timed out.
+				if cp.ctx.Err() != nil {
 					break
 				}
+				msg := callBuffer.nextCall()
+				if msg == nil {
+					break
+				}
+				resp := h.handleCallMsg(cp, msg)
+				callBuffer.pushResponse(resp)
+				if resp != nil && h.batchResponseMaxSize != 0 {
+					responseBytes += len(resp.Result)
+					if responseBytes > h.batchResponseMaxSize {
+						err := &internalServerError{errcodeResponseTooLarge, errMsgResponseTooLarge}
+						callBuffer.respondWithError(cp.ctx, h.conn, err)
+						break
+					}
+				}
 			}
-		}
-		if timer != nil {
-			timer.Stop()
-		}
+			if timer != nil {
+				timer.Stop()
+			}
 
-		h.addSubscriptions(cp.notifiers)
-		callBuffer.write(cp.ctx, h.conn)
-		for _, n := range cp.notifiers {
-			n.activate()
-		}
-	})
+			h.addSubscriptions(cp.notifiers)
+			callBuffer.write(cp.ctx, h.conn)
+			for _, n := range cp.notifiers {
+				n.activate()
+			}
+		},
+	)
 }
 
 func (h *handler) respondWithBatchTooLarge(cp *callProc, batch []*jsonrpcMessage) {
@@ -267,11 +280,15 @@ func (h *handler) respondWithBatchTooLarge(cp *callProc, batch []*jsonrpcMessage
 // handleMsg handles a single non-batch message.
 func (h *handler) handleMsg(msg *jsonrpcMessage) {
 	msgs := []*jsonrpcMessage{msg}
-	h.handleResponses(msgs, func(msg *jsonrpcMessage) {
-		h.startCallProc(func(cp *callProc) {
-			h.handleNonBatchCall(cp, msg)
-		})
-	})
+	h.handleResponses(
+		msgs, func(msg *jsonrpcMessage) {
+			h.startCallProc(
+				func(cp *callProc) {
+					h.handleNonBatchCall(cp, msg)
+				},
+			)
+		},
+	)
 }
 
 func (h *handler) handleNonBatchCall(cp *callProc, msg *jsonrpcMessage) {
@@ -287,13 +304,17 @@ func (h *handler) handleNonBatchCall(cp *callProc, msg *jsonrpcMessage) {
 	// running method might not return immediately on timeout, we must wait for the
 	// timeout concurrently with processing the request.
 	if timeout, ok := ContextRequestTimeout(cp.ctx); ok {
-		timer = time.AfterFunc(timeout, func() {
-			cancel()
-			responded.Do(func() {
-				resp := msg.errorResponse(&internalServerError{errcodeTimeout, errMsgTimeout})
-				h.conn.writeJSON(cp.ctx, resp, true)
-			})
-		})
+		timer = time.AfterFunc(
+			timeout, func() {
+				cancel()
+				responded.Do(
+					func() {
+						resp := msg.errorResponse(&internalServerError{errcodeTimeout, errMsgTimeout})
+						h.conn.writeJSON(cp.ctx, resp, true)
+					},
+				)
+			},
+		)
 	}
 
 	answer := h.handleCallMsg(cp, msg)
@@ -302,9 +323,11 @@ func (h *handler) handleNonBatchCall(cp *callProc, msg *jsonrpcMessage) {
 	}
 	h.addSubscriptions(cp.notifiers)
 	if answer != nil {
-		responded.Do(func() {
-			h.conn.writeJSON(cp.ctx, answer, false)
-		})
+		responded.Do(
+			func() {
+				h.conn.writeJSON(cp.ctx, answer, false)
+			},
+		)
 	}
 	for _, n := range cp.notifiers {
 		n.activate()
@@ -564,7 +587,9 @@ func (h *handler) handleSubscribe(cp *callProc, msg *jsonrpcMessage) *jsonrpcMes
 }
 
 // runMethod runs the Go callback for an RPC method.
-func (h *handler) runMethod(ctx context.Context, msg *jsonrpcMessage, callb *callback, args []reflect.Value) *jsonrpcMessage {
+func (h *handler) runMethod(
+	ctx context.Context, msg *jsonrpcMessage, callb *callback, args []reflect.Value,
+) *jsonrpcMessage {
 	result, err := callb.call(ctx, msg.Method, args)
 	if err != nil {
 		return msg.errorResponse(err)

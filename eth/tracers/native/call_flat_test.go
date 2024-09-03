@@ -21,12 +21,12 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/params"
 	"github.com/stretchr/testify/require"
 )
 
@@ -38,18 +38,22 @@ func TestCallFlatStop(t *testing.T) {
 	stopError := errors.New("stop error")
 
 	// simulate a transaction
-	tx := types.NewTx(&types.LegacyTx{
-		Nonce:    0,
-		To:       &common.Address{},
-		Value:    big.NewInt(0),
-		Gas:      0,
-		GasPrice: big.NewInt(0),
-		Data:     nil,
-	})
+	tx := types.NewTx(
+		&types.LegacyTx{
+			Nonce:    0,
+			To:       &common.Address{},
+			Value:    big.NewInt(0),
+			Gas:      0,
+			GasPrice: big.NewInt(0),
+			Data:     nil,
+		},
+	)
 
-	tracer.OnTxStart(&tracing.VMContext{
-		ChainConfig: params.MainnetChainConfig,
-	}, tx, common.Address{})
+	tracer.OnTxStart(
+		&tracing.VMContext{
+			ChainConfig: params.MainnetChainConfig,
+		}, tx, common.Address{},
+	)
 
 	tracer.OnEnter(0, byte(vm.CALL), common.Address{}, common.Address{}, nil, 0, big.NewInt(0))
 

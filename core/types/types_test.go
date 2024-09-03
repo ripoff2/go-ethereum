@@ -20,9 +20,9 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 type devnull struct{ len int }
@@ -89,29 +89,34 @@ func benchRLP(b *testing.B, encode bool) {
 		},
 		{
 			"legacy-transaction",
-			MustSignNewTx(key, signer,
+			MustSignNewTx(
+				key, signer,
 				&LegacyTx{
 					Nonce:    1,
 					GasPrice: big.NewInt(500),
 					Gas:      1000000,
 					To:       &to,
 					Value:    big.NewInt(1),
-				}),
+				},
+			),
 		},
 		{
 			"access-transaction",
-			MustSignNewTx(key, signer,
+			MustSignNewTx(
+				key, signer,
 				&AccessListTx{
 					Nonce:    1,
 					GasPrice: big.NewInt(500),
 					Gas:      1000000,
 					To:       &to,
 					Value:    big.NewInt(1),
-				}),
+				},
+			),
 		},
 		{
 			"1559-transaction",
-			MustSignNewTx(key, signer,
+			MustSignNewTx(
+				key, signer,
 				&DynamicFeeTx{
 					Nonce:     1,
 					Gas:       1000000,
@@ -119,30 +124,35 @@ func benchRLP(b *testing.B, encode bool) {
 					Value:     big.NewInt(1),
 					GasTipCap: big.NewInt(500),
 					GasFeeCap: big.NewInt(500),
-				}),
+				},
+			),
 		},
 	} {
 		if encode {
-			b.Run(tc.name, func(b *testing.B) {
-				b.ReportAllocs()
-				var null = &devnull{}
-				for i := 0; i < b.N; i++ {
-					rlp.Encode(null, tc.obj)
-				}
-				b.SetBytes(int64(null.len / b.N))
-			})
+			b.Run(
+				tc.name, func(b *testing.B) {
+					b.ReportAllocs()
+					var null = &devnull{}
+					for i := 0; i < b.N; i++ {
+						rlp.Encode(null, tc.obj)
+					}
+					b.SetBytes(int64(null.len / b.N))
+				},
+			)
 		} else {
 			data, _ := rlp.EncodeToBytes(tc.obj)
 			// Test decoding
-			b.Run(tc.name, func(b *testing.B) {
-				b.ReportAllocs()
-				for i := 0; i < b.N; i++ {
-					if err := rlp.DecodeBytes(data, tc.obj); err != nil {
-						b.Fatal(err)
+			b.Run(
+				tc.name, func(b *testing.B) {
+					b.ReportAllocs()
+					for i := 0; i < b.N; i++ {
+						if err := rlp.DecodeBytes(data, tc.obj); err != nil {
+							b.Fatal(err)
+						}
 					}
-				}
-				b.SetBytes(int64(len(data)))
-			})
+					b.SetBytes(int64(len(data)))
+				},
+			)
 		}
 	}
 }

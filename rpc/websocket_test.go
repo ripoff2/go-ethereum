@@ -236,7 +236,7 @@ func TestClientWebsocketPing(t *testing.T) {
 	// server can't handle the request.
 
 	// Wait for the context's deadline to be reached before proceeding.
-	// This is important for reproducing https://github.com/ethereum/go-ethereum/issues/19798
+	// This is important for reproducing https://github.com/ripoff2/go-ethereum/issues/19798
 	<-ctx.Done()
 	close(sendPing)
 
@@ -291,24 +291,28 @@ func TestClientWebsocketLargeMessage(t *testing.T) {
 func wsPingTestServer(t *testing.T, sendPing <-chan struct{}) *http.Server {
 	var srv http.Server
 	shutdown := make(chan struct{})
-	srv.RegisterOnShutdown(func() {
-		close(shutdown)
-	})
-	srv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Upgrade to WebSocket.
-		upgrader := websocket.Upgrader{
-			CheckOrigin: func(r *http.Request) bool { return true },
-		}
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			t.Errorf("server WS upgrade error: %v", err)
-			return
-		}
-		defer conn.Close()
+	srv.RegisterOnShutdown(
+		func() {
+			close(shutdown)
+		},
+	)
+	srv.Handler = http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			// Upgrade to WebSocket.
+			upgrader := websocket.Upgrader{
+				CheckOrigin: func(r *http.Request) bool { return true },
+			}
+			conn, err := upgrader.Upgrade(w, r, nil)
+			if err != nil {
+				t.Errorf("server WS upgrade error: %v", err)
+				return
+			}
+			defer conn.Close()
 
-		// Handle the connection.
-		wsPingTestHandler(t, conn, shutdown, sendPing)
-	})
+			// Handle the connection.
+			wsPingTestHandler(t, conn, shutdown, sendPing)
+		},
+	)
 
 	// Start the server.
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
@@ -339,11 +343,13 @@ func wsPingTestHandler(t *testing.T, conn *websocket.Conn, shutdown, sendPing <-
 
 	// Read from the connection to process control messages.
 	var pongCh = make(chan string)
-	conn.SetPongHandler(func(d string) error {
-		t.Logf("server got pong: %q", d)
-		pongCh <- d
-		return nil
-	})
+	conn.SetPongHandler(
+		func(d string) error {
+			t.Logf("server got pong: %q", d)
+			pongCh <- d
+			return nil
+		},
+	)
 	go func() {
 		for {
 			typ, msg, err := conn.ReadMessage()

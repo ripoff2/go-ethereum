@@ -21,9 +21,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/eth/protocols/eth"
+	"github.com/ripoff2/go-ethereum/p2p"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -116,10 +116,12 @@ func TestEthProtocolNegotiation(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			tt.conn.negotiateEthProtocol(tt.caps)
-			assert.Equal(t, tt.expected, uint32(tt.conn.negotiatedProtoVersion))
-		})
+		t.Run(
+			strconv.Itoa(i), func(t *testing.T) {
+				tt.conn.negotiateEthProtocol(tt.caps)
+				assert.Equal(t, tt.expected, uint32(tt.conn.negotiatedProtoVersion))
+			},
+		)
 	}
 }
 
@@ -189,12 +191,14 @@ func TestChainGetHeaders(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			headers, err := chain.GetHeaders(&tt.req)
-			if err != nil {
-				t.Fatal(err)
-			}
-			assert.Equal(t, headers, tt.expected)
-		})
+		t.Run(
+			strconv.Itoa(i), func(t *testing.T) {
+				headers, err := chain.GetHeaders(&tt.req)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assert.Equal(t, headers, tt.expected)
+			},
+		)
 	}
 }

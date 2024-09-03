@@ -25,14 +25,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 type TwoOperandTestcase struct {
@@ -146,16 +146,46 @@ func TestByteOp(t *testing.T) {
 func TestSHL(t *testing.T) {
 	// Testcases from https://github.com/ethereum/EIPs/blob/master/EIPS/eip-145.md#shl-shift-left
 	tests := []TwoOperandTestcase{
-		{"0000000000000000000000000000000000000000000000000000000000000001", "01", "0000000000000000000000000000000000000000000000000000000000000002"},
-		{"0000000000000000000000000000000000000000000000000000000000000001", "ff", "8000000000000000000000000000000000000000000000000000000000000000"},
-		{"0000000000000000000000000000000000000000000000000000000000000001", "0100", "0000000000000000000000000000000000000000000000000000000000000000"},
-		{"0000000000000000000000000000000000000000000000000000000000000001", "0101", "0000000000000000000000000000000000000000000000000000000000000000"},
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "00", "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "01", "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe"},
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "ff", "8000000000000000000000000000000000000000000000000000000000000000"},
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0100", "0000000000000000000000000000000000000000000000000000000000000000"},
-		{"0000000000000000000000000000000000000000000000000000000000000000", "01", "0000000000000000000000000000000000000000000000000000000000000000"},
-		{"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "01", "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe"},
+		{
+			"0000000000000000000000000000000000000000000000000000000000000001", "01",
+			"0000000000000000000000000000000000000000000000000000000000000002",
+		},
+		{
+			"0000000000000000000000000000000000000000000000000000000000000001", "ff",
+			"8000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"0000000000000000000000000000000000000000000000000000000000000001", "0100",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"0000000000000000000000000000000000000000000000000000000000000001", "0101",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "00",
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "01",
+			"fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
+		},
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "ff",
+			"8000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0100",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"0000000000000000000000000000000000000000000000000000000000000000", "01",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "01",
+			"fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
+		},
 	}
 	testTwoOperandOp(t, tests, opSHL, "shl")
 }
@@ -163,17 +193,50 @@ func TestSHL(t *testing.T) {
 func TestSHR(t *testing.T) {
 	// Testcases from https://github.com/ethereum/EIPs/blob/master/EIPS/eip-145.md#shr-logical-shift-right
 	tests := []TwoOperandTestcase{
-		{"0000000000000000000000000000000000000000000000000000000000000001", "00", "0000000000000000000000000000000000000000000000000000000000000001"},
-		{"0000000000000000000000000000000000000000000000000000000000000001", "01", "0000000000000000000000000000000000000000000000000000000000000000"},
-		{"8000000000000000000000000000000000000000000000000000000000000000", "01", "4000000000000000000000000000000000000000000000000000000000000000"},
-		{"8000000000000000000000000000000000000000000000000000000000000000", "ff", "0000000000000000000000000000000000000000000000000000000000000001"},
-		{"8000000000000000000000000000000000000000000000000000000000000000", "0100", "0000000000000000000000000000000000000000000000000000000000000000"},
-		{"8000000000000000000000000000000000000000000000000000000000000000", "0101", "0000000000000000000000000000000000000000000000000000000000000000"},
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "00", "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "01", "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "ff", "0000000000000000000000000000000000000000000000000000000000000001"},
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0100", "0000000000000000000000000000000000000000000000000000000000000000"},
-		{"0000000000000000000000000000000000000000000000000000000000000000", "01", "0000000000000000000000000000000000000000000000000000000000000000"},
+		{
+			"0000000000000000000000000000000000000000000000000000000000000001", "00",
+			"0000000000000000000000000000000000000000000000000000000000000001",
+		},
+		{
+			"0000000000000000000000000000000000000000000000000000000000000001", "01",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"8000000000000000000000000000000000000000000000000000000000000000", "01",
+			"4000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"8000000000000000000000000000000000000000000000000000000000000000", "ff",
+			"0000000000000000000000000000000000000000000000000000000000000001",
+		},
+		{
+			"8000000000000000000000000000000000000000000000000000000000000000", "0100",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"8000000000000000000000000000000000000000000000000000000000000000", "0101",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "00",
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "01",
+			"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "ff",
+			"0000000000000000000000000000000000000000000000000000000000000001",
+		},
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0100",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"0000000000000000000000000000000000000000000000000000000000000000", "01",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		},
 	}
 	testTwoOperandOp(t, tests, opSHR, "shr")
 }
@@ -181,22 +244,70 @@ func TestSHR(t *testing.T) {
 func TestSAR(t *testing.T) {
 	// Testcases from https://github.com/ethereum/EIPs/blob/master/EIPS/eip-145.md#sar-arithmetic-shift-right
 	tests := []TwoOperandTestcase{
-		{"0000000000000000000000000000000000000000000000000000000000000001", "00", "0000000000000000000000000000000000000000000000000000000000000001"},
-		{"0000000000000000000000000000000000000000000000000000000000000001", "01", "0000000000000000000000000000000000000000000000000000000000000000"},
-		{"8000000000000000000000000000000000000000000000000000000000000000", "01", "c000000000000000000000000000000000000000000000000000000000000000"},
-		{"8000000000000000000000000000000000000000000000000000000000000000", "ff", "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
-		{"8000000000000000000000000000000000000000000000000000000000000000", "0100", "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
-		{"8000000000000000000000000000000000000000000000000000000000000000", "0101", "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "00", "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "01", "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "ff", "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0100", "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
-		{"0000000000000000000000000000000000000000000000000000000000000000", "01", "0000000000000000000000000000000000000000000000000000000000000000"},
-		{"4000000000000000000000000000000000000000000000000000000000000000", "fe", "0000000000000000000000000000000000000000000000000000000000000001"},
-		{"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "f8", "000000000000000000000000000000000000000000000000000000000000007f"},
-		{"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "fe", "0000000000000000000000000000000000000000000000000000000000000001"},
-		{"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "ff", "0000000000000000000000000000000000000000000000000000000000000000"},
-		{"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0100", "0000000000000000000000000000000000000000000000000000000000000000"},
+		{
+			"0000000000000000000000000000000000000000000000000000000000000001", "00",
+			"0000000000000000000000000000000000000000000000000000000000000001",
+		},
+		{
+			"0000000000000000000000000000000000000000000000000000000000000001", "01",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"8000000000000000000000000000000000000000000000000000000000000000", "01",
+			"c000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"8000000000000000000000000000000000000000000000000000000000000000", "ff",
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			"8000000000000000000000000000000000000000000000000000000000000000", "0100",
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			"8000000000000000000000000000000000000000000000000000000000000000", "0101",
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "00",
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "01",
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "ff",
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0100",
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			"0000000000000000000000000000000000000000000000000000000000000000", "01",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"4000000000000000000000000000000000000000000000000000000000000000", "fe",
+			"0000000000000000000000000000000000000000000000000000000000000001",
+		},
+		{
+			"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "f8",
+			"000000000000000000000000000000000000000000000000000000000000007f",
+		},
+		{
+			"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "fe",
+			"0000000000000000000000000000000000000000000000000000000000000001",
+		},
+		{
+			"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "ff",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		},
+		{
+			"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0100",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+		},
 	}
 
 	testTwoOperandOp(t, tests, opSAR, "sar")
@@ -215,7 +326,8 @@ func TestAddMod(t *testing.T) {
 		z        string
 		expected string
 	}{
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 			"fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
 			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 			"fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
@@ -729,7 +841,9 @@ func TestRandom(t *testing.T) {
 		{name: "hash(0x010203)", random: crypto.Keccak256Hash([]byte{0x01, 0x02, 0x03})},
 	} {
 		var (
-			env            = NewEVM(BlockContext{Random: &tt.random}, TxContext{}, nil, params.TestChainConfig, Config{})
+			env = NewEVM(
+				BlockContext{Random: &tt.random}, TxContext{}, nil, params.TestChainConfig, Config{},
+			)
 			stack          = newstack()
 			pc             = uint64(0)
 			evmInterpreter = env.interpreter
@@ -770,7 +884,9 @@ func TestBlobHash(t *testing.T) {
 		{name: "out-of-bounds (nil)", idx: 25, expect: zero, hashes: nil},
 	} {
 		var (
-			env            = NewEVM(BlockContext{}, TxContext{BlobHashes: tt.hashes}, nil, params.TestChainConfig, Config{})
+			env = NewEVM(
+				BlockContext{}, TxContext{BlobHashes: tt.hashes}, nil, params.TestChainConfig, Config{},
+			)
 			stack          = newstack()
 			pc             = uint64(0)
 			evmInterpreter = env.interpreter
@@ -799,72 +915,84 @@ func TestOpMCopy(t *testing.T) {
 		want          string
 		wantGas       uint64
 	}{
-		{ // MCOPY 0 32 32 - copy 32 bytes from offset 32 to offset 0.
+		{
+			// MCOPY 0 32 32 - copy 32 bytes from offset 32 to offset 0.
 			dst: "0x0", src: "0x20", len: "0x20",
 			pre:     "0000000000000000000000000000000000000000000000000000000000000000 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
 			want:    "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
 			wantGas: 6,
 		},
 
-		{ // MCOPY 0 0 32 - copy 32 bytes from offset 0 to offset 0.
+		{
+			// MCOPY 0 0 32 - copy 32 bytes from offset 0 to offset 0.
 			dst: "0x0", src: "0x0", len: "0x20",
 			pre:     "0101010101010101010101010101010101010101010101010101010101010101",
 			want:    "0101010101010101010101010101010101010101010101010101010101010101",
 			wantGas: 6,
 		},
-		{ // MCOPY 0 1 8 - copy 8 bytes from offset 1 to offset 0 (overlapping).
+		{
+			// MCOPY 0 1 8 - copy 8 bytes from offset 1 to offset 0 (overlapping).
 			dst: "0x0", src: "0x1", len: "0x8",
 			pre:     "000102030405060708 000000000000000000000000000000000000000000000000",
 			want:    "010203040506070808 000000000000000000000000000000000000000000000000",
 			wantGas: 6,
 		},
-		{ // MCOPY 1 0 8 - copy 8 bytes from offset 0 to offset 1 (overlapping).
+		{
+			// MCOPY 1 0 8 - copy 8 bytes from offset 0 to offset 1 (overlapping).
 			dst: "0x1", src: "0x0", len: "0x8",
 			pre:     "000102030405060708 000000000000000000000000000000000000000000000000",
 			want:    "000001020304050607 000000000000000000000000000000000000000000000000",
 			wantGas: 6,
 		},
 		// Tests below are not in the EIP, but maybe should be added
-		{ // MCOPY 0xFFFFFFFFFFFF 0xFFFFFFFFFFFF 0 - copy zero bytes from out-of-bounds index(overlapping).
+		{
+			// MCOPY 0xFFFFFFFFFFFF 0xFFFFFFFFFFFF 0 - copy zero bytes from out-of-bounds index(overlapping).
 			dst: "0xFFFFFFFFFFFF", src: "0xFFFFFFFFFFFF", len: "0x0",
 			pre:     "11",
 			want:    "11",
 			wantGas: 3,
 		},
-		{ // MCOPY 0xFFFFFFFFFFFF 0 0 - copy zero bytes from start of mem to out-of-bounds.
+		{
+			// MCOPY 0xFFFFFFFFFFFF 0 0 - copy zero bytes from start of mem to out-of-bounds.
 			dst: "0xFFFFFFFFFFFF", src: "0x0", len: "0x0",
 			pre:     "11",
 			want:    "11",
 			wantGas: 3,
 		},
-		{ // MCOPY 0 0xFFFFFFFFFFFF 0 - copy zero bytes from out-of-bounds to start of mem
+		{
+			// MCOPY 0 0xFFFFFFFFFFFF 0 - copy zero bytes from out-of-bounds to start of mem
 			dst: "0x0", src: "0xFFFFFFFFFFFF", len: "0x0",
 			pre:     "11",
 			want:    "11",
 			wantGas: 3,
 		},
-		{ // MCOPY - copy 1 from space outside of uint64  space
+		{
+			// MCOPY - copy 1 from space outside of uint64  space
 			dst: "0x0", src: "0x10000000000000000", len: "0x1",
 			pre: "0",
 		},
-		{ // MCOPY - copy 1 from 0 to space outside of uint64
+		{
+			// MCOPY - copy 1 from 0 to space outside of uint64
 			dst: "0x10000000000000000", src: "0x0", len: "0x1",
 			pre: "0",
 		},
-		{ // MCOPY - copy nothing from 0 to space outside of uint64
+		{
+			// MCOPY - copy nothing from 0 to space outside of uint64
 			dst: "0x10000000000000000", src: "0x0", len: "0x0",
 			pre:     "",
 			want:    "",
 			wantGas: 3,
 		},
-		{ // MCOPY - copy 1 from 0x20 to 0x10, with no prior allocated mem
+		{
+			// MCOPY - copy 1 from 0x20 to 0x10, with no prior allocated mem
 			dst: "0x10", src: "0x20", len: "0x1",
 			pre: "",
 			// 64 bytes
 			want:    "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 			wantGas: 12,
 		},
-		{ // MCOPY - copy 1 from 0x19 to 0x10, with no prior allocated mem
+		{
+			// MCOPY - copy 1 from 0x19 to 0x10, with no prior allocated mem
 			dst: "0x10", src: "0x19", len: "0x1",
 			pre: "",
 			// 32 bytes

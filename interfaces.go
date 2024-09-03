@@ -22,8 +22,8 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
 )
 
 // NotFound is returned by API methods if the requested item does not exist.
@@ -222,7 +222,9 @@ type GasPricer1559 interface {
 
 // FeeHistoryReader provides access to the fee history oracle.
 type FeeHistoryReader interface {
-	FeeHistory(ctx context.Context, blockCount uint64, lastBlock *big.Int, rewardPercentiles []float64) (*FeeHistory, error)
+	FeeHistory(ctx context.Context, blockCount uint64, lastBlock *big.Int, rewardPercentiles []float64) (
+		*FeeHistory, error,
+	)
 }
 
 // FeeHistory provides recent fee market data that consumers can use to determine

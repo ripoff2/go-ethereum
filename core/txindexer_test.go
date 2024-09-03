@@ -20,13 +20,13 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 // TestTxIndexer tests the functionalities for managing transaction indexes.
@@ -45,11 +45,18 @@ func TestTxIndexer(t *testing.T) {
 		nonce     = uint64(0)
 		chainHead = uint64(128)
 	)
-	_, blocks, receipts := GenerateChainWithGenesis(gspec, engine, int(chainHead), func(i int, gen *BlockGen) {
-		tx, _ := types.SignTx(types.NewTransaction(nonce, common.HexToAddress("0xdeadbeef"), big.NewInt(1000), params.TxGas, big.NewInt(10*params.InitialBaseFee), nil), types.HomesteadSigner{}, testBankKey)
-		gen.AddTx(tx)
-		nonce += 1
-	})
+	_, blocks, receipts := GenerateChainWithGenesis(
+		gspec, engine, int(chainHead), func(i int, gen *BlockGen) {
+			tx, _ := types.SignTx(
+				types.NewTransaction(
+					nonce, common.HexToAddress("0xdeadbeef"), big.NewInt(1000), params.TxGas,
+					big.NewInt(10*params.InitialBaseFee), nil,
+				), types.HomesteadSigner{}, testBankKey,
+			)
+			gen.AddTx(tx)
+			nonce += 1
+		},
+	)
 
 	// verifyIndexes checks if the transaction indexes are present or not
 	// of the specified block.
@@ -211,7 +218,10 @@ func TestTxIndexer(t *testing.T) {
 	}
 	for _, c := range cases {
 		db, _ := rawdb.NewDatabaseWithFreezer(rawdb.NewMemoryDatabase(), "", "", false)
-		rawdb.WriteAncientBlocks(db, append([]*types.Block{gspec.ToBlock()}, blocks...), append([]types.Receipts{{}}, receipts...), big.NewInt(0))
+		rawdb.WriteAncientBlocks(
+			db, append([]*types.Block{gspec.ToBlock()}, blocks...), append([]types.Receipts{{}}, receipts...),
+			big.NewInt(0),
+		)
 
 		// Index the initial blocks from ancient store
 		indexer := &txIndexer{

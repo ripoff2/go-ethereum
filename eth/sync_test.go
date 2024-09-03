@@ -20,11 +20,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/eth/downloader"
-	"github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/eth/protocols/snap"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/eth/downloader"
+	"github.com/ripoff2/go-ethereum/eth/protocols/eth"
+	"github.com/ripoff2/go-ethereum/eth/protocols/snap"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
 )
 
 // Tests that snap sync is disabled after a successful sync cycle.
@@ -61,12 +61,16 @@ func testSnapSyncDisabling(t *testing.T, ethVer uint, snapVer uint) {
 	defer emptyPeerEth.Close()
 	defer fullPeerEth.Close()
 
-	go empty.handler.runEthPeer(emptyPeerEth, func(peer *eth.Peer) error {
-		return eth.Handle((*ethHandler)(empty.handler), peer)
-	})
-	go full.handler.runEthPeer(fullPeerEth, func(peer *eth.Peer) error {
-		return eth.Handle((*ethHandler)(full.handler), peer)
-	})
+	go empty.handler.runEthPeer(
+		emptyPeerEth, func(peer *eth.Peer) error {
+			return eth.Handle((*ethHandler)(empty.handler), peer)
+		},
+	)
+	go full.handler.runEthPeer(
+		fullPeerEth, func(peer *eth.Peer) error {
+			return eth.Handle((*ethHandler)(full.handler), peer)
+		},
+	)
 
 	emptyPipeSnap, fullPipeSnap := p2p.MsgPipe()
 	defer emptyPipeSnap.Close()
@@ -75,12 +79,16 @@ func testSnapSyncDisabling(t *testing.T, ethVer uint, snapVer uint) {
 	emptyPeerSnap := snap.NewPeer(snapVer, p2p.NewPeer(enode.ID{1}, "", caps), emptyPipeSnap)
 	fullPeerSnap := snap.NewPeer(snapVer, p2p.NewPeer(enode.ID{2}, "", caps), fullPipeSnap)
 
-	go empty.handler.runSnapExtension(emptyPeerSnap, func(peer *snap.Peer) error {
-		return snap.Handle((*snapHandler)(empty.handler), peer)
-	})
-	go full.handler.runSnapExtension(fullPeerSnap, func(peer *snap.Peer) error {
-		return snap.Handle((*snapHandler)(full.handler), peer)
-	})
+	go empty.handler.runSnapExtension(
+		emptyPeerSnap, func(peer *snap.Peer) error {
+			return snap.Handle((*snapHandler)(empty.handler), peer)
+		},
+	)
+	go full.handler.runSnapExtension(
+		fullPeerSnap, func(peer *snap.Peer) error {
+			return snap.Handle((*snapHandler)(full.handler), peer)
+		},
+	)
 	// Wait a bit for the above handlers to start
 	time.Sleep(250 * time.Millisecond)
 

@@ -21,8 +21,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 var (
@@ -200,31 +200,35 @@ func (s *serverWithTimeout) eventCallback(event Event) {
 // startTimeout starts a timeout timer for the given request.
 func (s *serverWithTimeout) startTimeout(reqData RequestResponse) {
 	id := reqData.ID
-	s.timeouts[id] = s.clock.AfterFunc(softRequestTimeout, func() {
-		s.lock.Lock()
-		if _, ok := s.timeouts[id]; !ok {
-			s.lock.Unlock()
-			return
-		}
-		s.timeouts[id] = s.clock.AfterFunc(hardRequestTimeout-softRequestTimeout, func() {
+	s.timeouts[id] = s.clock.AfterFunc(
+		softRequestTimeout, func() {
 			s.lock.Lock()
 			if _, ok := s.timeouts[id]; !ok {
 				s.lock.Unlock()
 				return
 			}
-			delete(s.timeouts, id)
+			s.timeouts[id] = s.clock.AfterFunc(
+				hardRequestTimeout-softRequestTimeout, func() {
+					s.lock.Lock()
+					if _, ok := s.timeouts[id]; !ok {
+						s.lock.Unlock()
+						return
+					}
+					delete(s.timeouts, id)
+					childEventCb := s.childEventCb
+					s.lock.Unlock()
+					if childEventCb != nil {
+						childEventCb(Event{Type: EvFail, Data: reqData})
+					}
+				},
+			)
 			childEventCb := s.childEventCb
 			s.lock.Unlock()
 			if childEventCb != nil {
-				childEventCb(Event{Type: EvFail, Data: reqData})
+				childEventCb(Event{Type: EvTimeout, Data: reqData})
 			}
-		})
-		childEventCb := s.childEventCb
-		s.lock.Unlock()
-		if childEventCb != nil {
-			childEventCb(Event{Type: EvTimeout, Data: reqData})
-		}
-	})
+		},
+	)
 }
 
 // unsubscribe stops all goroutines associated with the server.
@@ -407,23 +411,25 @@ func (s *serverWithLimits) delay(delay time.Duration) {
 	s.delayCounter++
 	delayCounter := s.delayCounter
 	log.Debug("Server delay started", "length", delay)
-	s.delayTimer = s.clock.AfterFunc(delay, func() {
-		log.Debug("Server delay ended", "length", delay)
-		var sendCanRequestAgain bool
-		s.lock.Lock()
-		if s.delayTimer != nil && s.delayCounter == delayCounter { // do nothing if there is a new timer now
-			s.delayTimer = nil
-			if s.canRequest() {
-				sendCanRequestAgain = s.sendEvent
-				s.sendEvent = false
+	s.delayTimer = s.clock.AfterFunc(
+		delay, func() {
+			log.Debug("Server delay ended", "length", delay)
+			var sendCanRequestAgain bool
+			s.lock.Lock()
+			if s.delayTimer != nil && s.delayCounter == delayCounter { // do nothing if there is a new timer now
+				s.delayTimer = nil
+				if s.canRequest() {
+					sendCanRequestAgain = s.sendEvent
+					s.sendEvent = false
+				}
 			}
-		}
-		childEventCb := s.childEventCb
-		s.lock.Unlock()
-		if sendCanRequestAgain && childEventCb != nil {
-			childEventCb(Event{Type: EvCanRequestAgain})
-		}
-	})
+			childEventCb := s.childEventCb
+			s.lock.Unlock()
+			if sendCanRequestAgain && childEventCb != nil {
+				childEventCb(Event{Type: EvCanRequestAgain})
+			}
+		},
+	)
 }
 
 // fail reports that a response from the server was found invalid by the processing

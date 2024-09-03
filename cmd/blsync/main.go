@@ -21,33 +21,34 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ethereum/go-ethereum/beacon/blsync"
-	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/internal/debug"
-	"github.com/ethereum/go-ethereum/internal/flags"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum/beacon/blsync"
+	"github.com/ripoff2/go-ethereum/cmd/utils"
+	"github.com/ripoff2/go-ethereum/internal/debug"
+	"github.com/ripoff2/go-ethereum/internal/flags"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/node"
+	"github.com/ripoff2/go-ethereum/rpc"
 	"github.com/urfave/cli/v2"
 )
 
 func main() {
 	app := flags.NewApp("beacon light syncer tool")
-	app.Flags = flags.Merge([]cli.Flag{
-		utils.BeaconApiFlag,
-		utils.BeaconApiHeaderFlag,
-		utils.BeaconThresholdFlag,
-		utils.BeaconNoFilterFlag,
-		utils.BeaconConfigFlag,
-		utils.BeaconGenesisRootFlag,
-		utils.BeaconGenesisTimeFlag,
-		utils.BeaconCheckpointFlag,
-		//TODO datadir for optional permanent database
-		utils.MainnetFlag,
-		utils.SepoliaFlag,
-		utils.BlsyncApiFlag,
-		utils.BlsyncJWTSecretFlag,
-	},
+	app.Flags = flags.Merge(
+		[]cli.Flag{
+			utils.BeaconApiFlag,
+			utils.BeaconApiHeaderFlag,
+			utils.BeaconThresholdFlag,
+			utils.BeaconNoFilterFlag,
+			utils.BeaconConfigFlag,
+			utils.BeaconGenesisRootFlag,
+			utils.BeaconGenesisTimeFlag,
+			utils.BeaconCheckpointFlag,
+			//TODO datadir for optional permanent database
+			utils.MainnetFlag,
+			utils.SepoliaFlag,
+			utils.BlsyncApiFlag,
+			utils.BlsyncJWTSecretFlag,
+		},
 		debug.Flags,
 	)
 	app.Before = func(ctx *cli.Context) error {

@@ -23,9 +23,9 @@ import (
 	"math/big"
 	"reflect"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/crypto"
 )
 
 // MakeTopics converts a filter query argument list into a filter topic set.
@@ -103,7 +103,10 @@ func genIntType(rule int64, size uint) []byte {
 	if rule < 0 {
 		// if a rule is negative, we need to put it into two's complement.
 		// extended to common.HashLength bytes.
-		topic = [common.HashLength]byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
+		topic = [common.HashLength]byte{
+			255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+			255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+		}
 	}
 	for i := uint(0); i < size; i++ {
 		topic[common.HashLength-i-1] = byte(rule >> (i * 8))
@@ -113,19 +116,23 @@ func genIntType(rule int64, size uint) []byte {
 
 // ParseTopics converts the indexed topic fields into actual log field values.
 func ParseTopics(out interface{}, fields Arguments, topics []common.Hash) error {
-	return parseTopicWithSetter(fields, topics,
+	return parseTopicWithSetter(
+		fields, topics,
 		func(arg Argument, reconstr interface{}) {
 			field := reflect.ValueOf(out).Elem().FieldByName(ToCamelCase(arg.Name))
 			field.Set(reflect.ValueOf(reconstr))
-		})
+		},
+	)
 }
 
 // ParseTopicsIntoMap converts the indexed topic field-value pairs into map key-value pairs.
 func ParseTopicsIntoMap(out map[string]interface{}, fields Arguments, topics []common.Hash) error {
-	return parseTopicWithSetter(fields, topics,
+	return parseTopicWithSetter(
+		fields, topics,
 		func(arg Argument, reconstr interface{}) {
 			out[arg.Name] = reconstr
-		})
+		},
+	)
 }
 
 // parseTopicWithSetter converts the indexed topic field-value pairs and stores them using the

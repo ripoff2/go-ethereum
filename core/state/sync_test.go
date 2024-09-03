@@ -20,18 +20,18 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/triedb"
-	"github.com/ethereum/go-ethereum/triedb/hashdb"
-	"github.com/ethereum/go-ethereum/triedb/pathdb"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum/triedb/hashdb"
+	"github.com/ripoff2/go-ethereum/triedb/pathdb"
 )
 
 // testAccount is the data associated with an account used by the state tests.
@@ -198,11 +198,13 @@ func testIterativeStateSync(t *testing.T, count int, commit bool, bypath bool, s
 	)
 	paths, nodes, codes := sched.Missing(count)
 	for i := 0; i < len(paths); i++ {
-		nodeElements = append(nodeElements, stateElement{
-			path:     paths[i],
-			hash:     nodes[i],
-			syncPath: trie.NewSyncPath([]byte(paths[i])),
-		})
+		nodeElements = append(
+			nodeElements, stateElement{
+				path:     paths[i],
+				hash:     nodes[i],
+				syncPath: trie.NewSyncPath([]byte(paths[i])),
+			},
+		)
 	}
 	for i := 0; i < len(codes); i++ {
 		codeElements = append(codeElements, stateElement{code: codes[i]})
@@ -275,17 +277,21 @@ func testIterativeStateSync(t *testing.T, count int, commit bool, bypath bool, s
 		paths, nodes, codes = sched.Missing(count)
 		nodeElements = nodeElements[:0]
 		for i := 0; i < len(paths); i++ {
-			nodeElements = append(nodeElements, stateElement{
-				path:     paths[i],
-				hash:     nodes[i],
-				syncPath: trie.NewSyncPath([]byte(paths[i])),
-			})
+			nodeElements = append(
+				nodeElements, stateElement{
+					path:     paths[i],
+					hash:     nodes[i],
+					syncPath: trie.NewSyncPath([]byte(paths[i])),
+				},
+			)
 		}
 		codeElements = codeElements[:0]
 		for i := 0; i < len(codes); i++ {
-			codeElements = append(codeElements, stateElement{
-				code: codes[i],
-			})
+			codeElements = append(
+				codeElements, stateElement{
+					code: codes[i],
+				},
+			)
 		}
 	}
 	// Copy the preimages from source db in order to traverse the state.
@@ -317,11 +323,13 @@ func testIterativeDelayedStateSync(t *testing.T, scheme string) {
 	)
 	paths, nodes, codes := sched.Missing(0)
 	for i := 0; i < len(paths); i++ {
-		nodeElements = append(nodeElements, stateElement{
-			path:     paths[i],
-			hash:     nodes[i],
-			syncPath: trie.NewSyncPath([]byte(paths[i])),
-		})
+		nodeElements = append(
+			nodeElements, stateElement{
+				path:     paths[i],
+				hash:     nodes[i],
+				syncPath: trie.NewSyncPath([]byte(paths[i])),
+			},
+		)
 	}
 	for i := 0; i < len(codes); i++ {
 		codeElements = append(codeElements, stateElement{code: codes[i]})
@@ -376,17 +384,21 @@ func testIterativeDelayedStateSync(t *testing.T, scheme string) {
 		paths, nodes, codes = sched.Missing(0)
 		nodeElements = nodeElements[nodeProcessed:]
 		for i := 0; i < len(paths); i++ {
-			nodeElements = append(nodeElements, stateElement{
-				path:     paths[i],
-				hash:     nodes[i],
-				syncPath: trie.NewSyncPath([]byte(paths[i])),
-			})
+			nodeElements = append(
+				nodeElements, stateElement{
+					path:     paths[i],
+					hash:     nodes[i],
+					syncPath: trie.NewSyncPath([]byte(paths[i])),
+				},
+			)
 		}
 		codeElements = codeElements[codeProcessed:]
 		for i := 0; i < len(codes); i++ {
-			codeElements = append(codeElements, stateElement{
-				code: codes[i],
-			})
+			codeElements = append(
+				codeElements, stateElement{
+					code: codes[i],
+				},
+			)
 		}
 	}
 	// Copy the preimages from source db in order to traverse the state.
@@ -457,7 +469,9 @@ func testIterativeRandomStateSync(t *testing.T, count int, scheme string) {
 				owner, inner := trie.ResolvePath([]byte(element.path))
 				data, err := reader.Node(owner, inner, element.hash)
 				if err != nil {
-					t.Fatalf("failed to retrieve node data for %x %v %v", element.hash, []byte(element.path), element.path)
+					t.Fatalf(
+						"failed to retrieve node data for %x %v %v", element.hash, []byte(element.path), element.path,
+					)
 				}
 				results = append(results, trie.NodeSyncResult{Path: path, Data: data})
 			}

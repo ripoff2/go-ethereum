@@ -27,21 +27,21 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/console/prompt"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state/snapshot"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/internal/flags"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/triedb"
 	"github.com/olekukonko/tablewriter"
+	"github.com/ripoff2/go-ethereum/cmd/utils"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/console/prompt"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state/snapshot"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/internal/flags"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/triedb"
 	"github.com/urfave/cli/v2"
 )
 
@@ -60,8 +60,10 @@ var (
 		Name:      "removedb",
 		Usage:     "Remove blockchain and state databases",
 		ArgsUsage: "",
-		Flags: flags.Merge(utils.DatabaseFlags,
-			[]cli.Flag{removeStateDataFlag, removeChainDataFlag}),
+		Flags: flags.Merge(
+			utils.DatabaseFlags,
+			[]cli.Flag{removeStateDataFlag, removeChainDataFlag},
+		),
 		Description: `
 Remove blockchain and state databases`,
 	}
@@ -89,9 +91,11 @@ Remove blockchain and state databases`,
 		Action:    inspect,
 		Name:      "inspect",
 		ArgsUsage: "<prefix> <start>",
-		Flags: flags.Merge([]cli.Flag{
-			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.SyncModeFlag,
+			}, utils.NetworkFlags, utils.DatabaseFlags,
+		),
 		Usage:       "Inspect the storage size for each type of data in the database",
 		Description: `This commands iterates the entire database. If the optional 'prefix' and 'start' arguments are provided, then the iteration is limited to the given subset of data.`,
 	}
@@ -109,19 +113,23 @@ a data corruption.`,
 		Action: dbStats,
 		Name:   "stats",
 		Usage:  "Print leveldb statistics",
-		Flags: flags.Merge([]cli.Flag{
-			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.SyncModeFlag,
+			}, utils.NetworkFlags, utils.DatabaseFlags,
+		),
 	}
 	dbCompactCmd = &cli.Command{
 		Action: dbCompact,
 		Name:   "compact",
 		Usage:  "Compact leveldb database. WARNING: May take a very long time",
-		Flags: flags.Merge([]cli.Flag{
-			utils.SyncModeFlag,
-			utils.CacheFlag,
-			utils.CacheDatabaseFlag,
-		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.SyncModeFlag,
+				utils.CacheFlag,
+				utils.CacheDatabaseFlag,
+			}, utils.NetworkFlags, utils.DatabaseFlags,
+		),
 		Description: `This command performs a database compaction.
 WARNING: This operation may take a very long time to finish, and may cause database
 corruption if it is aborted during execution'!`,
@@ -131,9 +139,11 @@ corruption if it is aborted during execution'!`,
 		Name:      "get",
 		Usage:     "Show the value of a database key",
 		ArgsUsage: "<hex-encoded key>",
-		Flags: flags.Merge([]cli.Flag{
-			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.SyncModeFlag,
+			}, utils.NetworkFlags, utils.DatabaseFlags,
+		),
 		Description: "This command looks up the specified database key from the database.",
 	}
 	dbDeleteCmd = &cli.Command{
@@ -141,9 +151,11 @@ corruption if it is aborted during execution'!`,
 		Name:      "delete",
 		Usage:     "Delete a database key (WARNING: may corrupt your database)",
 		ArgsUsage: "<hex-encoded key>",
-		Flags: flags.Merge([]cli.Flag{
-			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.SyncModeFlag,
+			}, utils.NetworkFlags, utils.DatabaseFlags,
+		),
 		Description: `This command deletes the specified database key from the database.
 WARNING: This is a low-level operation which may cause database corruption!`,
 	}
@@ -152,9 +164,11 @@ WARNING: This is a low-level operation which may cause database corruption!`,
 		Name:      "put",
 		Usage:     "Set the value of a database key (WARNING: may corrupt your database)",
 		ArgsUsage: "<hex-encoded key> <hex-encoded value>",
-		Flags: flags.Merge([]cli.Flag{
-			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.SyncModeFlag,
+			}, utils.NetworkFlags, utils.DatabaseFlags,
+		),
 		Description: `This command sets a given database key to the given value.
 WARNING: This is a low-level operation which may cause database corruption!`,
 	}
@@ -163,9 +177,11 @@ WARNING: This is a low-level operation which may cause database corruption!`,
 		Name:      "dumptrie",
 		Usage:     "Show the storage key/values of a given storage trie",
 		ArgsUsage: "<hex-encoded state root> <hex-encoded account hash> <hex-encoded storage trie root> <hex-encoded start (optional)> <int max elements (optional)>",
-		Flags: flags.Merge([]cli.Flag{
-			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.SyncModeFlag,
+			}, utils.NetworkFlags, utils.DatabaseFlags,
+		),
 		Description: "This command looks up the specified database key from the database.",
 	}
 	dbDumpFreezerIndex = &cli.Command{
@@ -173,9 +189,11 @@ WARNING: This is a low-level operation which may cause database corruption!`,
 		Name:      "freezer-index",
 		Usage:     "Dump out the index of a specific freezer table",
 		ArgsUsage: "<freezer-type> <table-type> <start (int)> <end (int)>",
-		Flags: flags.Merge([]cli.Flag{
-			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.SyncModeFlag,
+			}, utils.NetworkFlags, utils.DatabaseFlags,
+		),
 		Description: "This command displays information about the freezer index.",
 	}
 	dbImportCmd = &cli.Command{
@@ -183,9 +201,11 @@ WARNING: This is a low-level operation which may cause database corruption!`,
 		Name:      "import",
 		Usage:     "Imports leveldb-data from an exported RLP dump.",
 		ArgsUsage: "<dumpfile> <start (optional)",
-		Flags: flags.Merge([]cli.Flag{
-			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.SyncModeFlag,
+			}, utils.NetworkFlags, utils.DatabaseFlags,
+		),
 		Description: "The import command imports the specific chain data from an RLP encoded stream.",
 	}
 	dbExportCmd = &cli.Command{
@@ -193,18 +213,22 @@ WARNING: This is a low-level operation which may cause database corruption!`,
 		Name:      "export",
 		Usage:     "Exports the chain data into an RLP dump. If the <dumpfile> has .gz suffix, gzip compression will be used.",
 		ArgsUsage: "<type> <dumpfile>",
-		Flags: flags.Merge([]cli.Flag{
-			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.SyncModeFlag,
+			}, utils.NetworkFlags, utils.DatabaseFlags,
+		),
 		Description: "Exports the specified chain data to an RLP encoded stream, optionally gzip-compressed.",
 	}
 	dbMetadataCmd = &cli.Command{
 		Action: showMetaData,
 		Name:   "metadata",
 		Usage:  "Shows metadata about the chain status.",
-		Flags: flags.Merge([]cli.Flag{
-			utils.SyncModeFlag,
-		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.SyncModeFlag,
+			}, utils.NetworkFlags, utils.DatabaseFlags,
+		),
 		Description: "Shows metadata about the chain status.",
 	}
 	dbInspectHistoryCmd = &cli.Command{
@@ -212,21 +236,23 @@ WARNING: This is a low-level operation which may cause database corruption!`,
 		Name:      "inspect-history",
 		Usage:     "Inspect the state history within block range",
 		ArgsUsage: "<address> [OPTIONAL <storage-slot>]",
-		Flags: flags.Merge([]cli.Flag{
-			utils.SyncModeFlag,
-			&cli.Uint64Flag{
-				Name:  "start",
-				Usage: "block number of the range start, zero means earliest history",
-			},
-			&cli.Uint64Flag{
-				Name:  "end",
-				Usage: "block number of the range end(included), zero means latest history",
-			},
-			&cli.BoolFlag{
-				Name:  "raw",
-				Usage: "display the decoded raw state value (otherwise shows rlp-encoded value)",
-			},
-		}, utils.NetworkFlags, utils.DatabaseFlags),
+		Flags: flags.Merge(
+			[]cli.Flag{
+				utils.SyncModeFlag,
+				&cli.Uint64Flag{
+					Name:  "start",
+					Usage: "block number of the range start, zero means earliest history",
+				},
+				&cli.Uint64Flag{
+					Name:  "end",
+					Usage: "block number of the range end(included), zero means latest history",
+				},
+				&cli.BoolFlag{
+					Name:  "raw",
+					Usage: "display the decoded raw state value (otherwise shows rlp-encoded value)",
+				},
+			}, utils.NetworkFlags, utils.DatabaseFlags,
+		),
 		Description: "This command queries the history of the account or storage slot within the specified block range",
 	}
 )
@@ -254,10 +280,12 @@ func removeDB(ctx *cli.Context) error {
 	confirmAndRemoveDB(statePaths, "state data", ctx, removeStateDataFlag.Name)
 
 	// Delete ancient chain
-	chainPaths := []string{filepath.Join(
-		ancientDir,
-		rawdb.ChainFreezerName,
-	)}
+	chainPaths := []string{
+		filepath.Join(
+			ancientDir,
+			rawdb.ChainFreezerName,
+		),
+	}
 	confirmAndRemoveDB(chainPaths, "ancient chain", ctx, removeChainDataFlag.Name)
 	return nil
 }
@@ -265,18 +293,20 @@ func removeDB(ctx *cli.Context) error {
 // removeFolder deletes all files (not folders) inside the directory 'dir' (but
 // not files in subfolders).
 func removeFolder(dir string) {
-	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		// If we're at the top level folder, recurse into
-		if path == dir {
-			return nil
-		}
-		// Delete all the files, but not subfolders
-		if !info.IsDir() {
-			os.Remove(path)
-			return nil
-		}
-		return filepath.SkipDir
-	})
+	filepath.Walk(
+		dir, func(path string, info os.FileInfo, err error) error {
+			// If we're at the top level folder, recurse into
+			if path == dir {
+				return nil
+			}
+			// Delete all the files, but not subfolders
+			if !info.IsDir() {
+				os.Remove(path)
+				return nil
+			}
+			return filepath.SkipDir
+		},
+	)
 }
 
 // confirmAndRemoveDB prompts the user for a last confirmation and removes the
@@ -319,7 +349,10 @@ func confirmAndRemoveDB(paths []string, kind string, ctx *cli.Context, removeFla
 				log.Info("Folder is not existent", "path", path)
 			}
 		}
-		log.Info("Database successfully deleted", "kind", kind, "paths", deleted, "elapsed", common.PrettyDuration(time.Since(start)))
+		log.Info(
+			"Database successfully deleted", "kind", kind, "paths", deleted, "elapsed",
+			common.PrettyDuration(time.Since(start)),
+		)
 	}
 }
 
@@ -397,7 +430,10 @@ func checkStateContent(ctx *cli.Context) error {
 			fmt.Printf("  Data:  %#x\n", v)
 		}
 		if time.Since(lastLog) > 8*time.Second {
-			log.Info("Iterating the database", "at", fmt.Sprintf("%#x", k), "elapsed", common.PrettyDuration(time.Since(startTime)))
+			log.Info(
+				"Iterating the database", "at", fmt.Sprintf("%#x", k), "elapsed",
+				common.PrettyDuration(time.Since(startTime)),
+			)
 			lastLog = time.Now()
 		}
 	}
@@ -693,13 +729,17 @@ func (iter *snapshotIterator) Next() (byte, []byte, []byte, bool) {
 	}
 	for iter.account.Next() {
 		key := iter.account.Key()
-		if bytes.HasPrefix(key, rawdb.SnapshotAccountPrefix) && len(key) == (len(rawdb.SnapshotAccountPrefix)+common.HashLength) {
+		if bytes.HasPrefix(
+			key, rawdb.SnapshotAccountPrefix,
+		) && len(key) == (len(rawdb.SnapshotAccountPrefix)+common.HashLength) {
 			return utils.OpBatchAdd, key, iter.account.Value(), true
 		}
 	}
 	for iter.storage.Next() {
 		key := iter.storage.Key()
-		if bytes.HasPrefix(key, rawdb.SnapshotStoragePrefix) && len(key) == (len(rawdb.SnapshotStoragePrefix)+2*common.HashLength) {
+		if bytes.HasPrefix(
+			key, rawdb.SnapshotStoragePrefix,
+		) && len(key) == (len(rawdb.SnapshotStoragePrefix)+2*common.HashLength) {
 			return utils.OpBatchAdd, key, iter.storage.Value(), true
 		}
 	}
@@ -817,7 +857,9 @@ func inspectAccount(db *triedb.Database, start uint64, end uint64, address commo
 				if len(account.Root) > 0 {
 					root = fmt.Sprintf("%#x", account.Root)
 				}
-				content = fmt.Sprintf("nonce: %d, balance: %d, codeHash: %s, root: %s", account.Nonce, account.Balance, code, root)
+				content = fmt.Sprintf(
+					"nonce: %d, balance: %d, codeHash: %s, root: %s", account.Nonce, account.Balance, code, root,
+				)
 			}
 		}
 		fmt.Printf("#%d - #%d: %s\n", from, stats.Blocks[i], content)
@@ -826,7 +868,9 @@ func inspectAccount(db *triedb.Database, start uint64, end uint64, address commo
 	return nil
 }
 
-func inspectStorage(db *triedb.Database, start uint64, end uint64, address common.Address, slot common.Hash, raw bool) error {
+func inspectStorage(
+	db *triedb.Database, start uint64, end uint64, address common.Address, slot common.Hash, raw bool,
+) error {
 	// The hash of storage slot key is utilized in the history
 	// rather than the raw slot key, make the conversion.
 	slotHash := crypto.Keccak256Hash(slot.Bytes())
@@ -834,7 +878,10 @@ func inspectStorage(db *triedb.Database, start uint64, end uint64, address commo
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Storage history:\n\taddress: %s\n\tslot: %s\n\tblockrange: [#%d-#%d]\n", address.Hex(), slot.Hex(), stats.Start, stats.End)
+	fmt.Printf(
+		"Storage history:\n\taddress: %s\n\tslot: %s\n\tblockrange: [#%d-#%d]\n", address.Hex(), slot.Hex(),
+		stats.Start, stats.End,
+	)
 
 	from := stats.Start
 	for i := 0; i < len(stats.Blocks); i++ {
@@ -902,7 +949,9 @@ func inspectHistory(ctx *cli.Context) error {
 		if id == nil {
 			first, last, err := triedb.HistoryRange()
 			if err == nil {
-				return 0, fmt.Errorf("history of block #%d is not existent, available history range: [#%d-#%d]", blockNumber, first, last)
+				return 0, fmt.Errorf(
+					"history of block #%d is not existent, available history range: [#%d-#%d]", blockNumber, first, last,
+				)
 			}
 			return 0, fmt.Errorf("history of block #%d is not existent", blockNumber)
 		}

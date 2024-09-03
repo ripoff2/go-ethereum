@@ -27,7 +27,7 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 const (
@@ -41,8 +41,10 @@ const (
 func ipcListen(endpoint string) (net.Listener, error) {
 	// account for null-terminator too
 	if len(endpoint)+1 > maxPathSize {
-		log.Warn(fmt.Sprintf("The ipc endpoint is longer than %d characters. ", maxPathSize-1),
-			"endpoint", endpoint)
+		log.Warn(
+			fmt.Sprintf("The ipc endpoint is longer than %d characters. ", maxPathSize-1),
+			"endpoint", endpoint,
+		)
 	}
 
 	// Ensure the IPC path exists and remove any previous leftover

@@ -26,13 +26,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/prque"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto/kzg4844"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/prque"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto/kzg4844"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 const (
@@ -500,8 +500,10 @@ func (q *queue) ReserveReceipts(p *peerConnection, count int) (*fetchRequest, bo
 //	item     - the fetchRequest
 //	progress - whether any progress was made
 //	throttle - if the caller should throttle for a while
-func (q *queue) reserveHeaders(p *peerConnection, count int, taskPool map[common.Hash]*types.Header, taskQueue *prque.Prque[int64, *types.Header],
-	pendPool map[string]*fetchRequest, kind uint) (*fetchRequest, bool, bool) {
+func (q *queue) reserveHeaders(
+	p *peerConnection, count int, taskPool map[common.Hash]*types.Header, taskQueue *prque.Prque[int64, *types.Header],
+	pendPool map[string]*fetchRequest, kind uint,
+) (*fetchRequest, bool, bool) {
 	// Short circuit if the pool has been depleted, or if the peer's already
 	// downloading something (sanity check not to corrupt state)
 	if taskQueue.Empty() {
@@ -676,7 +678,9 @@ func (q *queue) expire(peer string, pendPool map[string]*fetchRequest, taskQueue
 // If the headers are accepted, the method makes an attempt to deliver the set
 // of ready headers to the processor to keep the pipeline full. However, it will
 // not block to prevent stalling other pending deliveries.
-func (q *queue) DeliverHeaders(id string, headers []*types.Header, hashes []common.Hash, headerProcCh chan *headerTask) (int, error) {
+func (q *queue) DeliverHeaders(
+	id string, headers []*types.Header, hashes []common.Hash, headerProcCh chan *headerTask,
+) (int, error) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -704,10 +708,16 @@ func (q *queue) DeliverHeaders(id string, headers []*types.Header, hashes []comm
 	accepted := len(headers) == MaxHeaderFetch
 	if accepted {
 		if headers[0].Number.Uint64() != request.From {
-			logger.Trace("First header broke chain ordering", "number", headers[0].Number, "hash", hashes[0], "expected", request.From)
+			logger.Trace(
+				"First header broke chain ordering", "number", headers[0].Number, "hash", hashes[0], "expected",
+				request.From,
+			)
 			accepted = false
 		} else if hashes[len(headers)-1] != target {
-			logger.Trace("Last header broke skeleton structure ", "number", headers[len(headers)-1].Number, "hash", hashes[len(headers)-1], "expected", target)
+			logger.Trace(
+				"Last header broke skeleton structure ", "number", headers[len(headers)-1].Number, "hash",
+				hashes[len(headers)-1], "expected", target,
+			)
 			accepted = false
 		}
 	}
@@ -782,9 +792,11 @@ func (q *queue) DeliverHeaders(id string, headers []*types.Header, hashes []comm
 // DeliverBodies injects a block body retrieval response into the results queue.
 // The method returns the number of blocks bodies accepted from the delivery and
 // also wakes any threads waiting for data delivery.
-func (q *queue) DeliverBodies(id string, txLists [][]*types.Transaction, txListHashes []common.Hash,
+func (q *queue) DeliverBodies(
+	id string, txLists [][]*types.Transaction, txListHashes []common.Hash,
 	uncleLists [][]*types.Header, uncleListHashes []common.Hash,
-	withdrawalLists [][]*types.Withdrawal, withdrawalListHashes []common.Hash) (int, error) {
+	withdrawalLists [][]*types.Withdrawal, withdrawalListHashes []common.Hash,
+) (int, error) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -848,14 +860,18 @@ func (q *queue) DeliverBodies(id string, txLists [][]*types.Transaction, txListH
 		result.Withdrawals = withdrawalLists[index]
 		result.SetBodyDone()
 	}
-	return q.deliver(id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool,
-		bodyReqTimer, bodyInMeter, bodyDropMeter, len(txLists), validate, reconstruct)
+	return q.deliver(
+		id, q.blockTaskPool, q.blockTaskQueue, q.blockPendPool,
+		bodyReqTimer, bodyInMeter, bodyDropMeter, len(txLists), validate, reconstruct,
+	)
 }
 
 // DeliverReceipts injects a receipt retrieval response into the results queue.
 // The method returns the number of transaction receipts accepted from the delivery
 // and also wakes any threads waiting for data delivery.
-func (q *queue) DeliverReceipts(id string, receiptList [][]*types.Receipt, receiptListHashes []common.Hash) (int, error) {
+func (q *queue) DeliverReceipts(id string, receiptList [][]*types.Receipt, receiptListHashes []common.Hash) (
+	int, error,
+) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -869,8 +885,10 @@ func (q *queue) DeliverReceipts(id string, receiptList [][]*types.Receipt, recei
 		result.Receipts = receiptList[index]
 		result.SetReceiptsDone()
 	}
-	return q.deliver(id, q.receiptTaskPool, q.receiptTaskQueue, q.receiptPendPool,
-		receiptReqTimer, receiptInMeter, receiptDropMeter, len(receiptList), validate, reconstruct)
+	return q.deliver(
+		id, q.receiptTaskPool, q.receiptTaskQueue, q.receiptPendPool,
+		receiptReqTimer, receiptInMeter, receiptDropMeter, len(receiptList), validate, reconstruct,
+	)
 }
 
 // deliver injects a data retrieval response into the results queue.
@@ -878,11 +896,13 @@ func (q *queue) DeliverReceipts(id string, receiptList [][]*types.Receipt, recei
 // Note, this method expects the queue lock to be already held for writing. The
 // reason this lock is not obtained in here is because the parameters already need
 // to access the queue, so they already need a lock anyway.
-func (q *queue) deliver(id string, taskPool map[common.Hash]*types.Header,
+func (q *queue) deliver(
+	id string, taskPool map[common.Hash]*types.Header,
 	taskQueue *prque.Prque[int64, *types.Header], pendPool map[string]*fetchRequest,
 	reqTimer metrics.Timer, resInMeter metrics.Meter, resDropMeter metrics.Meter,
 	results int, validate func(index int, header *types.Header) error,
-	reconstruct func(index int, result *fetchResult)) (int, error) {
+	reconstruct func(index int, result *fetchResult),
+) (int, error) {
 	// Short circuit if the data was never requested
 	request := pendPool[id]
 	if request == nil {

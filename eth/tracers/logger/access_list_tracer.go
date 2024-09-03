@@ -19,10 +19,10 @@ package logger
 import (
 	"maps"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
 )
 
 // accessList is an accumulator for the set of accounts and storage slots an EVM
@@ -103,7 +103,9 @@ type AccessListTracer struct {
 // NewAccessListTracer creates a new tracer that can generate AccessLists.
 // An optional AccessList can be specified to occupy slots and addresses in
 // the resulting accesslist.
-func NewAccessListTracer(acl types.AccessList, from, to common.Address, precompiles []common.Address) *AccessListTracer {
+func NewAccessListTracer(
+	acl types.AccessList, from, to common.Address, precompiles []common.Address,
+) *AccessListTracer {
 	excl := map[common.Address]struct{}{
 		from: {}, to: {},
 	}
@@ -132,7 +134,9 @@ func (a *AccessListTracer) Hooks() *tracing.Hooks {
 }
 
 // OnOpcode captures all opcodes that touch storage or addresses and adds them to the accesslist.
-func (a *AccessListTracer) OnOpcode(pc uint64, opcode byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error) {
+func (a *AccessListTracer) OnOpcode(
+	pc uint64, opcode byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error,
+) {
 	stackData := scope.StackData()
 	stackLen := len(stackData)
 	op := vm.OpCode(opcode)

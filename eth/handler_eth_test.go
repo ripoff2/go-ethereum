@@ -22,19 +22,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/forkid"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/downloader"
-	"github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/forkid"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/eth/downloader"
+	"github.com/ripoff2/go-ethereum/eth/protocols/eth"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 // testEthHandler is a mock event handler to listen for inbound network requests
@@ -104,22 +104,26 @@ func testForkIDSplit(t *testing.T, protocol uint) {
 		_, blocksNoFork, _  = core.GenerateChainWithGenesis(gspecNoFork, engine, 2, nil)
 		_, blocksProFork, _ = core.GenerateChainWithGenesis(gspecProFork, engine, 2, nil)
 
-		ethNoFork, _ = newHandler(&handlerConfig{
-			Database:   dbNoFork,
-			Chain:      chainNoFork,
-			TxPool:     newTestTxPool(),
-			Network:    1,
-			Sync:       downloader.FullSync,
-			BloomCache: 1,
-		})
-		ethProFork, _ = newHandler(&handlerConfig{
-			Database:   dbProFork,
-			Chain:      chainProFork,
-			TxPool:     newTestTxPool(),
-			Network:    1,
-			Sync:       downloader.FullSync,
-			BloomCache: 1,
-		})
+		ethNoFork, _ = newHandler(
+			&handlerConfig{
+				Database:   dbNoFork,
+				Chain:      chainNoFork,
+				TxPool:     newTestTxPool(),
+				Network:    1,
+				Sync:       downloader.FullSync,
+				BloomCache: 1,
+			},
+		)
+		ethProFork, _ = newHandler(
+			&handlerConfig{
+				Database:   dbProFork,
+				Chain:      chainProFork,
+				TxPool:     newTestTxPool(),
+				Network:    1,
+				Sync:       downloader.FullSync,
+				BloomCache: 1,
+			},
+		)
 	)
 	ethNoFork.Start(1000)
 	ethProFork.Start(1000)
@@ -253,16 +257,20 @@ func testRecvTransactions(t *testing.T, protocol uint) {
 	defer src.Close()
 	defer sink.Close()
 
-	go handler.handler.runEthPeer(sink, func(peer *eth.Peer) error {
-		return eth.Handle((*ethHandler)(handler.handler), peer)
-	})
+	go handler.handler.runEthPeer(
+		sink, func(peer *eth.Peer) error {
+			return eth.Handle((*ethHandler)(handler.handler), peer)
+		},
+	)
 	// Run the handshake locally to avoid spinning up a source handler
 	var (
 		genesis = handler.chain.Genesis()
 		head    = handler.chain.CurrentBlock()
 		td      = handler.chain.GetTd(head.Hash(), head.Number.Uint64())
 	)
-	if err := src.Handshake(1, td, head.Hash(), genesis.Hash(), forkid.NewIDWithChain(handler.chain), forkid.NewFilter(handler.chain)); err != nil {
+	if err := src.Handshake(
+		1, td, head.Hash(), genesis.Hash(), forkid.NewIDWithChain(handler.chain), forkid.NewFilter(handler.chain),
+	); err != nil {
 		t.Fatalf("failed to run protocol handshake")
 	}
 	// Send the transaction to the sink and verify that it's added to the tx pool
@@ -296,7 +304,9 @@ func testSendTransactions(t *testing.T, protocol uint) {
 
 	insert := make([]*types.Transaction, 100)
 	for nonce := range insert {
-		tx := types.NewTransaction(uint64(nonce), common.Address{}, big.NewInt(0), 100000, big.NewInt(0), make([]byte, 10240))
+		tx := types.NewTransaction(
+			uint64(nonce), common.Address{}, big.NewInt(0), 100000, big.NewInt(0), make([]byte, 10240),
+		)
 		tx, _ = types.SignTx(tx, types.HomesteadSigner{}, testKey)
 		insert[nonce] = tx
 	}
@@ -313,16 +323,20 @@ func testSendTransactions(t *testing.T, protocol uint) {
 	defer src.Close()
 	defer sink.Close()
 
-	go handler.handler.runEthPeer(src, func(peer *eth.Peer) error {
-		return eth.Handle((*ethHandler)(handler.handler), peer)
-	})
+	go handler.handler.runEthPeer(
+		src, func(peer *eth.Peer) error {
+			return eth.Handle((*ethHandler)(handler.handler), peer)
+		},
+	)
 	// Run the handshake locally to avoid spinning up a source handler
 	var (
 		genesis = handler.chain.Genesis()
 		head    = handler.chain.CurrentBlock()
 		td      = handler.chain.GetTd(head.Hash(), head.Number.Uint64())
 	)
-	if err := sink.Handshake(1, td, head.Hash(), genesis.Hash(), forkid.NewIDWithChain(handler.chain), forkid.NewFilter(handler.chain)); err != nil {
+	if err := sink.Handshake(
+		1, td, head.Hash(), genesis.Hash(), forkid.NewIDWithChain(handler.chain), forkid.NewFilter(handler.chain),
+	); err != nil {
 		t.Fatalf("failed to run protocol handshake")
 	}
 	// After the handshake completes, the source handler should stream the sink
@@ -396,17 +410,23 @@ func testTransactionPropagation(t *testing.T, protocol uint) {
 		defer sourcePipe.Close()
 		defer sinkPipe.Close()
 
-		sourcePeer := eth.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{byte(i + 1)}, "", nil, sourcePipe), sourcePipe, source.txpool)
+		sourcePeer := eth.NewPeer(
+			protocol, p2p.NewPeerPipe(enode.ID{byte(i + 1)}, "", nil, sourcePipe), sourcePipe, source.txpool,
+		)
 		sinkPeer := eth.NewPeer(protocol, p2p.NewPeerPipe(enode.ID{0}, "", nil, sinkPipe), sinkPipe, sink.txpool)
 		defer sourcePeer.Close()
 		defer sinkPeer.Close()
 
-		go source.handler.runEthPeer(sourcePeer, func(peer *eth.Peer) error {
-			return eth.Handle((*ethHandler)(source.handler), peer)
-		})
-		go sink.handler.runEthPeer(sinkPeer, func(peer *eth.Peer) error {
-			return eth.Handle((*ethHandler)(sink.handler), peer)
-		})
+		go source.handler.runEthPeer(
+			sourcePeer, func(peer *eth.Peer) error {
+				return eth.Handle((*ethHandler)(source.handler), peer)
+			},
+		)
+		go sink.handler.runEthPeer(
+			sinkPeer, func(peer *eth.Peer) error {
+				return eth.Handle((*ethHandler)(sink.handler), peer)
+			},
+		)
 	}
 	// Subscribe to all the transaction pools
 	txChs := make([]chan core.NewTxsEvent, len(sinks))

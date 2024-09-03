@@ -31,10 +31,10 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
 )
 
 // To regenerate discv5 test vectors, run
@@ -284,38 +284,42 @@ func TestDecodeErrorsV5(t *testing.T) {
 	b = make([]byte, 63)
 	net.nodeA.expectDecodeErr(t, errInvalidHeader, b)
 
-	t.Run("invalid-handshake-datasize", func(t *testing.T) {
-		requiredNumber := 108
+	t.Run(
+		"invalid-handshake-datasize", func(t *testing.T) {
+			requiredNumber := 108
 
-		testDataFile := filepath.Join("testdata", "v5.1-ping-handshake"+".txt")
-		enc := hexFile(testDataFile)
-		//delete some byte from handshake to make it invalid
-		enc = enc[:len(enc)-requiredNumber]
-		net.nodeB.expectDecodeErr(t, errMsgTooShort, enc)
-	})
+			testDataFile := filepath.Join("testdata", "v5.1-ping-handshake"+".txt")
+			enc := hexFile(testDataFile)
+			//delete some byte from handshake to make it invalid
+			enc = enc[:len(enc)-requiredNumber]
+			net.nodeB.expectDecodeErr(t, errMsgTooShort, enc)
+		},
+	)
 
-	t.Run("invalid-auth-datasize", func(t *testing.T) {
-		testPacket := []byte{}
-		testDataFiles := []string{"v5.1-whoareyou", "v5.1-ping-handshake"}
-		for counter, name := range testDataFiles {
-			file := filepath.Join("testdata", name+".txt")
-			enc := hexFile(file)
-			if counter == 0 {
-				//make whoareyou header
-				testPacket = enc[:sizeofStaticPacketData-1]
-				testPacket = append(testPacket, 255)
+	t.Run(
+		"invalid-auth-datasize", func(t *testing.T) {
+			testPacket := []byte{}
+			testDataFiles := []string{"v5.1-whoareyou", "v5.1-ping-handshake"}
+			for counter, name := range testDataFiles {
+				file := filepath.Join("testdata", name+".txt")
+				enc := hexFile(file)
+				if counter == 0 {
+					//make whoareyou header
+					testPacket = enc[:sizeofStaticPacketData-1]
+					testPacket = append(testPacket, 255)
+				}
+				if counter == 1 {
+					//append invalid auth size
+					testPacket = append(testPacket, enc[sizeofStaticPacketData:]...)
+				}
 			}
-			if counter == 1 {
-				//append invalid auth size
-				testPacket = append(testPacket, enc[sizeofStaticPacketData:]...)
-			}
-		}
 
-		wantErr := "invalid auth size"
-		if _, err := net.nodeB.decode(testPacket); strings.HasSuffix(err.Error(), wantErr) {
-			t.Fatal(fmt.Errorf("(%s) got err %q, want %q", net.nodeB.ln.ID().TerminalString(), err, wantErr))
-		}
-	})
+			wantErr := "invalid auth size"
+			if _, err := net.nodeB.decode(testPacket); strings.HasSuffix(err.Error(), wantErr) {
+				t.Fatal(fmt.Errorf("(%s) got err %q, want %q", net.nodeB.ln.ID().TerminalString(), err, wantErr))
+			}
+		},
+	)
 }
 
 // This test checks that all test vectors can be decoded.
@@ -396,36 +400,38 @@ func TestTestVectorsV5(t *testing.T) {
 
 	for _, test := range tests {
 		test := test
-		t.Run(test.name, func(t *testing.T) {
-			net := newHandshakeTest()
-			defer net.close()
+		t.Run(
+			test.name, func(t *testing.T) {
+				net := newHandshakeTest()
+				defer net.close()
 
-			// Override all random inputs.
-			net.nodeA.c.sc.nonceGen = func(counter uint32) (Nonce, error) {
-				return Nonce{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, nil
-			}
-			net.nodeA.c.sc.maskingIVGen = func(buf []byte) error {
-				return nil // all zero
-			}
-			net.nodeA.c.sc.ephemeralKeyGen = func() (*ecdsa.PrivateKey, error) {
-				return testEphKey, nil
-			}
+				// Override all random inputs.
+				net.nodeA.c.sc.nonceGen = func(counter uint32) (Nonce, error) {
+					return Nonce{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, nil
+				}
+				net.nodeA.c.sc.maskingIVGen = func(buf []byte) error {
+					return nil // all zero
+				}
+				net.nodeA.c.sc.ephemeralKeyGen = func() (*ecdsa.PrivateKey, error) {
+					return testEphKey, nil
+				}
 
-			// Prime the codec for encoding/decoding.
-			if test.prep != nil {
-				test.prep(net)
-			}
+				// Prime the codec for encoding/decoding.
+				if test.prep != nil {
+					test.prep(net)
+				}
 
-			file := filepath.Join("testdata", test.name+".txt")
-			if *writeTestVectorsFlag {
-				// Encode the packet.
-				d, nonce := net.nodeA.encodeWithChallenge(t, net.nodeB, test.challenge, test.packet)
-				comment := testVectorComment(net, test.packet, test.challenge, nonce)
-				writeTestVector(file, comment, d)
-			}
-			enc := hexFile(file)
-			net.nodeB.expectDecode(t, test.packet.Kind(), enc)
-		})
+				file := filepath.Join("testdata", test.name+".txt")
+				if *writeTestVectorsFlag {
+					// Encode the packet.
+					d, nonce := net.nodeA.encodeWithChallenge(t, net.nodeB, test.challenge, test.packet)
+					comment := testVectorComment(net, test.packet, test.challenge, nonce)
+					writeTestVector(file, comment, d)
+				}
+				enc := hexFile(file)
+				net.nodeB.expectDecode(t, test.packet.Kind(), enc)
+			},
+		)
 	}
 }
 
@@ -556,7 +562,9 @@ func (n *handshakeTestNode) encode(t testing.TB, to handshakeTestNode, p Packet)
 	return n.encodeWithChallenge(t, to, nil, p)
 }
 
-func (n *handshakeTestNode) encodeWithChallenge(t testing.TB, to handshakeTestNode, c *Whoareyou, p Packet) ([]byte, Nonce) {
+func (n *handshakeTestNode) encodeWithChallenge(t testing.TB, to handshakeTestNode, c *Whoareyou, p Packet) (
+	[]byte, Nonce,
+) {
 	t.Helper()
 
 	// Copy challenge and add destination node. This avoids sharing 'c' among the two codecs.

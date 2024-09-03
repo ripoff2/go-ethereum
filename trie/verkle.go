@@ -21,14 +21,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/trie/trienode"
-	"github.com/ethereum/go-ethereum/trie/utils"
-	"github.com/ethereum/go-ethereum/triedb/database"
 	"github.com/ethereum/go-verkle"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
+	"github.com/ripoff2/go-ethereum/trie/utils"
+	"github.com/ripoff2/go-ethereum/triedb/database"
 )
 
 var (
@@ -302,7 +302,9 @@ func (t *VerkleTrie) IsVerkle() bool {
 // Proof builds and returns the verkle multiproof for keys, built against
 // the pre tree. The post tree is passed in order to add the post values
 // to that proof.
-func (t *VerkleTrie) Proof(posttrie *VerkleTrie, keys [][]byte, resolver verkle.NodeResolverFn) (*verkle.VerkleProof, verkle.StateDiff, error) {
+func (t *VerkleTrie) Proof(posttrie *VerkleTrie, keys [][]byte, resolver verkle.NodeResolverFn) (
+	*verkle.VerkleProof, verkle.StateDiff, error,
+) {
 	var postroot verkle.VerkleNode
 	if posttrie != nil {
 		postroot = posttrie.root

@@ -10,15 +10,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/tests"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/tests"
 )
 
 // flatCallTrace is the result of a callTracerParity run.
@@ -83,7 +83,9 @@ func flatCallTracerTestRunner(tracerName string, filename string, dirPath string
 	if err := rlp.DecodeBytes(common.FromHex(test.Input), tx); err != nil {
 		return fmt.Errorf("failed to parse testcase input: %v", err)
 	}
-	signer := types.MakeSigner(test.Genesis.Config, new(big.Int).SetUint64(uint64(test.Context.Number)), uint64(test.Context.Time))
+	signer := types.MakeSigner(
+		test.Genesis.Config, new(big.Int).SetUint64(uint64(test.Context.Number)), uint64(test.Context.Time),
+	)
 	context := test.Context.toBlockContext(test.Genesis)
 	state := tests.MakePreState(rawdb.NewMemoryDatabase(), test.Genesis.Alloc, false, rawdb.HashScheme)
 	defer state.Close()
@@ -99,7 +101,9 @@ func flatCallTracerTestRunner(tracerName string, filename string, dirPath string
 	if err != nil {
 		return fmt.Errorf("failed to prepare transaction for tracing: %v", err)
 	}
-	evm := vm.NewEVM(context, core.NewEVMTxContext(msg), state.StateDB, test.Genesis.Config, vm.Config{Tracer: tracer.Hooks})
+	evm := vm.NewEVM(
+		context, core.NewEVMTxContext(msg), state.StateDB, test.Genesis.Config, vm.Config{Tracer: tracer.Hooks},
+	)
 	tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
 	vmRet, err := core.ApplyMessage(evm, msg, new(core.GasPool).AddGas(tx.Gas()))
 	if err != nil {
@@ -152,14 +156,16 @@ func testFlatCallTracer(tracerName string, dirPath string, t *testing.T) {
 			continue
 		}
 		file := file // capture range variable
-		t.Run(camel(strings.TrimSuffix(file.Name(), ".json")), func(t *testing.T) {
-			t.Parallel()
+		t.Run(
+			camel(strings.TrimSuffix(file.Name(), ".json")), func(t *testing.T) {
+				t.Parallel()
 
-			err := flatCallTracerTestRunner(tracerName, file.Name(), dirPath, t)
-			if err != nil {
-				t.Fatal(err)
-			}
-		})
+				err := flatCallTracerTestRunner(tracerName, file.Name(), dirPath, t)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+		)
 	}
 }
 
@@ -189,13 +195,15 @@ func BenchmarkFlatCallTracer(b *testing.B) {
 
 	for _, file := range files {
 		filename := strings.TrimPrefix(file, "testdata/call_tracer_flat/")
-		b.Run(camel(strings.TrimSuffix(filename, ".json")), func(b *testing.B) {
-			for n := 0; n < b.N; n++ {
-				err := flatCallTracerTestRunner("flatCallTracer", filename, "call_tracer_flat", b)
-				if err != nil {
-					b.Fatal(err)
+		b.Run(
+			camel(strings.TrimSuffix(filename, ".json")), func(b *testing.B) {
+				for n := 0; n < b.N; n++ {
+					err := flatCallTracerTestRunner("flatCallTracer", filename, "call_tracer_flat", b)
+					if err != nil {
+						b.Fatal(err)
+					}
 				}
-			}
-		})
+			},
+		)
 	}
 }

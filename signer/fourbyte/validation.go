@@ -21,14 +21,16 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/signer/core/apitypes"
 )
 
 // ValidateTransaction does a number of checks on the supplied transaction, and
 // returns either a list of warnings, or an error (indicating that the transaction
 // should be immediately rejected).
-func (db *Database) ValidateTransaction(selector *string, tx *apitypes.SendTxArgs) (*apitypes.ValidationMessages, error) {
+func (db *Database) ValidateTransaction(selector *string, tx *apitypes.SendTxArgs) (
+	*apitypes.ValidationMessages, error,
+) {
 	messages := new(apitypes.ValidationMessages)
 
 	// Prevent accidental erroneous usage of both 'input' and 'data' (show stopper)
@@ -53,7 +55,7 @@ func (db *Database) ValidateTransaction(selector *string, tx *apitypes.SendTxArg
 	if tx.To == nil {
 		// Contract creation should contain sufficient data to deploy a contract. A
 		// typical error is omitting sender due to some quirk in the javascript call
-		// e.g. https://github.com/ethereum/go-ethereum/issues/16106.
+		// e.g. https://github.com/ripoff2/go-ethereum/issues/16106.
 		if len(data) == 0 {
 			// Prevent sending ether into black hole (show stopper)
 			if tx.Value.ToInt().Sign() > 0 {
@@ -62,7 +64,11 @@ func (db *Database) ValidateTransaction(selector *string, tx *apitypes.SendTxArg
 			// No value submitted at least, critically Warn, but don't blow up
 			messages.Crit("Transaction will create a contract with empty code")
 		} else if len(data) < 40 { // arbitrary heuristic limit
-			messages.Warn(fmt.Sprintf("Transaction will create a contract, but the payload is suspiciously small (%d bytes)", len(data)))
+			messages.Warn(
+				fmt.Sprintf(
+					"Transaction will create a contract, but the payload is suspiciously small (%d bytes)", len(data),
+				),
+			)
 		}
 		// Method selector should be nil for contract creation
 		if selector != nil {
@@ -110,7 +116,11 @@ func (db *Database) ValidateCallData(selector *string, data []byte, messages *ap
 	// If a custom method selector was provided, validate with that
 	if selector != nil {
 		if info, err := verifySelector(*selector, data); err != nil {
-			messages.Warn(fmt.Sprintf("Transaction contains data, but provided ABI signature could not be matched: %v", err))
+			messages.Warn(
+				fmt.Sprintf(
+					"Transaction contains data, but provided ABI signature could not be matched: %v", err,
+				),
+			)
 		} else {
 			messages.Info(fmt.Sprintf("Transaction invokes the following method: %q", info.String()))
 			db.AddSelector(*selector, data[:4])
@@ -124,7 +134,11 @@ func (db *Database) ValidateCallData(selector *string, data []byte, messages *ap
 		return
 	}
 	if info, err := verifySelector(embedded, data); err != nil {
-		messages.Warn(fmt.Sprintf("Transaction contains data, but provided ABI signature could not be verified: %v", err))
+		messages.Warn(
+			fmt.Sprintf(
+				"Transaction contains data, but provided ABI signature could not be verified: %v", err,
+			),
+		)
 	} else {
 		messages.Info(fmt.Sprintf("Transaction invokes the following method: %q", info.String()))
 	}

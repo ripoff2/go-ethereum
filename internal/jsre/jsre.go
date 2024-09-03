@@ -28,7 +28,7 @@ import (
 	"time"
 
 	"github.com/dop251/goja"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 // JSRE is a JS runtime environment embedding the goja interpreter.
@@ -125,9 +125,11 @@ func (re *JSRE) runEventLoop() {
 		}
 		registry[timer] = timer
 
-		timer.timer = time.AfterFunc(timer.duration, func() {
-			ready <- timer
-		})
+		timer.timer = time.AfterFunc(
+			timer.duration, func() {
+				ready <- timer
+			},
+		)
 
 		return timer, re.vm.ToValue(timer)
 	}
@@ -152,18 +154,22 @@ func (re *JSRE) runEventLoop() {
 	}
 	re.vm.Set("_setTimeout", setTimeout)
 	re.vm.Set("_setInterval", setInterval)
-	re.vm.RunString(`var setTimeout = function(args) {
+	re.vm.RunString(
+		`var setTimeout = function(args) {
 		if (arguments.length < 1) {
 			throw TypeError("Failed to execute 'setTimeout': 1 argument required, but only 0 present.");
 		}
 		return _setTimeout.apply(this, arguments);
-	}`)
-	re.vm.RunString(`var setInterval = function(args) {
+	}`,
+	)
+	re.vm.RunString(
+		`var setInterval = function(args) {
 		if (arguments.length < 1) {
 			throw TypeError("Failed to execute 'setInterval': 1 argument required, but only 0 present.");
 		}
 		return _setInterval.apply(this, arguments);
-	}`)
+	}`,
+	)
 	re.vm.Set("clearTimeout", clearTimeout)
 	re.vm.Set("clearInterval", clearTimeout)
 
@@ -275,26 +281,30 @@ func (re *JSRE) Set(ns string, v interface{}) (err error) {
 
 // MakeCallback turns the given function into a function that's callable by JS.
 func MakeCallback(vm *goja.Runtime, fn func(Call) (goja.Value, error)) goja.Value {
-	return vm.ToValue(func(call goja.FunctionCall) goja.Value {
-		result, err := fn(Call{call, vm})
-		if err != nil {
-			panic(vm.NewGoError(err))
-		}
-		return result
-	})
+	return vm.ToValue(
+		func(call goja.FunctionCall) goja.Value {
+			result, err := fn(Call{call, vm})
+			if err != nil {
+				panic(vm.NewGoError(err))
+			}
+			return result
+		},
+	)
 }
 
 // Evaluate executes code and pretty prints the result to the specified output stream.
 func (re *JSRE) Evaluate(code string, w io.Writer) {
-	re.Do(func(vm *goja.Runtime) {
-		val, err := vm.RunString(code)
-		if err != nil {
-			prettyError(vm, err, w)
-		} else {
-			prettyPrint(vm, val, w)
-		}
-		fmt.Fprintln(w)
-	})
+	re.Do(
+		func(vm *goja.Runtime) {
+			val, err := vm.RunString(code)
+			if err != nil {
+				prettyError(vm, err, w)
+			} else {
+				prettyPrint(vm, val, w)
+			}
+			fmt.Fprintln(w)
+		},
+	)
 }
 
 // Interrupt stops the current JS evaluation.

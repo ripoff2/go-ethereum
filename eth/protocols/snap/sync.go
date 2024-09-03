@@ -29,19 +29,19 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/msgrate"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/trie/trienode"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p/msgrate"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
 )
 
 const (
@@ -802,7 +802,9 @@ func (s *Syncer) loadSyncStatus() {
 							subtask.genTrie = newHashTrie(subtask.genBatch)
 						}
 						if s.scheme == rawdb.PathScheme {
-							subtask.genTrie = newPathTrie(accountHash, subtask.Next != common.Hash{}, s.db, subtask.genBatch)
+							subtask.genTrie = newPathTrie(
+								accountHash, subtask.Next != common.Hash{}, s.db, subtask.genBatch,
+							)
 						}
 					}
 				}
@@ -862,14 +864,16 @@ func (s *Syncer) loadSyncStatus() {
 		if s.scheme == rawdb.PathScheme {
 			tr = newPathTrie(common.Hash{}, next != common.Hash{}, s.db, batch)
 		}
-		s.tasks = append(s.tasks, &accountTask{
-			Next:           next,
-			Last:           last,
-			SubTasks:       make(map[common.Hash][]*storageTask),
-			genBatch:       batch,
-			stateCompleted: make(map[common.Hash]struct{}),
-			genTrie:        tr,
-		})
+		s.tasks = append(
+			s.tasks, &accountTask{
+				Next:           next,
+				Last:           last,
+				SubTasks:       make(map[common.Hash][]*storageTask),
+				genBatch:       batch,
+				stateCompleted: make(map[common.Hash]struct{}),
+				genTrie:        tr,
+			},
+		)
 		log.Debug("Created account sync task", "from", next, "last", last)
 		next = common.BigToHash(new(big.Int).Add(last.Big(), common.Big1))
 	}
@@ -902,7 +906,10 @@ func (s *Syncer) saveSyncStatus() {
 			task.StorageCompleted = append(task.StorageCompleted, hash)
 		}
 		if len(task.StorageCompleted) > 0 {
-			log.Debug("Leftover completed storages", "number", len(task.StorageCompleted), "next", task.Next, "last", task.Last)
+			log.Debug(
+				"Leftover completed storages", "number", len(task.StorageCompleted), "next", task.Next, "last",
+				task.Last,
+			)
 		}
 	}
 	// Store the actual progress markers
@@ -1068,11 +1075,13 @@ func (s *Syncer) assignAccountTasks(success chan *accountResponse, fail chan *ac
 			limit:   task.Last,
 			task:    task,
 		}
-		req.timeout = time.AfterFunc(s.rates.TargetTimeout(), func() {
-			peer.Log().Debug("Account range request timed out", "reqid", reqid)
-			s.rates.Update(idle, AccountRangeMsg, 0, 0)
-			s.scheduleRevertAccountRequest(req)
-		})
+		req.timeout = time.AfterFunc(
+			s.rates.TargetTimeout(), func() {
+				peer.Log().Debug("Account range request timed out", "reqid", reqid)
+				s.rates.Update(idle, AccountRangeMsg, 0, 0)
+				s.scheduleRevertAccountRequest(req)
+			},
+		)
 		s.accountReqs[reqid] = req
 		delete(s.accountIdlers, idle)
 
@@ -1179,11 +1188,13 @@ func (s *Syncer) assignBytecodeTasks(success chan *bytecodeResponse, fail chan *
 			hashes:  hashes,
 			task:    task,
 		}
-		req.timeout = time.AfterFunc(s.rates.TargetTimeout(), func() {
-			peer.Log().Debug("Bytecode request timed out", "reqid", reqid)
-			s.rates.Update(idle, ByteCodesMsg, 0, 0)
-			s.scheduleRevertBytecodeRequest(req)
-		})
+		req.timeout = time.AfterFunc(
+			s.rates.TargetTimeout(), func() {
+				peer.Log().Debug("Bytecode request timed out", "reqid", reqid)
+				s.rates.Update(idle, ByteCodesMsg, 0, 0)
+				s.scheduleRevertBytecodeRequest(req)
+			},
+		)
 		s.bytecodeReqs[reqid] = req
 		delete(s.bytecodeIdlers, idle)
 
@@ -1327,11 +1338,13 @@ func (s *Syncer) assignStorageTasks(success chan *storageResponse, fail chan *st
 			req.origin = subtask.Next
 			req.limit = subtask.Last
 		}
-		req.timeout = time.AfterFunc(s.rates.TargetTimeout(), func() {
-			peer.Log().Debug("Storage request timed out", "reqid", reqid)
-			s.rates.Update(idle, StorageRangesMsg, 0, 0)
-			s.scheduleRevertStorageRequest(req)
-		})
+		req.timeout = time.AfterFunc(
+			s.rates.TargetTimeout(), func() {
+				peer.Log().Debug("Storage request timed out", "reqid", reqid)
+				s.rates.Update(idle, StorageRangesMsg, 0, 0)
+				s.scheduleRevertStorageRequest(req)
+			},
+		)
 		s.storageReqs[reqid] = req
 		delete(s.storageIdlers, idle)
 
@@ -1359,7 +1372,9 @@ func (s *Syncer) assignStorageTasks(success chan *storageResponse, fail chan *st
 
 // assignTrienodeHealTasks attempts to match idle peers to trie node requests to
 // heal any trie errors caused by the snap sync's chunked retrieval model.
-func (s *Syncer) assignTrienodeHealTasks(success chan *trienodeHealResponse, fail chan *trienodeHealRequest, cancel chan struct{}) {
+func (s *Syncer) assignTrienodeHealTasks(
+	success chan *trienodeHealResponse, fail chan *trienodeHealRequest, cancel chan struct{},
+) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -1464,11 +1479,13 @@ func (s *Syncer) assignTrienodeHealTasks(success chan *trienodeHealResponse, fai
 			hashes:  hashes,
 			task:    s.healer,
 		}
-		req.timeout = time.AfterFunc(s.rates.TargetTimeout(), func() {
-			peer.Log().Debug("Trienode heal request timed out", "reqid", reqid)
-			s.rates.Update(idle, TrieNodesMsg, 0, 0)
-			s.scheduleRevertTrienodeHealRequest(req)
-		})
+		req.timeout = time.AfterFunc(
+			s.rates.TargetTimeout(), func() {
+				peer.Log().Debug("Trienode heal request timed out", "reqid", reqid)
+				s.rates.Update(idle, TrieNodesMsg, 0, 0)
+				s.scheduleRevertTrienodeHealRequest(req)
+			},
+		)
 		s.trienodeHealReqs[reqid] = req
 		delete(s.trienodeHealIdlers, idle)
 
@@ -1487,7 +1504,9 @@ func (s *Syncer) assignTrienodeHealTasks(success chan *trienodeHealResponse, fai
 
 // assignBytecodeHealTasks attempts to match idle peers to bytecode requests to
 // heal any trie errors caused by the snap sync's chunked retrieval model.
-func (s *Syncer) assignBytecodeHealTasks(success chan *bytecodeHealResponse, fail chan *bytecodeHealRequest, cancel chan struct{}) {
+func (s *Syncer) assignBytecodeHealTasks(
+	success chan *bytecodeHealResponse, fail chan *bytecodeHealRequest, cancel chan struct{},
+) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -1580,11 +1599,13 @@ func (s *Syncer) assignBytecodeHealTasks(success chan *bytecodeHealResponse, fai
 			hashes:  hashes,
 			task:    s.healer,
 		}
-		req.timeout = time.AfterFunc(s.rates.TargetTimeout(), func() {
-			peer.Log().Debug("Bytecode heal request timed out", "reqid", reqid)
-			s.rates.Update(idle, ByteCodesMsg, 0, 0)
-			s.scheduleRevertBytecodeHealRequest(req)
-		})
+		req.timeout = time.AfterFunc(
+			s.rates.TargetTimeout(), func() {
+				peer.Log().Debug("Bytecode heal request timed out", "reqid", reqid)
+				s.rates.Update(idle, ByteCodesMsg, 0, 0)
+				s.scheduleRevertBytecodeHealRequest(req)
+			},
+		)
 		s.bytecodeHealReqs[reqid] = req
 		delete(s.bytecodeHealIdlers, idle)
 
@@ -2104,7 +2125,10 @@ func (s *Syncer) processStorageResponse(res *storageResponse) {
 						if n := estimate / (2 * (maxRequestSize / 64)); n+1 < chunks {
 							chunks = n + 1
 						}
-						log.Debug("Chunked large contract", "initiators", len(keys), "tail", lastKey, "remaining", estimate, "chunks", chunks)
+						log.Debug(
+							"Chunked large contract", "initiators", len(keys), "tail", lastKey, "remaining", estimate,
+							"chunks", chunks,
+						)
 					} else {
 						log.Debug("Chunked large contract", "initiators", len(keys), "tail", lastKey, "chunks", chunks)
 					}
@@ -2129,13 +2153,15 @@ func (s *Syncer) processStorageResponse(res *storageResponse) {
 						// Keep the left boundary as it's the first range.
 						tr = newPathTrie(account, false, s.db, batch)
 					}
-					tasks = append(tasks, &storageTask{
-						Next:     common.Hash{},
-						Last:     r.End(),
-						root:     acc.Root,
-						genBatch: batch,
-						genTrie:  tr,
-					})
+					tasks = append(
+						tasks, &storageTask{
+							Next:     common.Hash{},
+							Last:     r.End(),
+							root:     acc.Root,
+							genBatch: batch,
+							genTrie:  tr,
+						},
+					)
 					for r.Next() {
 						batch := ethdb.HookedBatch{
 							Batch: s.db.NewBatch(),
@@ -2150,16 +2176,21 @@ func (s *Syncer) processStorageResponse(res *storageResponse) {
 						if s.scheme == rawdb.PathScheme {
 							tr = newPathTrie(account, true, s.db, batch)
 						}
-						tasks = append(tasks, &storageTask{
-							Next:     r.Start(),
-							Last:     r.End(),
-							root:     acc.Root,
-							genBatch: batch,
-							genTrie:  tr,
-						})
+						tasks = append(
+							tasks, &storageTask{
+								Next:     r.Start(),
+								Last:     r.End(),
+								root:     acc.Root,
+								genBatch: batch,
+								genTrie:  tr,
+							},
+						)
 					}
 					for _, task := range tasks {
-						log.Debug("Created storage sync task", "account", account, "root", acc.Root, "from", task.Next, "last", task.Last)
+						log.Debug(
+							"Created storage sync task", "account", account, "root", acc.Root, "from", task.Next,
+							"last", task.Last,
+						)
 					}
 					res.mainTask.SubTasks[account] = tasks
 
@@ -2174,13 +2205,15 @@ func (s *Syncer) processStorageResponse(res *storageResponse) {
 				last := res.subTask.Last.Big()
 				// Find the first overflowing key. While at it, mark res as complete
 				// if we find the range to include or pass the 'last'
-				index := sort.Search(len(res.hashes[i]), func(k int) bool {
-					cmp := res.hashes[i][k].Big().Cmp(last)
-					if cmp >= 0 {
-						res.cont = false
-					}
-					return cmp > 0
-				})
+				index := sort.Search(
+					len(res.hashes[i]), func(k int) bool {
+						cmp := res.hashes[i][k].Big().Cmp(last)
+						if cmp >= 0 {
+							res.cont = false
+						}
+						return cmp > 0
+					},
+				)
 				if index >= 0 {
 					// cut off excess
 					res.hashes[i] = res.hashes[i][:index]
@@ -2261,7 +2294,10 @@ func (s *Syncer) processStorageResponse(res *storageResponse) {
 	}
 	s.storageSynced += uint64(slots)
 
-	log.Debug("Persisted set of storage slots", "accounts", len(res.hashes), "slots", slots, "bytes", s.storageBytes-oldStorageBytes)
+	log.Debug(
+		"Persisted set of storage slots", "accounts", len(res.hashes), "slots", slots, "bytes",
+		s.storageBytes-oldStorageBytes,
+	)
 
 	// If this delivery completed the last pending task, forward the account task
 	// to the next chunk
@@ -2331,7 +2367,9 @@ func (s *Syncer) processTrienodeHealResponse(res *trienodeHealResponse) {
 	//
 	// The above is a geometric sequence that can be summed to:
 	//   HR(N) = (1-MI)^N*(OR-NR) + NR
-	s.trienodeHealRate = gomath.Pow(1-trienodeHealRateMeasurementImpact, float64(fills))*(s.trienodeHealRate-rate) + rate
+	s.trienodeHealRate = gomath.Pow(
+		1-trienodeHealRateMeasurementImpact, float64(fills),
+	)*(s.trienodeHealRate-rate) + rate
 
 	pending := s.trienodeHealPend.Load()
 	if time.Since(s.trienodeHealThrottled) > time.Second {
@@ -2348,7 +2386,10 @@ func (s *Syncer) processTrienodeHealResponse(res *trienodeHealResponse) {
 		}
 		s.trienodeHealThrottled = time.Now()
 
-		log.Debug("Updated trie node heal throttler", "rate", s.trienodeHealRate, "pending", pending, "throttle", s.trienodeHealThrottle)
+		log.Debug(
+			"Updated trie node heal throttler", "rate", s.trienodeHealRate, "pending", pending, "throttle",
+			s.trienodeHealThrottle,
+		)
 	}
 }
 
@@ -2497,7 +2538,10 @@ func (s *Syncer) OnAccounts(peer SyncPeer, id uint64, hashes []common.Hash, acco
 		size += common.StorageSize(len(node))
 	}
 	logger := peer.Log().New("reqid", id)
-	logger.Trace("Delivering range of accounts", "hashes", len(hashes), "accounts", len(accounts), "proofs", len(proof), "bytes", size)
+	logger.Trace(
+		"Delivering range of accounts", "hashes", len(hashes), "accounts", len(accounts), "proofs", len(proof), "bytes",
+		size,
+	)
 
 	// Whether or not the response is valid, we can mark the peer as idle and
 	// notify the scheduler to assign a new task. If the response is invalid,
@@ -2720,7 +2764,10 @@ func (s *Syncer) OnStorage(peer SyncPeer, id uint64, hashes [][]common.Hash, slo
 		size += common.StorageSize(len(node))
 	}
 	logger := peer.Log().New("reqid", id)
-	logger.Trace("Delivering ranges of storage slots", "accounts", len(hashes), "hashes", hashCount, "slots", slotCount, "proofs", len(proof), "size", size)
+	logger.Trace(
+		"Delivering ranges of storage slots", "accounts", len(hashes), "hashes", hashCount, "slots", slotCount,
+		"proofs", len(proof), "size", size,
+	)
 
 	// Whether or not the response is valid, we can mark the peer as idle and
 	// notify the scheduler to assign a new task. If the response is invalid,
@@ -3110,10 +3157,12 @@ func (s *Syncer) reportSyncProgress(force bool) {
 		return
 	}
 	s.logTime = time.Now()
-	estBytes := float64(new(big.Int).Div(
-		new(big.Int).Mul(new(big.Int).SetUint64(uint64(synced)), hashSpace),
-		accountFills,
-	).Uint64())
+	estBytes := float64(
+		new(big.Int).Div(
+			new(big.Int).Mul(new(big.Int).SetUint64(uint64(synced)), hashSpace),
+			accountFills,
+		).Uint64(),
+	)
 	// Don't report anything until we have a meaningful progress
 	if estBytes < 1.0 {
 		return
@@ -3128,8 +3177,10 @@ func (s *Syncer) reportSyncProgress(force bool) {
 		storage  = fmt.Sprintf("%v@%v", log.FormatLogfmtUint64(s.storageSynced), s.storageBytes.TerminalString())
 		bytecode = fmt.Sprintf("%v@%v", log.FormatLogfmtUint64(s.bytecodeSynced), s.bytecodeBytes.TerminalString())
 	)
-	log.Info("Syncing: state download in progress", "synced", progress, "state", synced,
-		"accounts", accounts, "slots", storage, "codes", bytecode, "eta", common.PrettyDuration(estTime-elapsed))
+	log.Info(
+		"Syncing: state download in progress", "synced", progress, "state", synced,
+		"accounts", accounts, "slots", storage, "codes", bytecode, "eta", common.PrettyDuration(estTime-elapsed),
+	)
 }
 
 // reportHealProgress calculates various status reports and provides it to the user.
@@ -3142,13 +3193,19 @@ func (s *Syncer) reportHealProgress(force bool) {
 
 	// Create a mega progress report
 	var (
-		trienode = fmt.Sprintf("%v@%v", log.FormatLogfmtUint64(s.trienodeHealSynced), s.trienodeHealBytes.TerminalString())
-		bytecode = fmt.Sprintf("%v@%v", log.FormatLogfmtUint64(s.bytecodeHealSynced), s.bytecodeHealBytes.TerminalString())
+		trienode = fmt.Sprintf(
+			"%v@%v", log.FormatLogfmtUint64(s.trienodeHealSynced), s.trienodeHealBytes.TerminalString(),
+		)
+		bytecode = fmt.Sprintf(
+			"%v@%v", log.FormatLogfmtUint64(s.bytecodeHealSynced), s.bytecodeHealBytes.TerminalString(),
+		)
 		accounts = fmt.Sprintf("%v@%v", log.FormatLogfmtUint64(s.accountHealed), s.accountHealedBytes.TerminalString())
 		storage  = fmt.Sprintf("%v@%v", log.FormatLogfmtUint64(s.storageHealed), s.storageHealedBytes.TerminalString())
 	)
-	log.Info("Syncing: state healing in progress", "accounts", accounts, "slots", storage,
-		"codes", bytecode, "nodes", trienode, "pending", s.healer.scheduler.Pending())
+	log.Info(
+		"Syncing: state healing in progress", "accounts", accounts, "slots", storage,
+		"codes", bytecode, "nodes", trienode, "pending", s.healer.scheduler.Pending(),
+	)
 }
 
 // estimateRemainingSlots tries to determine roughly how many slots are left in
@@ -3256,7 +3313,9 @@ func (t *healRequestSort) Merge() []TrieNodePathSet {
 
 // sortByAccountPath takes hashes and paths, and sorts them. After that, it generates
 // the TrieNodePaths and merges paths which belongs to the same account path.
-func sortByAccountPath(paths []string, hashes []common.Hash) ([]string, []common.Hash, []trie.SyncPath, []TrieNodePathSet) {
+func sortByAccountPath(paths []string, hashes []common.Hash) (
+	[]string, []common.Hash, []trie.SyncPath, []TrieNodePathSet,
+) {
 	syncPaths := make([]trie.SyncPath, len(paths))
 	for i, path := range paths {
 		syncPaths[i] = trie.NewSyncPath([]byte(path))

@@ -26,18 +26,18 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/prque"
-	"github.com/ethereum/go-ethereum/consensus/misc/eip1559"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/txpool"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/prque"
+	"github.com/ripoff2/go-ethereum/consensus/misc/eip1559"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/txpool"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/params"
 	"golang.org/x/exp/maps"
 )
 
@@ -94,7 +94,9 @@ var (
 	reorgDurationTimer = metrics.NewRegisteredTimer("txpool/reorgtime", nil)
 	// dropBetweenReorgHistogram counts how many drops we experience between two reorg runs. It is expected
 	// that this number is pretty low, since txpool reorgs happen very frequently.
-	dropBetweenReorgHistogram = metrics.NewRegisteredHistogram("txpool/dropbetweenreorg", nil, metrics.NewExpDecaySample(1028, 0.015))
+	dropBetweenReorgHistogram = metrics.NewRegisteredHistogram(
+		"txpool/dropbetweenreorg", nil, metrics.NewExpDecaySample(1028, 0.015),
+	)
 
 	pendingGauge = metrics.NewRegisteredGauge("txpool/pending", nil)
 	queuedGauge  = metrics.NewRegisteredGauge("txpool/queued", nil)
@@ -163,7 +165,9 @@ func (config *Config) sanitize() Config {
 		conf.Rejournal = time.Second
 	}
 	if conf.PriceLimit < 1 {
-		log.Warn("Sanitizing invalid txpool price limit", "provided", conf.PriceLimit, "updated", DefaultConfig.PriceLimit)
+		log.Warn(
+			"Sanitizing invalid txpool price limit", "provided", conf.PriceLimit, "updated", DefaultConfig.PriceLimit,
+		)
 		conf.PriceLimit = DefaultConfig.PriceLimit
 	}
 	if conf.PriceBump < 1 {
@@ -171,19 +175,29 @@ func (config *Config) sanitize() Config {
 		conf.PriceBump = DefaultConfig.PriceBump
 	}
 	if conf.AccountSlots < 1 {
-		log.Warn("Sanitizing invalid txpool account slots", "provided", conf.AccountSlots, "updated", DefaultConfig.AccountSlots)
+		log.Warn(
+			"Sanitizing invalid txpool account slots", "provided", conf.AccountSlots, "updated",
+			DefaultConfig.AccountSlots,
+		)
 		conf.AccountSlots = DefaultConfig.AccountSlots
 	}
 	if conf.GlobalSlots < 1 {
-		log.Warn("Sanitizing invalid txpool global slots", "provided", conf.GlobalSlots, "updated", DefaultConfig.GlobalSlots)
+		log.Warn(
+			"Sanitizing invalid txpool global slots", "provided", conf.GlobalSlots, "updated", DefaultConfig.GlobalSlots,
+		)
 		conf.GlobalSlots = DefaultConfig.GlobalSlots
 	}
 	if conf.AccountQueue < 1 {
-		log.Warn("Sanitizing invalid txpool account queue", "provided", conf.AccountQueue, "updated", DefaultConfig.AccountQueue)
+		log.Warn(
+			"Sanitizing invalid txpool account queue", "provided", conf.AccountQueue, "updated",
+			DefaultConfig.AccountQueue,
+		)
 		conf.AccountQueue = DefaultConfig.AccountQueue
 	}
 	if conf.GlobalQueue < 1 {
-		log.Warn("Sanitizing invalid txpool global queue", "provided", conf.GlobalQueue, "updated", DefaultConfig.GlobalQueue)
+		log.Warn(
+			"Sanitizing invalid txpool global queue", "provided", conf.GlobalQueue, "updated", DefaultConfig.GlobalQueue,
+		)
 		conf.GlobalQueue = DefaultConfig.GlobalQueue
 	}
 	if conf.Lifetime < 1 {
@@ -715,7 +729,10 @@ func (pool *LegacyPool) add(tx *types.Transaction, local bool) (replaced bool, e
 	if uint64(pool.all.Slots()+numSlots(tx)) > pool.config.GlobalSlots+pool.config.GlobalQueue {
 		// If the new transaction is underpriced, don't accept it
 		if !isLocal && pool.priced.Underpriced(tx) {
-			log.Trace("Discarding underpriced transaction", "hash", hash, "gasTipCap", tx.GasTipCap(), "gasFeeCap", tx.GasFeeCap())
+			log.Trace(
+				"Discarding underpriced transaction", "hash", hash, "gasTipCap", tx.GasTipCap(), "gasFeeCap",
+				tx.GasFeeCap(),
+			)
 			underpricedTxMeter.Mark(1)
 			return false, txpool.ErrUnderpriced
 		}
@@ -732,7 +749,9 @@ func (pool *LegacyPool) add(tx *types.Transaction, local bool) (replaced bool, e
 		// New transaction is better than our worse ones, make room for it.
 		// If it's a local transaction, forcibly discard all available transactions.
 		// Otherwise if we can't make enough room for new one, abort the operation.
-		drop, success := pool.priced.Discard(pool.all.Slots()-int(pool.config.GlobalSlots+pool.config.GlobalQueue)+numSlots(tx), isLocal)
+		drop, success := pool.priced.Discard(
+			pool.all.Slots()-int(pool.config.GlobalSlots+pool.config.GlobalQueue)+numSlots(tx), isLocal,
+		)
 
 		// Special case, we still can't make the room for the new remote one.
 		if !isLocal && !success {
@@ -763,11 +782,16 @@ func (pool *LegacyPool) add(tx *types.Transaction, local bool) (replaced bool, e
 
 		// Kick out the underpriced remote transactions.
 		for _, tx := range drop {
-			log.Trace("Discarding freshly underpriced transaction", "hash", tx.Hash(), "gasTipCap", tx.GasTipCap(), "gasFeeCap", tx.GasFeeCap())
+			log.Trace(
+				"Discarding freshly underpriced transaction", "hash", tx.Hash(), "gasTipCap", tx.GasTipCap(),
+				"gasFeeCap", tx.GasFeeCap(),
+			)
 			underpricedTxMeter.Mark(1)
 
 			sender, _ := types.Sender(pool.signer, tx)
-			dropped := pool.removeTx(tx.Hash(), false, sender != from) // Don't unreserve the sender of the tx being added if last from the acc
+			dropped := pool.removeTx(
+				tx.Hash(), false, sender != from,
+			) // Don't unreserve the sender of the tx being added if last from the acc
 
 			pool.changesSinceReorg += dropped
 		}
@@ -1258,7 +1282,9 @@ func (pool *LegacyPool) scheduleReorgLoop() {
 }
 
 // runReorg runs reset and promoteExecutables on behalf of scheduleReorgLoop.
-func (pool *LegacyPool) runReorg(done chan struct{}, reset *txpoolResetRequest, dirtyAccounts *accountSet, events map[common.Address]*sortedMap) {
+func (pool *LegacyPool) runReorg(
+	done chan struct{}, reset *txpoolResetRequest, dirtyAccounts *accountSet, events map[common.Address]*sortedMap,
+) {
 	defer func(t0 time.Time) {
 		reorgDurationTimer.Update(time.Since(t0))
 	}(time.Now())
@@ -1364,13 +1390,17 @@ func (pool *LegacyPool) reset(oldHead, newHead *types.Header) {
 				// there's nothing to add
 				if newNum >= oldNum {
 					// If we reorged to a same or higher number, then it's not a case of setHead
-					log.Warn("Transaction pool reset with missing old head",
-						"old", oldHead.Hash(), "oldnum", oldNum, "new", newHead.Hash(), "newnum", newNum)
+					log.Warn(
+						"Transaction pool reset with missing old head",
+						"old", oldHead.Hash(), "oldnum", oldNum, "new", newHead.Hash(), "newnum", newNum,
+					)
 					return
 				}
 				// If the reorg ended up on a lower number, it's indicative of setHead being the cause
-				log.Debug("Skipping transaction reset caused by setHead",
-					"old", oldHead.Hash(), "oldnum", oldNum, "new", newHead.Hash(), "newnum", newNum)
+				log.Debug(
+					"Skipping transaction reset caused by setHead",
+					"old", oldHead.Hash(), "oldnum", oldNum, "new", newHead.Hash(), "newnum", newNum,
+				)
 				// We still need to update the current state s.th. the lost transactions can be readded by the user
 			} else {
 				if add == nil {
@@ -1378,7 +1408,9 @@ func (pool *LegacyPool) reset(oldHead, newHead *types.Header) {
 					// the firing of newhead-event and _now_: most likely a
 					// reorg caused by sync-reversion or explicit sethead back to an
 					// earlier block.
-					log.Warn("Transaction pool reset with missing new head", "number", newHead.Number, "hash", newHead.Hash())
+					log.Warn(
+						"Transaction pool reset with missing new head", "number", newHead.Number, "hash", newHead.Hash(),
+					)
 					return
 				}
 				var discarded, included types.Transactions
@@ -1941,12 +1973,14 @@ func (t *lookup) RemoteToLocals(locals *accountSet) int {
 // RemotesBelowTip finds all remote transactions below the given tip threshold.
 func (t *lookup) RemotesBelowTip(threshold *big.Int) types.Transactions {
 	found := make(types.Transactions, 0, 128)
-	t.Range(func(hash common.Hash, tx *types.Transaction, local bool) bool {
-		if tx.GasTipCapIntCmp(threshold) < 0 {
-			found = append(found, tx)
-		}
-		return true
-	}, false, true) // Only iterate remotes
+	t.Range(
+		func(hash common.Hash, tx *types.Transaction, local bool) bool {
+			if tx.GasTipCapIntCmp(threshold) < 0 {
+				found = append(found, tx)
+			}
+			return true
+		}, false, true,
+	) // Only iterate remotes
 	return found
 }
 

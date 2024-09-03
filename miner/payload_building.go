@@ -23,12 +23,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/beacon/engine"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/beacon/engine"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 // BuildPayloadArgs contains the provided parameters for building payload.
@@ -108,7 +108,8 @@ func (payload *Payload) update(r *newPayloadResult, elapsed time.Duration) {
 		payload.sidecars = r.sidecars
 
 		feesInEther := new(big.Float).Quo(new(big.Float).SetInt(r.fees), big.NewFloat(params.Ether))
-		log.Info("Updated payload",
+		log.Info(
+			"Updated payload",
 			"id", payload.id,
 			"number", r.block.NumberU64(),
 			"hash", r.block.Hash(),

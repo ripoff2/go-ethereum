@@ -25,14 +25,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/console/prompt"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/eth"
-	"github.com/ethereum/go-ethereum/eth/ethconfig"
-	"github.com/ethereum/go-ethereum/internal/jsre"
-	"github.com/ethereum/go-ethereum/miner"
-	"github.com/ethereum/go-ethereum/node"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/console/prompt"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/eth"
+	"github.com/ripoff2/go-ethereum/eth/ethconfig"
+	"github.com/ripoff2/go-ethereum/internal/jsre"
+	"github.com/ripoff2/go-ethereum/miner"
+	"github.com/ripoff2/go-ethereum/node"
 )
 
 const (
@@ -111,21 +111,25 @@ func newTester(t *testing.T, confOverride func(*ethconfig.Config)) *tester {
 		t.Fatalf("failed to start test stack: %v", err)
 	}
 	client := stack.Attach()
-	t.Cleanup(func() {
-		client.Close()
-	})
+	t.Cleanup(
+		func() {
+			client.Close()
+		},
+	)
 
 	prompter := &hookedPrompter{scheduler: make(chan string)}
 	printer := new(bytes.Buffer)
 
-	console, err := New(Config{
-		DataDir:  stack.DataDir(),
-		DocRoot:  "testdata",
-		Client:   client,
-		Prompter: prompter,
-		Printer:  printer,
-		Preload:  []string{"preload.js"},
-	})
+	console, err := New(
+		Config{
+			DataDir:  stack.DataDir(),
+			DocRoot:  "testdata",
+			Client:   client,
+			Prompter: prompter,
+			Printer:  printer,
+			Preload:  []string{"preload.js"},
+		},
+	)
 	if err != nil {
 		t.Fatalf("failed to create JavaScript console: %v", err)
 	}
@@ -283,18 +287,24 @@ func TestIndenting(t *testing.T) {
 		{`var a = 1;`, 0},
 		{`"some string"`, 0},
 		{`"some string with (parenthesis`, 0},
-		{`"some string with newline
-		("`, 0},
+		{
+			`"some string with newline
+		("`, 0,
+		},
 		{`function v(a,b) {}`, 0},
 		{`function f(a,b) { var str = "asd("; };`, 0},
 		{`function f(a) {`, 1},
 		{`function f(a, function(b) {`, 2},
-		{`function f(a, function(b) {
+		{
+			`function f(a, function(b) {
 		     var str = "a)}";
-		  });`, 0},
-		{`function f(a,b) {
+		  });`, 0,
+		},
+		{
+			`function f(a,b) {
 		   var str = "a{b(" + a, ", " + b;
-		   }`, 0},
+		   }`, 0,
+		},
 		{`var str = "\"{"`, 0},
 		{`var str = "'("`, 0},
 		{`var str = "\\{"`, 0},
@@ -305,9 +315,11 @@ func TestIndenting(t *testing.T) {
 		{`var obj = { {a:1}`, 1},
 		{`var obj = { {a:1}, b:2}`, 0},
 		{`var obj = {}`, 0},
-		{`var obj = {
+		{
+			`var obj = {
 			a: 1, b: 2
-		}`, 0},
+		}`, 0,
+		},
 		{`var test = }`, -1},
 		{`var str = "a\""; var obj = {`, 1},
 	}

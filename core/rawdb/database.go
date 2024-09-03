@@ -25,13 +25,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/ethdb/leveldb"
-	"github.com/ethereum/go-ethereum/ethdb/memorydb"
-	"github.com/ethereum/go-ethereum/ethdb/pebble"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/olekukonko/tablewriter"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/ethdb/leveldb"
+	"github.com/ripoff2/go-ethereum/ethdb/memorydb"
+	"github.com/ripoff2/go-ethereum/ethdb/pebble"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // freezerdb is a database wrapper that enables ancient chain segment freezing.
@@ -187,7 +187,9 @@ func resolveChainFreezerDir(ancient string) string {
 // value data store with a freezer moving immutable chain segments into cold
 // storage. The passed ancient indicates the path of root ancient directory
 // where the chain freezer can be opened.
-func NewDatabaseWithFreezer(db ethdb.KeyValueStore, ancient string, namespace string, readonly bool) (ethdb.Database, error) {
+func NewDatabaseWithFreezer(db ethdb.KeyValueStore, ancient string, namespace string, readonly bool) (
+	ethdb.Database, error,
+) {
 	// Create the idle freezer instance. If the given ancient directory is empty,
 	// in-memory chain freezer is used (e.g. dev mode); otherwise the regular
 	// file-based freezer is created.
@@ -251,8 +253,10 @@ func NewDatabaseWithFreezer(db ethdb.KeyValueStore, ancient string, namespace st
 					}
 					// We are about to exit on error. Print database metadata before exiting
 					printChainMetadata(db)
-					return nil, fmt.Errorf("gap in the chain between ancients [0 - #%d] and leveldb [#%d - #%d] ",
-						frozen-1, number, head)
+					return nil, fmt.Errorf(
+						"gap in the chain between ancients [0 - #%d] and leveldb [#%d - #%d] ",
+						frozen-1, number, head,
+					)
 				}
 				// Database contains only older data than the freezer, this happens if the
 				// state was wiped and reinited from an existing freezer.
@@ -319,7 +323,9 @@ func NewLevelDBDatabase(file string, cache int, handles int, namespace string, r
 
 // NewPebbleDBDatabase creates a persistent key-value database without a freezer
 // moving immutable chain segments into cold storage.
-func NewPebbleDBDatabase(file string, cache int, handles int, namespace string, readonly, ephemeral bool) (ethdb.Database, error) {
+func NewPebbleDBDatabase(
+	file string, cache int, handles int, namespace string, readonly, ephemeral bool,
+) (ethdb.Database, error) {
 	db, err := pebble.New(file, cache, handles, namespace, readonly, ephemeral)
 	if err != nil {
 		return nil, err
@@ -378,7 +384,9 @@ func openKeyValueDatabase(o OpenOptions) (ethdb.Database, error) {
 	// as long as there's no conflict between the two types
 	existingDb := PreexistingDatabase(o.Directory)
 	if len(existingDb) != 0 && len(o.Type) != 0 && o.Type != existingDb {
-		return nil, fmt.Errorf("db.engine choice was %v but found pre-existing %v database in specified data directory", o.Type, existingDb)
+		return nil, fmt.Errorf(
+			"db.engine choice was %v but found pre-existing %v database in specified data directory", o.Type, existingDb,
+		)
 	}
 	if o.Type == dbPebble || existingDb == dbPebble {
 		log.Info("Using pebble as the backing database")
@@ -524,7 +532,9 @@ func InspectDatabase(db ethdb.Database, keyPrefix, keyStart []byte) error {
 			txLookups.Add(size)
 		case bytes.HasPrefix(key, SnapshotAccountPrefix) && len(key) == (len(SnapshotAccountPrefix)+common.HashLength):
 			accountSnaps.Add(size)
-		case bytes.HasPrefix(key, SnapshotStoragePrefix) && len(key) == (len(SnapshotStoragePrefix)+2*common.HashLength):
+		case bytes.HasPrefix(
+			key, SnapshotStoragePrefix,
+		) && len(key) == (len(SnapshotStoragePrefix)+2*common.HashLength):
 			storageSnaps.Add(size)
 		case bytes.HasPrefix(key, PreimagePrefix) && len(key) == (len(PreimagePrefix)+common.HashLength):
 			preimages.Add(size)
@@ -624,12 +634,14 @@ func InspectDatabase(db ethdb.Database, keyPrefix, keyStart []byte) error {
 	}
 	for _, ancient := range ancients {
 		for _, table := range ancient.sizes {
-			stats = append(stats, []string{
-				fmt.Sprintf("Ancient store (%s)", strings.Title(ancient.name)),
-				strings.Title(table.name),
-				table.size.String(),
-				fmt.Sprintf("%d", ancient.count()),
-			})
+			stats = append(
+				stats, []string{
+					fmt.Sprintf("Ancient store (%s)", strings.Title(ancient.name)),
+					strings.Title(table.name),
+					table.size.String(),
+					fmt.Sprintf("%d", ancient.count()),
+				},
+			)
 		}
 		total += ancient.size()
 	}

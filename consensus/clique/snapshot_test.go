@@ -24,13 +24,13 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 // testerAccountPool is a pool to maintain currently active tester accounts,
@@ -316,7 +316,9 @@ func TestClique(t *testing.T) {
 				{signer: "A", voted: "F", auth: true}, // Authorize F, 3 votes needed
 				{signer: "B", voted: "F", auth: true},
 				{signer: "C", voted: "F", auth: true},
-				{signer: "D", voted: "F", auth: false}, // Deauthorize F, 4 votes needed (leave A's previous vote "unchanged")
+				{
+					signer: "D", voted: "F", auth: false,
+				}, // Deauthorize F, 4 votes needed (leave A's previous vote "unchanged")
 				{signer: "E", voted: "F", auth: false},
 				{signer: "B", voted: "F", auth: false},
 				{signer: "C", voted: "F", auth: false},
@@ -367,7 +369,7 @@ func TestClique(t *testing.T) {
 			failure: errRecentlySigned,
 		}, {
 			// Recent signatures should not reset on checkpoint blocks imported in a new
-			// batch (https://github.com/ethereum/go-ethereum/issues/17593). Whilst this
+			// batch (https://github.com/ripoff2/go-ethereum/issues/17593). Whilst this
 			// seems overly specific and weird, it was a Rinkeby consensus split.
 			epoch:   3,
 			signers: []string{"A", "B", "C"},
@@ -422,15 +424,17 @@ func (tt *cliqueTest) run(t *testing.T) {
 	engine := New(config.Clique, rawdb.NewMemoryDatabase())
 	engine.fakeDiff = true
 
-	_, blocks, _ := core.GenerateChainWithGenesis(genesis, engine, len(tt.votes), func(j int, gen *core.BlockGen) {
-		// Cast the vote contained in this block
-		gen.SetCoinbase(accounts.address(tt.votes[j].voted))
-		if tt.votes[j].auth {
-			var nonce types.BlockNonce
-			copy(nonce[:], nonceAuthVote)
-			gen.SetNonce(nonce)
-		}
-	})
+	_, blocks, _ := core.GenerateChainWithGenesis(
+		genesis, engine, len(tt.votes), func(j int, gen *core.BlockGen) {
+			// Cast the vote contained in this block
+			gen.SetCoinbase(accounts.address(tt.votes[j].voted))
+			if tt.votes[j].auth {
+				var nonce types.BlockNonce
+				copy(nonce[:], nonceAuthVote)
+				gen.SetNonce(nonce)
+			}
+		},
+	)
 	// Iterate through the blocks and seal them individually
 	for j, block := range blocks {
 		// Get the header and prepare it for signing

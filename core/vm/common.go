@@ -17,9 +17,9 @@
 package vm
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/math"
 )
 
 // calcMemSize64 calculates the required memory size, and returns
@@ -63,7 +63,9 @@ func getData(data []byte, start uint64, size uint64) []byte {
 	return common.RightPadBytes(data[start:end], int(size))
 }
 
-func getDataAndAdjustedBounds(data []byte, start uint64, size uint64) (codeCopyPadded []byte, actualStart uint64, sizeNonPadded uint64) {
+func getDataAndAdjustedBounds(data []byte, start uint64, size uint64) (
+	codeCopyPadded []byte, actualStart uint64, sizeNonPadded uint64,
+) {
 	length := uint64(len(data))
 	if start > length {
 		start = length

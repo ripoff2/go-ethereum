@@ -22,13 +22,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/internal/testrand"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie/triestate"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/internal/testrand"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie/triestate"
 )
 
 // randomStateSet generates a random state change set.
@@ -102,7 +102,9 @@ func TestEncodeDecodeHistory(t *testing.T) {
 	}
 }
 
-func checkHistory(t *testing.T, db ethdb.KeyValueReader, freezer ethdb.AncientReader, id uint64, root common.Hash, exist bool) {
+func checkHistory(
+	t *testing.T, db ethdb.KeyValueReader, freezer ethdb.AncientReader, id uint64, root common.Hash, exist bool,
+) {
 	blob := rawdb.ReadStateHistoryMeta(freezer, id)
 	if exist && len(blob) == 0 {
 		t.Fatalf("Failed to load trie history, %d", id)
@@ -118,7 +120,9 @@ func checkHistory(t *testing.T, db ethdb.KeyValueReader, freezer ethdb.AncientRe
 	}
 }
 
-func checkHistoriesInRange(t *testing.T, db ethdb.KeyValueReader, freezer ethdb.AncientReader, from, to uint64, roots []common.Hash, exist bool) {
+func checkHistoriesInRange(
+	t *testing.T, db ethdb.KeyValueReader, freezer ethdb.AncientReader, from, to uint64, roots []common.Hash, exist bool,
+) {
 	for i, j := from, 0; i <= to; i, j = i+1, j+1 {
 		checkHistory(t, db, freezer, i, roots[j], exist)
 	}
@@ -135,7 +139,9 @@ func TestTruncateHeadHistory(t *testing.T) {
 
 	for i := 0; i < len(hs); i++ {
 		accountData, storageData, accountIndex, storageIndex := hs[i].encode()
-		rawdb.WriteStateHistory(freezer, uint64(i+1), hs[i].meta.encode(), accountIndex, storageIndex, accountData, storageData)
+		rawdb.WriteStateHistory(
+			freezer, uint64(i+1), hs[i].meta.encode(), accountIndex, storageIndex, accountData, storageData,
+		)
 		rawdb.WriteStateID(db, hs[i].meta.root, uint64(i+1))
 		roots = append(roots, hs[i].meta.root)
 	}
@@ -163,7 +169,9 @@ func TestTruncateTailHistory(t *testing.T) {
 
 	for i := 0; i < len(hs); i++ {
 		accountData, storageData, accountIndex, storageIndex := hs[i].encode()
-		rawdb.WriteStateHistory(freezer, uint64(i+1), hs[i].meta.encode(), accountIndex, storageIndex, accountData, storageData)
+		rawdb.WriteStateHistory(
+			freezer, uint64(i+1), hs[i].meta.encode(), accountIndex, storageIndex, accountData, storageData,
+		)
 		rawdb.WriteStateID(db, hs[i].meta.root, uint64(i+1))
 		roots = append(roots, hs[i].meta.root)
 	}
@@ -206,7 +214,9 @@ func TestTruncateTailHistories(t *testing.T) {
 
 		for i := 0; i < len(hs); i++ {
 			accountData, storageData, accountIndex, storageIndex := hs[i].encode()
-			rawdb.WriteStateHistory(freezer, uint64(i+1), hs[i].meta.encode(), accountIndex, storageIndex, accountData, storageData)
+			rawdb.WriteStateHistory(
+				freezer, uint64(i+1), hs[i].meta.encode(), accountIndex, storageIndex, accountData, storageData,
+			)
 			rawdb.WriteStateID(db, hs[i].meta.root, uint64(i+1))
 			roots = append(roots, hs[i].meta.root)
 		}
@@ -234,7 +244,9 @@ func TestTruncateOutOfRange(t *testing.T) {
 
 	for i := 0; i < len(hs); i++ {
 		accountData, storageData, accountIndex, storageIndex := hs[i].encode()
-		rawdb.WriteStateHistory(freezer, uint64(i+1), hs[i].meta.encode(), accountIndex, storageIndex, accountData, storageData)
+		rawdb.WriteStateHistory(
+			freezer, uint64(i+1), hs[i].meta.encode(), accountIndex, storageIndex, accountData, storageData,
+		)
 		rawdb.WriteStateID(db, hs[i].meta.root, uint64(i+1))
 	}
 	truncateFromTail(db, freezer, uint64(len(hs)/2))

@@ -22,13 +22,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/bitutil"
-	"github.com/ethereum/go-ethereum/core/bloombits"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/node"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/bitutil"
+	"github.com/ripoff2/go-ethereum/core/bloombits"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/node"
 )
 
 func BenchmarkBloomBits512(b *testing.B) {
@@ -118,7 +118,10 @@ func benchmarkBloomBits(b *testing.B, sectionSize uint64) {
 	d := time.Since(start)
 	b.Log("Finished generating bloombits data")
 	b.Log(" ", d, "total  ", d/time.Duration(cnt*sectionSize), "per block")
-	b.Log(" data size:", dataSize, "  compressed size:", compSize, "  compression ratio:", float64(compSize)/float64(dataSize))
+	b.Log(
+		" data size:", dataSize, "  compressed size:", compSize, "  compression ratio:",
+		float64(compSize)/float64(dataSize),
+	)
 
 	b.Log("Running filter benchmarks...")
 	start = time.Now()
@@ -145,7 +148,10 @@ func benchmarkBloomBits(b *testing.B, sectionSize uint64) {
 
 	d = time.Since(start)
 	b.Log("Finished running filter benchmarks")
-	b.Log(" ", d, "total  ", d/time.Duration(benchFilterCnt), "per address", d*time.Duration(1000000)/time.Duration(benchFilterCnt*cnt*sectionSize), "per million blocks")
+	b.Log(
+		" ", d, "total  ", d/time.Duration(benchFilterCnt), "per address",
+		d*time.Duration(1000000)/time.Duration(benchFilterCnt*cnt*sectionSize), "per million blocks",
+	)
 	db.Close()
 }
 

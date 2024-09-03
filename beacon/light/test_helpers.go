@@ -21,10 +21,10 @@ import (
 	"crypto/sha256"
 	mrand "math/rand"
 
-	"github.com/ethereum/go-ethereum/beacon/merkle"
-	"github.com/ethereum/go-ethereum/beacon/params"
-	"github.com/ethereum/go-ethereum/beacon/types"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/beacon/merkle"
+	"github.com/ripoff2/go-ethereum/beacon/params"
+	"github.com/ripoff2/go-ethereum/beacon/types"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 func GenerateTestCommittee() *types.SerializedSyncCommittee {
@@ -33,22 +33,38 @@ func GenerateTestCommittee() *types.SerializedSyncCommittee {
 	return s
 }
 
-func GenerateTestUpdate(config *types.ChainConfig, period uint64, committee, nextCommittee *types.SerializedSyncCommittee, signerCount int, finalizedHeader bool) *types.LightClientUpdate {
+func GenerateTestUpdate(
+	config *types.ChainConfig, period uint64, committee, nextCommittee *types.SerializedSyncCommittee, signerCount int,
+	finalizedHeader bool,
+) *types.LightClientUpdate {
 	update := new(types.LightClientUpdate)
 	update.NextSyncCommitteeRoot = nextCommittee.Root()
 	var attestedHeader types.Header
 	if finalizedHeader {
 		update.FinalizedHeader = new(types.Header)
-		*update.FinalizedHeader, update.NextSyncCommitteeBranch = makeTestHeaderWithMerkleProof(types.SyncPeriodStart(period)+100, params.StateIndexNextSyncCommittee, merkle.Value(update.NextSyncCommitteeRoot))
-		attestedHeader, update.FinalityBranch = makeTestHeaderWithMerkleProof(types.SyncPeriodStart(period)+200, params.StateIndexFinalBlock, merkle.Value(update.FinalizedHeader.Hash()))
+		*update.FinalizedHeader, update.NextSyncCommitteeBranch = makeTestHeaderWithMerkleProof(
+			types.SyncPeriodStart(period)+100, params.StateIndexNextSyncCommittee,
+			merkle.Value(update.NextSyncCommitteeRoot),
+		)
+		attestedHeader, update.FinalityBranch = makeTestHeaderWithMerkleProof(
+			types.SyncPeriodStart(period)+200, params.StateIndexFinalBlock, merkle.Value(update.FinalizedHeader.Hash()),
+		)
 	} else {
-		attestedHeader, update.NextSyncCommitteeBranch = makeTestHeaderWithMerkleProof(types.SyncPeriodStart(period)+2000, params.StateIndexNextSyncCommittee, merkle.Value(update.NextSyncCommitteeRoot))
+		attestedHeader, update.NextSyncCommitteeBranch = makeTestHeaderWithMerkleProof(
+			types.SyncPeriodStart(period)+2000, params.StateIndexNextSyncCommittee,
+			merkle.Value(update.NextSyncCommitteeRoot),
+		)
 	}
-	update.AttestedHeader = GenerateTestSignedHeader(attestedHeader, config, committee, attestedHeader.Slot+1, signerCount)
+	update.AttestedHeader = GenerateTestSignedHeader(
+		attestedHeader, config, committee, attestedHeader.Slot+1, signerCount,
+	)
 	return update
 }
 
-func GenerateTestSignedHeader(header types.Header, config *types.ChainConfig, committee *types.SerializedSyncCommittee, signatureSlot uint64, signerCount int) types.SignedHeader {
+func GenerateTestSignedHeader(
+	header types.Header, config *types.ChainConfig, committee *types.SerializedSyncCommittee, signatureSlot uint64,
+	signerCount int,
+) types.SignedHeader {
 	bitmask := makeBitmask(signerCount)
 	signingRoot, _ := config.Forks.SigningRoot(header)
 	c, _ := dummyVerifier{}.deserializeSyncCommittee(committee)
@@ -63,7 +79,9 @@ func GenerateTestSignedHeader(header types.Header, config *types.ChainConfig, co
 }
 
 func GenerateTestCheckpoint(period uint64, committee *types.SerializedSyncCommittee) *types.BootstrapData {
-	header, branch := makeTestHeaderWithMerkleProof(types.SyncPeriodStart(period)+200, params.StateIndexSyncCommittee, merkle.Value(committee.Root()))
+	header, branch := makeTestHeaderWithMerkleProof(
+		types.SyncPeriodStart(period)+200, params.StateIndexSyncCommittee, merkle.Value(committee.Root()),
+	)
 	return &types.BootstrapData{
 		Header:          header,
 		Committee:       committee,
@@ -122,7 +140,9 @@ func (blsVerifier) deserializeSyncCommittee(s *types.SerializedSyncCommittee) (s
 }
 
 // verifySignature implements committeeSigVerifier
-func (blsVerifier) verifySignature(committee syncCommittee, signingRoot common.Hash, aggregate *types.SyncAggregate) bool {
+func (blsVerifier) verifySignature(
+	committee syncCommittee, signingRoot common.Hash, aggregate *types.SyncAggregate,
+) bool {
 	return committee.(*types.SyncCommittee).VerifySignature(signingRoot, aggregate)
 }
 
@@ -139,11 +159,15 @@ func (dummyVerifier) deserializeSyncCommittee(s *types.SerializedSyncCommittee) 
 }
 
 // verifySignature implements committeeSigVerifier
-func (dummyVerifier) verifySignature(committee syncCommittee, signingRoot common.Hash, aggregate *types.SyncAggregate) bool {
+func (dummyVerifier) verifySignature(
+	committee syncCommittee, signingRoot common.Hash, aggregate *types.SyncAggregate,
+) bool {
 	return aggregate.Signature == makeDummySignature(committee.(dummySyncCommittee), signingRoot, aggregate.Signers)
 }
 
-func makeDummySignature(committee dummySyncCommittee, signingRoot common.Hash, bitmask [params.SyncCommitteeBitmaskSize]byte) (sig [params.BLSSignatureSize]byte) {
+func makeDummySignature(
+	committee dummySyncCommittee, signingRoot common.Hash, bitmask [params.SyncCommitteeBitmaskSize]byte,
+) (sig [params.BLSSignatureSize]byte) {
 	for i, b := range committee[:] {
 		sig[i] = b ^ signingRoot[i]
 	}

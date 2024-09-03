@@ -25,11 +25,11 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 const (
@@ -350,7 +350,10 @@ func (c *Config) ResolvePath(path string) string {
 		if oldpath != "" && common.FileExist(oldpath) {
 			if warn && !c.oldGethResourceWarning {
 				c.oldGethResourceWarning = true
-				log.Warn("Using deprecated resource file, please move this file to the 'geth' subdirectory of datadir.", "file", oldpath)
+				log.Warn(
+					"Using deprecated resource file, please move this file to the 'geth' subdirectory of datadir.",
+					"file", oldpath,
+				)
 			}
 			return oldpath
 		}

@@ -27,9 +27,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 // The values in those tests are from the Transaction Tests
@@ -56,15 +56,17 @@ var (
 		common.Hex2Bytes("98ff921201554726367d2be8c804a7ff89ccf285ebc57dff8ae4c44b9c19ac4a8887321be575c8095f789dd4c743dfe42c1820f9231f98a962b210e3ac2452a301"),
 	)
 
-	emptyEip2718Tx = NewTx(&AccessListTx{
-		ChainID:  big.NewInt(1),
-		Nonce:    3,
-		To:       &testAddr,
-		Value:    big.NewInt(10),
-		Gas:      25000,
-		GasPrice: big.NewInt(1),
-		Data:     common.FromHex("5544"),
-	})
+	emptyEip2718Tx = NewTx(
+		&AccessListTx{
+			ChainID:  big.NewInt(1),
+			Nonce:    3,
+			To:       &testAddr,
+			Value:    big.NewInt(10),
+			Gas:      25000,
+			GasPrice: big.NewInt(1),
+			Data:     common.FromHex("5544"),
+		},
+	)
 
 	signedEip2718Tx, _ = emptyEip2718Tx.WithSignature(
 		NewEIP2930Signer(big.NewInt(1)),
@@ -451,7 +453,8 @@ func TestTransactionSizes(t *testing.T) {
 				AccessTuple{
 					Address:     common.HexToAddress("0x01"),
 					StorageKeys: []common.Hash{common.HexToHash("0x01")},
-				}},
+				},
+			},
 		},
 		&DynamicFeeTx{
 			ChainID:   big.NewInt(123),
@@ -549,32 +552,34 @@ func TestYParityJSONUnmarshalling(t *testing.T) {
 		txType := txType
 		for _, test := range tests {
 			test := test
-			t.Run(fmt.Sprintf("txType=%d: %s", txType, test.name), func(t *testing.T) {
-				// Copy the base json
-				testJson := maps.Clone(baseJson)
+			t.Run(
+				fmt.Sprintf("txType=%d: %s", txType, test.name), func(t *testing.T) {
+					// Copy the base json
+					testJson := maps.Clone(baseJson)
 
-				// Set v, yParity and type
-				if test.v != "" {
-					testJson["v"] = test.v
-				}
-				if test.yParity != "" {
-					testJson["yParity"] = test.yParity
-				}
-				testJson["type"] = fmt.Sprintf("0x%x", txType)
+					// Set v, yParity and type
+					if test.v != "" {
+						testJson["v"] = test.v
+					}
+					if test.yParity != "" {
+						testJson["yParity"] = test.yParity
+					}
+					testJson["type"] = fmt.Sprintf("0x%x", txType)
 
-				// Marshal the JSON
-				jsonBytes, err := json.Marshal(testJson)
-				if err != nil {
-					t.Fatal(err)
-				}
+					// Marshal the JSON
+					jsonBytes, err := json.Marshal(testJson)
+					if err != nil {
+						t.Fatal(err)
+					}
 
-				// Unmarshal the tx
-				var tx Transaction
-				err = tx.UnmarshalJSON(jsonBytes)
-				if err != test.wantErr {
-					t.Fatalf("wrong error: got %v, want %v", err, test.wantErr)
-				}
-			})
+					// Unmarshal the tx
+					var tx Transaction
+					err = tx.UnmarshalJSON(jsonBytes)
+					if err != test.wantErr {
+						t.Fatalf("wrong error: got %v, want %v", err, test.wantErr)
+					}
+				},
+			)
 		}
 	}
 }

@@ -30,14 +30,14 @@ import (
 	"testing/quick"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie/trienode"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -338,32 +338,63 @@ func TestLargeValue(t *testing.T) {
 // TestRandomCases tests some cases that were found via random fuzzing
 func TestRandomCases(t *testing.T) {
 	var rt = []randTestStep{
-		{op: 6, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                                                                                                 // step 0
-		{op: 6, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                                                                                                 // step 1
-		{op: 0, key: common.Hex2Bytes("d51b182b95d677e5f1c82508c0228de96b73092d78ce78b2230cd948674f66fd1483bd"), value: common.Hex2Bytes("0000000000000002")},           // step 2
-		{op: 2, key: common.Hex2Bytes("c2a38512b83107d665c65235b0250002882ac2022eb00711552354832c5f1d030d0e408e"), value: common.Hex2Bytes("")},                         // step 3
-		{op: 3, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                                                                                                 // step 4
-		{op: 3, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                                                                                                 // step 5
-		{op: 6, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                                                                                                 // step 6
-		{op: 3, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                                                                                                 // step 7
-		{op: 0, key: common.Hex2Bytes("c2a38512b83107d665c65235b0250002882ac2022eb00711552354832c5f1d030d0e408e"), value: common.Hex2Bytes("0000000000000008")},         // step 8
-		{op: 0, key: common.Hex2Bytes("d51b182b95d677e5f1c82508c0228de96b73092d78ce78b2230cd948674f66fd1483bd"), value: common.Hex2Bytes("0000000000000009")},           // step 9
-		{op: 2, key: common.Hex2Bytes("fd"), value: common.Hex2Bytes("")},                                                                                               // step 10
-		{op: 6, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                                                                                                 // step 11
-		{op: 6, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                                                                                                 // step 12
-		{op: 0, key: common.Hex2Bytes("fd"), value: common.Hex2Bytes("000000000000000d")},                                                                               // step 13
-		{op: 6, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                                                                                                 // step 14
-		{op: 1, key: common.Hex2Bytes("c2a38512b83107d665c65235b0250002882ac2022eb00711552354832c5f1d030d0e408e"), value: common.Hex2Bytes("")},                         // step 15
-		{op: 3, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                                                                                                 // step 16
-		{op: 0, key: common.Hex2Bytes("c2a38512b83107d665c65235b0250002882ac2022eb00711552354832c5f1d030d0e408e"), value: common.Hex2Bytes("0000000000000011")},         // step 17
-		{op: 5, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                                                                                                 // step 18
-		{op: 3, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                                                                                                 // step 19
-		{op: 0, key: common.Hex2Bytes("d51b182b95d677e5f1c82508c0228de96b73092d78ce78b2230cd948674f66fd1483bd"), value: common.Hex2Bytes("0000000000000014")},           // step 20
-		{op: 0, key: common.Hex2Bytes("d51b182b95d677e5f1c82508c0228de96b73092d78ce78b2230cd948674f66fd1483bd"), value: common.Hex2Bytes("0000000000000015")},           // step 21
-		{op: 0, key: common.Hex2Bytes("c2a38512b83107d665c65235b0250002882ac2022eb00711552354832c5f1d030d0e408e"), value: common.Hex2Bytes("0000000000000016")},         // step 22
-		{op: 5, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                                                                                                 // step 23
-		{op: 1, key: common.Hex2Bytes("980c393656413a15c8da01978ed9f89feb80b502f58f2d640e3a2f5f7a99a7018f1b573befd92053ac6f78fca4a87268"), value: common.Hex2Bytes("")}, // step 24
-		{op: 1, key: common.Hex2Bytes("fd"), value: common.Hex2Bytes("")},                                                                                               // step 25
+		{op: 6, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")}, // step 0
+		{op: 6, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")}, // step 1
+		{
+			op: 0, key: common.Hex2Bytes("d51b182b95d677e5f1c82508c0228de96b73092d78ce78b2230cd948674f66fd1483bd"),
+			value: common.Hex2Bytes("0000000000000002"),
+		}, // step 2
+		{
+			op: 2, key: common.Hex2Bytes("c2a38512b83107d665c65235b0250002882ac2022eb00711552354832c5f1d030d0e408e"),
+			value: common.Hex2Bytes(""),
+		}, // step 3
+		{op: 3, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")}, // step 4
+		{op: 3, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")}, // step 5
+		{op: 6, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")}, // step 6
+		{op: 3, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")}, // step 7
+		{
+			op: 0, key: common.Hex2Bytes("c2a38512b83107d665c65235b0250002882ac2022eb00711552354832c5f1d030d0e408e"),
+			value: common.Hex2Bytes("0000000000000008"),
+		}, // step 8
+		{
+			op: 0, key: common.Hex2Bytes("d51b182b95d677e5f1c82508c0228de96b73092d78ce78b2230cd948674f66fd1483bd"),
+			value: common.Hex2Bytes("0000000000000009"),
+		}, // step 9
+		{op: 2, key: common.Hex2Bytes("fd"), value: common.Hex2Bytes("")},                 // step 10
+		{op: 6, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                   // step 11
+		{op: 6, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                   // step 12
+		{op: 0, key: common.Hex2Bytes("fd"), value: common.Hex2Bytes("000000000000000d")}, // step 13
+		{op: 6, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")},                   // step 14
+		{
+			op: 1, key: common.Hex2Bytes("c2a38512b83107d665c65235b0250002882ac2022eb00711552354832c5f1d030d0e408e"),
+			value: common.Hex2Bytes(""),
+		}, // step 15
+		{op: 3, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")}, // step 16
+		{
+			op: 0, key: common.Hex2Bytes("c2a38512b83107d665c65235b0250002882ac2022eb00711552354832c5f1d030d0e408e"),
+			value: common.Hex2Bytes("0000000000000011"),
+		}, // step 17
+		{op: 5, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")}, // step 18
+		{op: 3, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")}, // step 19
+		{
+			op: 0, key: common.Hex2Bytes("d51b182b95d677e5f1c82508c0228de96b73092d78ce78b2230cd948674f66fd1483bd"),
+			value: common.Hex2Bytes("0000000000000014"),
+		}, // step 20
+		{
+			op: 0, key: common.Hex2Bytes("d51b182b95d677e5f1c82508c0228de96b73092d78ce78b2230cd948674f66fd1483bd"),
+			value: common.Hex2Bytes("0000000000000015"),
+		}, // step 21
+		{
+			op: 0, key: common.Hex2Bytes("c2a38512b83107d665c65235b0250002882ac2022eb00711552354832c5f1d030d0e408e"),
+			value: common.Hex2Bytes("0000000000000016"),
+		}, // step 22
+		{op: 5, key: common.Hex2Bytes(""), value: common.Hex2Bytes("")}, // step 23
+		{
+			op:    1,
+			key:   common.Hex2Bytes("980c393656413a15c8da01978ed9f89feb80b502f58f2d640e3a2f5f7a99a7018f1b573befd92053ac6f78fca4a87268"),
+			value: common.Hex2Bytes(""),
+		}, // step 24
+		{op: 1, key: common.Hex2Bytes("fd"), value: common.Hex2Bytes("")}, // step 25
 	}
 	if err := runRandTest(rt); err != nil {
 		t.Fatal(err)
@@ -705,12 +736,16 @@ func BenchmarkHash(b *testing.B) {
 // the first one will be NOOP. As such, we'll use b.N as the number of account to
 // insert into the trie before measuring the hashing.
 func BenchmarkCommitAfterHash(b *testing.B) {
-	b.Run("no-onleaf", func(b *testing.B) {
-		benchmarkCommitAfterHash(b, false)
-	})
-	b.Run("with-onleaf", func(b *testing.B) {
-		benchmarkCommitAfterHash(b, true)
-	})
+	b.Run(
+		"no-onleaf", func(b *testing.B) {
+			benchmarkCommitAfterHash(b, false)
+		},
+	)
+	b.Run(
+		"with-onleaf", func(b *testing.B) {
+			benchmarkCommitAfterHash(b, true)
+		},
+	)
 }
 
 func benchmarkCommitAfterHash(b *testing.B, collectLeaf bool) {
@@ -833,7 +868,9 @@ func (s *spongeDb) Put(key []byte, value []byte) error {
 	if len(valbrief) > 8 {
 		valbrief = valbrief[:8]
 	}
-	s.journal = append(s.journal, fmt.Sprintf("%v: PUT([%x...], [%d bytes] %x...)\n", s.id, keybrief, len(value), valbrief))
+	s.journal = append(
+		s.journal, fmt.Sprintf("%v: PUT([%x...], [%d bytes] %x...)\n", s.id, keybrief, len(value), valbrief),
+	)
 
 	if s.values == nil {
 		s.sponge.Write(key)
@@ -962,9 +999,11 @@ func TestCommitSequenceStackTrie(t *testing.T) {
 			id:     "b",
 			values: make(map[string]string),
 		}
-		stTrie := NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
-			rawdb.WriteTrieNode(stackTrieSponge, common.Hash{}, path, hash, blob, db.Scheme())
-		})
+		stTrie := NewStackTrie(
+			func(path []byte, hash common.Hash, blob []byte) {
+				rawdb.WriteTrieNode(stackTrieSponge, common.Hash{}, path, hash, blob, db.Scheme())
+			},
+		)
 
 		// Fill the trie with elements
 		for i := 0; i < count; i++ {
@@ -1031,9 +1070,11 @@ func TestCommitSequenceSmallRoot(t *testing.T) {
 		id:     "b",
 		values: make(map[string]string),
 	}
-	stTrie := NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
-		rawdb.WriteTrieNode(stackTrieSponge, common.Hash{}, path, hash, blob, db.Scheme())
-	})
+	stTrie := NewStackTrie(
+		func(path []byte, hash common.Hash, blob []byte) {
+			rawdb.WriteTrieNode(stackTrieSponge, common.Hash{}, path, hash, blob, db.Scheme())
+		},
+	)
 	// Add a single small-element to the trie(s)
 	key := make([]byte, 5)
 	key[0] = 1
@@ -1065,42 +1106,52 @@ func TestCommitSequenceSmallRoot(t *testing.T) {
 // storage tries are small (a couple of entries), whereas the full post-block account trie update is large (a couple
 // of thousand entries)
 func BenchmarkHashFixedSize(b *testing.B) {
-	b.Run("10", func(b *testing.B) {
-		b.StopTimer()
-		acc, add := makeAccounts(20)
-		for i := 0; i < b.N; i++ {
-			benchmarkHashFixedSize(b, acc, add)
-		}
-	})
-	b.Run("100", func(b *testing.B) {
-		b.StopTimer()
-		acc, add := makeAccounts(100)
-		for i := 0; i < b.N; i++ {
-			benchmarkHashFixedSize(b, acc, add)
-		}
-	})
+	b.Run(
+		"10", func(b *testing.B) {
+			b.StopTimer()
+			acc, add := makeAccounts(20)
+			for i := 0; i < b.N; i++ {
+				benchmarkHashFixedSize(b, acc, add)
+			}
+		},
+	)
+	b.Run(
+		"100", func(b *testing.B) {
+			b.StopTimer()
+			acc, add := makeAccounts(100)
+			for i := 0; i < b.N; i++ {
+				benchmarkHashFixedSize(b, acc, add)
+			}
+		},
+	)
 
-	b.Run("1K", func(b *testing.B) {
-		b.StopTimer()
-		acc, add := makeAccounts(1000)
-		for i := 0; i < b.N; i++ {
-			benchmarkHashFixedSize(b, acc, add)
-		}
-	})
-	b.Run("10K", func(b *testing.B) {
-		b.StopTimer()
-		acc, add := makeAccounts(10000)
-		for i := 0; i < b.N; i++ {
-			benchmarkHashFixedSize(b, acc, add)
-		}
-	})
-	b.Run("100K", func(b *testing.B) {
-		b.StopTimer()
-		acc, add := makeAccounts(100000)
-		for i := 0; i < b.N; i++ {
-			benchmarkHashFixedSize(b, acc, add)
-		}
-	})
+	b.Run(
+		"1K", func(b *testing.B) {
+			b.StopTimer()
+			acc, add := makeAccounts(1000)
+			for i := 0; i < b.N; i++ {
+				benchmarkHashFixedSize(b, acc, add)
+			}
+		},
+	)
+	b.Run(
+		"10K", func(b *testing.B) {
+			b.StopTimer()
+			acc, add := makeAccounts(10000)
+			for i := 0; i < b.N; i++ {
+				benchmarkHashFixedSize(b, acc, add)
+			}
+		},
+	)
+	b.Run(
+		"100K", func(b *testing.B) {
+			b.StopTimer()
+			acc, add := makeAccounts(100000)
+			for i := 0; i < b.N; i++ {
+				benchmarkHashFixedSize(b, acc, add)
+			}
+		},
+	)
 }
 
 func benchmarkHashFixedSize(b *testing.B, addresses [][20]byte, accounts [][]byte) {
@@ -1116,42 +1167,52 @@ func benchmarkHashFixedSize(b *testing.B, addresses [][20]byte, accounts [][]byt
 }
 
 func BenchmarkCommitAfterHashFixedSize(b *testing.B) {
-	b.Run("10", func(b *testing.B) {
-		b.StopTimer()
-		acc, add := makeAccounts(20)
-		for i := 0; i < b.N; i++ {
-			benchmarkCommitAfterHashFixedSize(b, acc, add)
-		}
-	})
-	b.Run("100", func(b *testing.B) {
-		b.StopTimer()
-		acc, add := makeAccounts(100)
-		for i := 0; i < b.N; i++ {
-			benchmarkCommitAfterHashFixedSize(b, acc, add)
-		}
-	})
+	b.Run(
+		"10", func(b *testing.B) {
+			b.StopTimer()
+			acc, add := makeAccounts(20)
+			for i := 0; i < b.N; i++ {
+				benchmarkCommitAfterHashFixedSize(b, acc, add)
+			}
+		},
+	)
+	b.Run(
+		"100", func(b *testing.B) {
+			b.StopTimer()
+			acc, add := makeAccounts(100)
+			for i := 0; i < b.N; i++ {
+				benchmarkCommitAfterHashFixedSize(b, acc, add)
+			}
+		},
+	)
 
-	b.Run("1K", func(b *testing.B) {
-		b.StopTimer()
-		acc, add := makeAccounts(1000)
-		for i := 0; i < b.N; i++ {
-			benchmarkCommitAfterHashFixedSize(b, acc, add)
-		}
-	})
-	b.Run("10K", func(b *testing.B) {
-		b.StopTimer()
-		acc, add := makeAccounts(10000)
-		for i := 0; i < b.N; i++ {
-			benchmarkCommitAfterHashFixedSize(b, acc, add)
-		}
-	})
-	b.Run("100K", func(b *testing.B) {
-		b.StopTimer()
-		acc, add := makeAccounts(100000)
-		for i := 0; i < b.N; i++ {
-			benchmarkCommitAfterHashFixedSize(b, acc, add)
-		}
-	})
+	b.Run(
+		"1K", func(b *testing.B) {
+			b.StopTimer()
+			acc, add := makeAccounts(1000)
+			for i := 0; i < b.N; i++ {
+				benchmarkCommitAfterHashFixedSize(b, acc, add)
+			}
+		},
+	)
+	b.Run(
+		"10K", func(b *testing.B) {
+			b.StopTimer()
+			acc, add := makeAccounts(10000)
+			for i := 0; i < b.N; i++ {
+				benchmarkCommitAfterHashFixedSize(b, acc, add)
+			}
+		},
+	)
+	b.Run(
+		"100K", func(b *testing.B) {
+			b.StopTimer()
+			acc, add := makeAccounts(100000)
+			for i := 0; i < b.N; i++ {
+				benchmarkCommitAfterHashFixedSize(b, acc, add)
+			}
+		},
+	)
 }
 
 func benchmarkCommitAfterHashFixedSize(b *testing.B, addresses [][20]byte, accounts [][]byte) {
@@ -1194,15 +1255,17 @@ func TestDecodeNode(t *testing.T) {
 }
 
 func FuzzTrie(f *testing.F) {
-	f.Fuzz(func(t *testing.T, data []byte) {
-		var steps = 500
-		var input = bytes.NewReader(data)
-		var finishedFn = func() bool {
-			steps--
-			return steps < 0 || input.Len() == 0
-		}
-		if err := runRandTest(generateSteps(finishedFn, input)); err != nil {
-			t.Fatal(err)
-		}
-	})
+	f.Fuzz(
+		func(t *testing.T, data []byte) {
+			var steps = 500
+			var input = bytes.NewReader(data)
+			var finishedFn = func() bool {
+				steps--
+				return steps < 0 || input.Len() == 0
+			}
+			if err := runRandTest(generateSteps(finishedFn, input)); err != nil {
+				t.Fatal(err)
+			}
+		},
+	)
 }

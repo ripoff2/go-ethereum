@@ -24,8 +24,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
 )
 
 const jsonIndent = "    "
@@ -77,9 +77,11 @@ func (ns nodeSet) nodes() []*enode.Node {
 		result = append(result, n.N)
 	}
 	// Sort by ID.
-	slices.SortFunc(result, func(a, b *enode.Node) int {
-		return bytes.Compare(a.ID().Bytes(), b.ID().Bytes())
-	})
+	slices.SortFunc(
+		result, func(a, b *enode.Node) int {
+			return bytes.Compare(a.ID().Bytes(), b.ID().Bytes())
+		},
+	)
 	return result
 }
 
@@ -103,15 +105,17 @@ func (ns nodeSet) topN(n int) nodeSet {
 	for _, v := range ns {
 		byscore = append(byscore, v)
 	}
-	slices.SortFunc(byscore, func(a, b nodeJSON) int {
-		if a.Score > b.Score {
-			return -1
-		}
-		if a.Score < b.Score {
-			return 1
-		}
-		return 0
-	})
+	slices.SortFunc(
+		byscore, func(a, b nodeJSON) int {
+			if a.Score > b.Score {
+				return -1
+			}
+			if a.Score < b.Score {
+				return 1
+			}
+			return 0
+		},
+	)
 	result := make(nodeSet, n)
 	for _, v := range byscore[:n] {
 		result[v.N.ID()] = v

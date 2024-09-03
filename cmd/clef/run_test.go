@@ -21,8 +21,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/internal/cmdtest"
-	"github.com/ethereum/go-ethereum/internal/reexec"
+	"github.com/ripoff2/go-ethereum/internal/cmdtest"
+	"github.com/ripoff2/go-ethereum/internal/reexec"
 )
 
 const registeredName = "clef-test"
@@ -36,13 +36,15 @@ type testproc struct {
 }
 
 func init() {
-	reexec.Register(registeredName, func() {
-		if err := app.Run(os.Args); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		os.Exit(0)
-	})
+	reexec.Register(
+		registeredName, func() {
+			if err := app.Run(os.Args); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			os.Exit(0)
+		},
+	)
 }
 
 func TestMain(m *testing.M) {
@@ -61,9 +63,11 @@ func runClef(t *testing.T, args ...string) *testproc {
 	if err != nil {
 		return nil
 	}
-	t.Cleanup(func() {
-		os.RemoveAll(ddir)
-	})
+	t.Cleanup(
+		func() {
+			os.RemoveAll(ddir)
+		},
+	)
 	return runWithKeystore(t, ddir, args...)
 }
 

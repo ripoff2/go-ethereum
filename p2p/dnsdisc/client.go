@@ -27,12 +27,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/lru"
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/common/lru"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
 	"golang.org/x/sync/singleflight"
 	"golang.org/x/time/rate"
 )
@@ -134,19 +134,21 @@ func (c *Client) NewIterator(urls ...string) (enode.Iterator, error) {
 
 // resolveRoot retrieves a root entry via DNS.
 func (c *Client) resolveRoot(ctx context.Context, loc *linkEntry) (rootEntry, error) {
-	e, err, _ := c.singleflight.Do(loc.str, func() (interface{}, error) {
-		txts, err := c.cfg.Resolver.LookupTXT(ctx, loc.domain)
-		c.cfg.Logger.Trace("Updating DNS discovery root", "tree", loc.domain, "err", err)
-		if err != nil {
-			return rootEntry{}, err
-		}
-		for _, txt := range txts {
-			if strings.HasPrefix(txt, rootPrefix) {
-				return parseAndVerifyRoot(txt, loc)
+	e, err, _ := c.singleflight.Do(
+		loc.str, func() (interface{}, error) {
+			txts, err := c.cfg.Resolver.LookupTXT(ctx, loc.domain)
+			c.cfg.Logger.Trace("Updating DNS discovery root", "tree", loc.domain, "err", err)
+			if err != nil {
+				return rootEntry{}, err
 			}
-		}
-		return rootEntry{}, nameError{loc.domain, errNoRoot}
-	})
+			for _, txt := range txts {
+				if strings.HasPrefix(txt, rootPrefix) {
+					return parseAndVerifyRoot(txt, loc)
+				}
+			}
+			return rootEntry{}, nameError{loc.domain, errNoRoot}
+		},
+	)
 	return e.(rootEntry), err
 }
 
@@ -175,14 +177,16 @@ func (c *Client) resolveEntry(ctx context.Context, domain, hash string) (entry, 
 		return e, nil
 	}
 
-	ei, err, _ := c.singleflight.Do(cacheKey, func() (interface{}, error) {
-		e, err := c.doResolveEntry(ctx, domain, hash)
-		if err != nil {
-			return nil, err
-		}
-		c.entries.Add(cacheKey, e)
-		return e, nil
-	})
+	ei, err, _ := c.singleflight.Do(
+		cacheKey, func() (interface{}, error) {
+			e, err := c.doResolveEntry(ctx, domain, hash)
+			if err != nil {
+				return nil, err
+			}
+			c.entries.Add(cacheKey, e)
+			return e, nil
+		},
+	)
 	e, _ := ei.(entry)
 	return e, err
 }

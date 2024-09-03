@@ -23,15 +23,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/trie/trienode"
-	"github.com/ethereum/go-ethereum/trie/triestate"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
+	"github.com/ripoff2/go-ethereum/trie/triestate"
 )
 
 const (
@@ -80,7 +80,10 @@ type layer interface {
 	// the provided dirty trie nodes along with the state change set.
 	//
 	// Note, the maps are retained by the method to avoid copying everything.
-	update(root common.Hash, id uint64, block uint64, nodes map[common.Hash]map[string]*trienode.Node, states *triestate.Set) *diffLayer
+	update(
+		root common.Hash, id uint64, block uint64, nodes map[common.Hash]map[string]*trienode.Node,
+		states *triestate.Set,
+	) *diffLayer
 
 	// journal commits an entire diff hierarchy to disk into a single journal entry.
 	// This is meant to be used during shutdown to persist the layer without
@@ -101,7 +104,10 @@ type Config struct {
 func (c *Config) sanitize() *Config {
 	conf := *c
 	if conf.DirtyCacheSize > maxBufferSize {
-		log.Warn("Sanitizing invalid node buffer size", "provided", common.StorageSize(conf.DirtyCacheSize), "updated", common.StorageSize(maxBufferSize))
+		log.Warn(
+			"Sanitizing invalid node buffer size", "provided", common.StorageSize(conf.DirtyCacheSize), "updated",
+			common.StorageSize(maxBufferSize),
+		)
 		conf.DirtyCacheSize = maxBufferSize
 	}
 	return &conf
@@ -241,7 +247,9 @@ func (db *Database) repairHistory() error {
 //
 // The passed in maps(nodes, states) will be retained to avoid copying everything.
 // Therefore, these maps must not be changed afterwards.
-func (db *Database) Update(root common.Hash, parentRoot common.Hash, block uint64, nodes *trienode.MergedNodeSet, states *triestate.Set) error {
+func (db *Database) Update(
+	root common.Hash, parentRoot common.Hash, block uint64, nodes *trienode.MergedNodeSet, states *triestate.Set,
+) error {
 	// Hold the lock to prevent concurrent mutations.
 	db.lock.Lock()
 	defer db.lock.Unlock()
@@ -421,13 +429,15 @@ func (db *Database) Recoverable(root common.Hash) bool {
 	}
 	// Ensure the requested state is a canonical state and all state
 	// histories in range [id+1, disklayer.ID] are present and complete.
-	return checkHistories(db.freezer, *id+1, dl.stateID()-*id, func(m *meta) error {
-		if m.parent != root {
-			return errors.New("unexpected state history")
-		}
-		root = m.root
-		return nil
-	}) == nil
+	return checkHistories(
+		db.freezer, *id+1, dl.stateID()-*id, func(m *meta) error {
+			if m.parent != root {
+				return errors.New("unexpected state history")
+			}
+			root = m.root
+			return nil
+		},
+	) == nil
 }
 
 // Close closes the trie database and the held freezer.
@@ -452,14 +462,16 @@ func (db *Database) Close() error {
 // Size returns the current storage size of the memory cache in front of the
 // persistent database layer.
 func (db *Database) Size() (diffs common.StorageSize, nodes common.StorageSize) {
-	db.tree.forEach(func(layer layer) {
-		if diff, ok := layer.(*diffLayer); ok {
-			diffs += common.StorageSize(diff.memory)
-		}
-		if disk, ok := layer.(*diskLayer); ok {
-			nodes += disk.size()
-		}
-	})
+	db.tree.forEach(
+		func(layer layer) {
+			if diff, ok := layer.(*diffLayer); ok {
+				diffs += common.StorageSize(diff.memory)
+			}
+			if disk, ok := layer.(*diskLayer); ok {
+				nodes += disk.size()
+			}
+		},
+	)
 	return diffs, nodes
 }
 
@@ -467,11 +479,13 @@ func (db *Database) Size() (diffs common.StorageSize, nodes common.StorageSize) 
 // initialized in path-based scheme.
 func (db *Database) Initialized(genesisRoot common.Hash) bool {
 	var inited bool
-	db.tree.forEach(func(layer layer) {
-		if layer.rootHash() != types.EmptyRootHash {
-			inited = true
-		}
-	})
+	db.tree.forEach(
+		func(layer layer) {
+			if layer.rootHash() != types.EmptyRootHash {
+				inited = true
+			}
+		},
+	)
 	if !inited {
 		inited = rawdb.ReadSnapSyncStatusFlag(db.diskdb) != rawdb.StateSyncUnknown
 	}
@@ -484,7 +498,10 @@ func (db *Database) SetBufferSize(size int) error {
 	defer db.lock.Unlock()
 
 	if size > maxBufferSize {
-		log.Info("Capped node buffer size", "provided", common.StorageSize(size), "adjusted", common.StorageSize(maxBufferSize))
+		log.Info(
+			"Capped node buffer size", "provided", common.StorageSize(size), "adjusted",
+			common.StorageSize(maxBufferSize),
+		)
 		size = maxBufferSize
 	}
 	db.bufferSize = size
@@ -523,7 +540,9 @@ func (db *Database) AccountHistory(address common.Address, start, end uint64) (*
 // object is selected as the ending point. Note end is included in the query.
 //
 // Note, slot refers to the hash of the raw slot key.
-func (db *Database) StorageHistory(address common.Address, slot common.Hash, start uint64, end uint64) (*HistoryStats, error) {
+func (db *Database) StorageHistory(address common.Address, slot common.Hash, start uint64, end uint64) (
+	*HistoryStats, error,
+) {
 	return storageHistory(db.freezer, address, slot, start, end)
 }
 

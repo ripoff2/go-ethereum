@@ -30,7 +30,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/internal/reexec"
+	"github.com/ripoff2/go-ethereum/internal/reexec"
 )
 
 func runSelf(args ...string) ([]byte, error) {
@@ -152,7 +152,10 @@ func TestVmodule(t *testing.T) {
 	t.Parallel()
 	checkOutput := func(level int, want, wantNot string) {
 		t.Helper()
-		output, err := runSelf("--log.format", "terminal", "--verbosity=0", "--log.vmodule", fmt.Sprintf("logtestcmd_active.go=%d", level), "logtest")
+		output, err := runSelf(
+			"--log.format", "terminal", "--verbosity=0", "--log.vmodule", fmt.Sprintf("logtestcmd_active.go=%d", level),
+			"logtest",
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -163,11 +166,19 @@ func TestVmodule(t *testing.T) {
 			t.Errorf("string ('%s') should not be present in output", wantNot)
 		}
 	}
-	checkOutput(5, "log at level trace", "")                   // trace should be present at 5
-	checkOutput(4, "log at level debug", "log at level trace") // debug should be present at 4, but trace should be missing
-	checkOutput(3, "log at level info", "log at level debug")  // info should be present at 3, but debug should be missing
-	checkOutput(2, "log at level warn", "log at level info")   // warn should be present at 2, but info should be missing
-	checkOutput(1, "log at level error", "log at level warn")  // error should be present at 1, but warn should be missing
+	checkOutput(5, "log at level trace", "") // trace should be present at 5
+	checkOutput(
+		4, "log at level debug", "log at level trace",
+	) // debug should be present at 4, but trace should be missing
+	checkOutput(
+		3, "log at level info", "log at level debug",
+	) // info should be present at 3, but debug should be missing
+	checkOutput(
+		2, "log at level warn", "log at level info",
+	) // warn should be present at 2, but info should be missing
+	checkOutput(
+		1, "log at level error", "log at level warn",
+	) // error should be present at 1, but warn should be missing
 }
 
 func nicediff(have, want []byte) string {

@@ -22,9 +22,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 var ErrInvalidChainId = errors.New("invalid chain id for signer")
@@ -234,7 +234,8 @@ func (s cancunSigner) Hash(tx *Transaction) common.Hash {
 			tx.AccessList(),
 			tx.BlobGasFeeCap(),
 			tx.BlobHashes(),
-		})
+		},
+	)
 }
 
 type londonSigner struct{ eip2930Signer }
@@ -300,7 +301,8 @@ func (s londonSigner) Hash(tx *Transaction) common.Hash {
 			tx.Value(),
 			tx.Data(),
 			tx.AccessList(),
-		})
+		},
+	)
 }
 
 type eip2930Signer struct{ EIP155Signer }
@@ -374,7 +376,8 @@ func (s eip2930Signer) Hash(tx *Transaction) common.Hash {
 				tx.Value(),
 				tx.Data(),
 				tx.AccessList(),
-			})
+			},
+		)
 	default:
 		// This _should_ not happen, but in case someone sends in a bad
 		// json struct via RPC, it's probably more prudent to return an
@@ -444,15 +447,17 @@ func (s EIP155Signer) SignatureValues(tx *Transaction, sig []byte) (R, S, V *big
 // Hash returns the hash to be signed by the sender.
 // It does not uniquely identify the transaction.
 func (s EIP155Signer) Hash(tx *Transaction) common.Hash {
-	return rlpHash([]interface{}{
-		tx.Nonce(),
-		tx.GasPrice(),
-		tx.Gas(),
-		tx.To(),
-		tx.Value(),
-		tx.Data(),
-		s.chainId, uint(0), uint(0),
-	})
+	return rlpHash(
+		[]interface{}{
+			tx.Nonce(),
+			tx.GasPrice(),
+			tx.Gas(),
+			tx.To(),
+			tx.Value(),
+			tx.Data(),
+			s.chainId, uint(0), uint(0),
+		},
+	)
 }
 
 // HomesteadSigner implements Signer interface using the
@@ -516,14 +521,16 @@ func (fs FrontierSigner) SignatureValues(tx *Transaction, sig []byte) (r, s, v *
 // Hash returns the hash to be signed by the sender.
 // It does not uniquely identify the transaction.
 func (fs FrontierSigner) Hash(tx *Transaction) common.Hash {
-	return rlpHash([]interface{}{
-		tx.Nonce(),
-		tx.GasPrice(),
-		tx.Gas(),
-		tx.To(),
-		tx.Value(),
-		tx.Data(),
-	})
+	return rlpHash(
+		[]interface{}{
+			tx.Nonce(),
+			tx.GasPrice(),
+			tx.Gas(),
+			tx.To(),
+			tx.Value(),
+			tx.Data(),
+		},
+	)
 }
 
 func decodeSignature(sig []byte) (r, s, v *big.Int) {

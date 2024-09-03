@@ -26,7 +26,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 // Type enumerator
@@ -185,11 +185,13 @@ func NewType(t string, internalType string, components []ArgumentMarshaling) (ty
 			if !isValidFieldName(fieldName) {
 				return Type{}, fmt.Errorf("field %d has invalid name", idx)
 			}
-			fields = append(fields, reflect.StructField{
-				Name: fieldName, // reflect.StructOf will panic for any exported field.
-				Type: cType.GetType(),
-				Tag:  reflect.StructTag("json:\"" + c.Name + "\""),
-			})
+			fields = append(
+				fields, reflect.StructField{
+					Name: fieldName, // reflect.StructOf will panic for any exported field.
+					Type: cType.GetType(),
+					Tag:  reflect.StructTag("json:\"" + c.Name + "\""),
+				},
+			)
 			elems = append(elems, &cType)
 			names = append(names, c.Name)
 			expression += cType.stringKind

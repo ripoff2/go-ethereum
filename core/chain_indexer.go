@@ -25,12 +25,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // ChainIndexerBackend defines the methods needed to process chain segments in
@@ -101,7 +101,10 @@ type ChainIndexer struct {
 // NewChainIndexer creates a new chain indexer to do background processing on
 // chain segments of a given size after certain number of confirmations passed.
 // The throttling parameter might be used to prevent database thrashing.
-func NewChainIndexer(chainDb ethdb.Database, indexDb ethdb.Database, backend ChainIndexerBackend, section, confirm uint64, throttling time.Duration, kind string) *ChainIndexer {
+func NewChainIndexer(
+	chainDb ethdb.Database, indexDb ethdb.Database, backend ChainIndexerBackend, section, confirm uint64,
+	throttling time.Duration, kind string,
+) *ChainIndexer {
 	c := &ChainIndexer{
 		chainDb:     chainDb,
 		indexDb:     indexDb,
@@ -286,7 +289,10 @@ func (c *ChainIndexer) newHead(head uint64, reorg bool) {
 				// syncing reached the checkpoint, verify section head
 				syncedHead := rawdb.ReadCanonicalHash(c.chainDb, c.checkpointSections*c.sectionSize-1)
 				if syncedHead != c.checkpointHead {
-					c.log.Error("Synced chain does not match checkpoint", "number", c.checkpointSections*c.sectionSize-1, "expected", c.checkpointHead, "synced", syncedHead)
+					c.log.Error(
+						"Synced chain does not match checkpoint", "number", c.checkpointSections*c.sectionSize-1,
+						"expected", c.checkpointHead, "synced", syncedHead,
+					)
 					return
 				}
 			}
@@ -370,12 +376,14 @@ func (c *ChainIndexer) updateLoop() {
 			}
 			// If there are still further sections to process, reschedule
 			if c.knownSections > c.storedSections {
-				time.AfterFunc(c.throttling, func() {
-					select {
-					case c.update <- struct{}{}:
-					default:
-					}
-				})
+				time.AfterFunc(
+					c.throttling, func() {
+						select {
+						case c.update <- struct{}{}:
+						default:
+						}
+					},
+				)
 			}
 			c.lock.Unlock()
 		}

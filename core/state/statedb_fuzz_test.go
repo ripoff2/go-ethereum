@@ -28,17 +28,17 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state/snapshot"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/triedb"
-	"github.com/ethereum/go-ethereum/triedb/pathdb"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state/snapshot"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum/triedb/pathdb"
 )
 
 // A stateTest checks that the state changes are correctly captured. Instances
@@ -153,11 +153,13 @@ func (*stateTest) Generate(r *rand.Rand, size int) reflect.Value {
 	if size > 0 && chunk == 0 {
 		chunk = 1
 	}
-	return reflect.ValueOf(&stateTest{
-		addrs:   addrs,
-		actions: actions,
-		chunk:   chunk,
-	})
+	return reflect.ValueOf(
+		&stateTest{
+			addrs:   addrs,
+			actions: actions,
+			chunk:   chunk,
+		},
+	)
 }
 
 func (test *stateTest) String() string {
@@ -205,12 +207,14 @@ func (test *stateTest) run() bool {
 
 	var snaps *snapshot.Tree
 	if rand.Intn(3) == 0 {
-		snaps, _ = snapshot.New(snapshot.Config{
-			CacheSize:  1,
-			Recovery:   false,
-			NoBuild:    false,
-			AsyncBuild: false,
-		}, disk, tdb, types.EmptyRootHash)
+		snaps, _ = snapshot.New(
+			snapshot.Config{
+				CacheSize:  1,
+				Recovery:   false,
+				NoBuild:    false,
+				AsyncBuild: false,
+			}, disk, tdb, types.EmptyRootHash,
+		)
 	}
 	for i, actions := range test.actions {
 		root := types.EmptyRootHash
@@ -266,7 +270,9 @@ func (test *stateTest) run() bool {
 // - the account was indeed not present in trie
 // - the account is present in new trie, nil->nil is regarded as invalid
 // - the slots transition is correct
-func (test *stateTest) verifyAccountCreation(next common.Hash, db *triedb.Database, otr, ntr *trie.Trie, addr common.Address, slots map[common.Hash][]byte) error {
+func (test *stateTest) verifyAccountCreation(
+	next common.Hash, db *triedb.Database, otr, ntr *trie.Trie, addr common.Address, slots map[common.Hash][]byte,
+) error {
 	// Verify account change
 	addrHash := crypto.Keccak256Hash(addr.Bytes())
 	oBlob, err := otr.Get(addrHash.Bytes())
@@ -317,7 +323,10 @@ func (test *stateTest) verifyAccountCreation(next common.Hash, db *triedb.Databa
 // - the account was indeed present in trie
 // - the account in old trie matches the provided value
 // - the slots transition is correct
-func (test *stateTest) verifyAccountUpdate(next common.Hash, db *triedb.Database, otr, ntr *trie.Trie, addr common.Address, origin []byte, slots map[common.Hash][]byte) error {
+func (test *stateTest) verifyAccountUpdate(
+	next common.Hash, db *triedb.Database, otr, ntr *trie.Trie, addr common.Address, origin []byte,
+	slots map[common.Hash][]byte,
+) error {
 	// Verify account change
 	addrHash := crypto.Keccak256Hash(addr.Bytes())
 	oBlob, err := otr.Get(addrHash.Bytes())
@@ -371,7 +380,10 @@ func (test *stateTest) verifyAccountUpdate(next common.Hash, db *triedb.Database
 	return nil
 }
 
-func (test *stateTest) verify(root common.Hash, next common.Hash, db *triedb.Database, accountsOrigin map[common.Address][]byte, storagesOrigin map[common.Address]map[common.Hash][]byte) error {
+func (test *stateTest) verify(
+	root common.Hash, next common.Hash, db *triedb.Database, accountsOrigin map[common.Address][]byte,
+	storagesOrigin map[common.Address]map[common.Hash][]byte,
+) error {
 	otr, err := trie.New(trie.StateTrieID(root), db)
 	if err != nil {
 		return err

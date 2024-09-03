@@ -33,20 +33,20 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state/snapshot"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/eth/ethconfig"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/internal/debug"
-	"github.com/ethereum/go-ethereum/internal/era"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state/snapshot"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/eth/ethconfig"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/internal/debug"
+	"github.com/ripoff2/go-ethereum/internal/era"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/node"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
 	"github.com/urfave/cli/v2"
 )
 
@@ -134,11 +134,17 @@ func monitorFreeDiskSpace(sigc chan os.Signal, path string, freeDiskSpaceCritica
 			break
 		}
 		if freeSpace < freeDiskSpaceCritical {
-			log.Error("Low disk space. Gracefully shutting down Geth to prevent database corruption.", "available", common.StorageSize(freeSpace), "path", path)
+			log.Error(
+				"Low disk space. Gracefully shutting down Geth to prevent database corruption.", "available",
+				common.StorageSize(freeSpace), "path", path,
+			)
 			sigc <- syscall.SIGTERM
 			break
 		} else if freeSpace < 2*freeDiskSpaceCritical {
-			log.Warn("Disk space is running low. Geth will shutdown if disk space runs below critical level.", "available", common.StorageSize(freeSpace), "critical_level", common.StorageSize(freeDiskSpaceCritical), "path", path)
+			log.Warn(
+				"Disk space is running low. Geth will shutdown if disk space runs below critical level.", "available",
+				common.StorageSize(freeSpace), "critical_level", common.StorageSize(freeDiskSpaceCritical), "path", path,
+			)
 		}
 		time.Sleep(30 * time.Second)
 	}
@@ -217,7 +223,10 @@ func ImportChain(chain *core.BlockChain, fn string) error {
 		}
 		missing := missingBlocks(chain, blocks[:i])
 		if len(missing) == 0 {
-			log.Info("Skipping batch as all blocks present", "batch", batch, "first", blocks[0].Hash(), "last", blocks[i-1].Hash())
+			log.Info(
+				"Skipping batch as all blocks present", "batch", batch, "first", blocks[0].Hash(), "last",
+				blocks[i-1].Hash(),
+			)
 			continue
 		}
 		if failindex, err := chain.InsertChain(missing); err != nil {
@@ -256,7 +265,10 @@ func ImportHistory(chain *core.BlockChain, db ethdb.Database, dir string, networ
 		return fmt.Errorf("unable to read checksums.txt: %w", err)
 	}
 	if len(checksums) != len(entries) {
-		return fmt.Errorf("expected equal number of checksums and entries, have: %d checksums, %d entries", len(checksums), len(entries))
+		return fmt.Errorf(
+			"expected equal number of checksums and entries, have: %d checksums, %d entries", len(checksums),
+			len(entries),
+		)
 	}
 	var (
 		start    = time.Now()
@@ -305,19 +317,26 @@ func ImportHistory(chain *core.BlockChain, db ethdb.Database, dir string, networ
 				if err != nil {
 					return fmt.Errorf("error reading receipts %d: %w", it.Number(), err)
 				}
-				if status, err := chain.HeaderChain().InsertHeaderChain([]*types.Header{block.Header()}, start, forker); err != nil {
+				if status, err := chain.HeaderChain().InsertHeaderChain(
+					[]*types.Header{block.Header()}, start, forker,
+				); err != nil {
 					return fmt.Errorf("error inserting header %d: %w", it.Number(), err)
 				} else if status != core.CanonStatTy {
 					return fmt.Errorf("error inserting header %d, not canon: %v", it.Number(), status)
 				}
-				if _, err := chain.InsertReceiptChain([]*types.Block{block}, []types.Receipts{receipts}, 2^64-1); err != nil {
+				if _, err := chain.InsertReceiptChain(
+					[]*types.Block{block}, []types.Receipts{receipts}, 2^64-1,
+				); err != nil {
 					return fmt.Errorf("error inserting body %d: %w", it.Number(), err)
 				}
 				imported += 1
 
 				// Give the user some feedback that something is happening.
 				if time.Since(reported) >= 8*time.Second {
-					log.Info("Importing Era files", "head", it.Number(), "imported", imported, "elapsed", common.PrettyDuration(time.Since(start)))
+					log.Info(
+						"Importing Era files", "head", it.Number(), "imported", imported, "elapsed",
+						common.PrettyDuration(time.Since(start)),
+					)
 					imported = 0
 					reported = time.Now()
 				}
@@ -629,7 +648,10 @@ func ExportSnapshotPreimages(chaindb ethdb.Database, snaptree *snapshot.Tree, fn
 
 					if time.Since(logged) > time.Second*8 {
 						logged = time.Now()
-						log.Info("Exporting preimages", "count", preimages, "elapsed", common.PrettyDuration(time.Since(start)))
+						log.Info(
+							"Exporting preimages", "count", preimages, "elapsed",
+							common.PrettyDuration(time.Since(start)),
+						)
 					}
 				}
 				stIt.Release()
@@ -709,8 +731,10 @@ func ImportLDBData(db ethdb.Database, f string, startIndex int64, interrupt chan
 	if header.Version != 0 {
 		return fmt.Errorf("incompatible version %d, (support only 0)", header.Version)
 	}
-	log.Info("Importing data", "file", f, "type", header.Kind, "data age",
-		common.PrettyDuration(time.Since(time.Unix(int64(header.UnixTime), 0))))
+	log.Info(
+		"Importing data", "file", f, "type", header.Kind, "data age",
+		common.PrettyDuration(time.Since(time.Unix(int64(header.UnixTime), 0))),
+	)
 
 	// Import the snapshot in batches to prevent disk thrashing
 	var (
@@ -762,13 +786,19 @@ func ImportLDBData(db ethdb.Database, f string, startIndex int64, interrupt chan
 				if err := batch.Write(); err != nil {
 					return err
 				}
-				log.Info("External data import interrupted", "file", f, "count", count, "elapsed", common.PrettyDuration(time.Since(start)))
+				log.Info(
+					"External data import interrupted", "file", f, "count", count, "elapsed",
+					common.PrettyDuration(time.Since(start)),
+				)
 				return nil
 			default:
 			}
 		}
 		if count%1000 == 0 && time.Since(logged) > 8*time.Second {
-			log.Info("Importing external data", "file", f, "count", count, "elapsed", common.PrettyDuration(time.Since(start)))
+			log.Info(
+				"Importing external data", "file", f, "count", count, "elapsed",
+				common.PrettyDuration(time.Since(start)),
+			)
 			logged = time.Now()
 		}
 		count += 1
@@ -779,8 +809,10 @@ func ImportLDBData(db ethdb.Database, f string, startIndex int64, interrupt chan
 			return err
 		}
 	}
-	log.Info("Imported chain data", "file", f, "count", count,
-		"elapsed", common.PrettyDuration(time.Since(start)))
+	log.Info(
+		"Imported chain data", "file", f, "count", count,
+		"elapsed", common.PrettyDuration(time.Since(start)),
+	)
 	return nil
 }
 
@@ -815,12 +847,14 @@ func ExportChaindata(fn string, kind string, iter ChainDataIterator, interrupt c
 		defer writer.(*gzip.Writer).Close()
 	}
 	// Write the header
-	if err := rlp.Encode(writer, &exportHeader{
-		Magic:    exportMagic,
-		Version:  0,
-		Kind:     kind,
-		UnixTime: uint64(time.Now().Unix()),
-	}); err != nil {
+	if err := rlp.Encode(
+		writer, &exportHeader{
+			Magic:    exportMagic,
+			Version:  0,
+			Kind:     kind,
+			UnixTime: uint64(time.Now().Unix()),
+		},
+	); err != nil {
 		return err
 	}
 	// Extract data from source iterator and dump them out to file
@@ -847,20 +881,26 @@ func ExportChaindata(fn string, kind string, iter ChainDataIterator, interrupt c
 			// Check interruption emitted by ctrl+c
 			select {
 			case <-interrupt:
-				log.Info("Chain data exporting interrupted", "file", fn,
-					"kind", kind, "count", count, "elapsed", common.PrettyDuration(time.Since(start)))
+				log.Info(
+					"Chain data exporting interrupted", "file", fn,
+					"kind", kind, "count", count, "elapsed", common.PrettyDuration(time.Since(start)),
+				)
 				return nil
 			default:
 			}
 			if time.Since(logged) > 8*time.Second {
-				log.Info("Exporting chain data", "file", fn, "kind", kind,
-					"count", count, "elapsed", common.PrettyDuration(time.Since(start)))
+				log.Info(
+					"Exporting chain data", "file", fn, "kind", kind,
+					"count", count, "elapsed", common.PrettyDuration(time.Since(start)),
+				)
 				logged = time.Now()
 			}
 		}
 		count++
 	}
-	log.Info("Exported chain data", "file", fn, "kind", kind, "count", count,
-		"elapsed", common.PrettyDuration(time.Since(start)))
+	log.Info(
+		"Exported chain data", "file", fn, "kind", kind, "count", count,
+		"elapsed", common.PrettyDuration(time.Since(start)),
+	)
 	return nil
 }

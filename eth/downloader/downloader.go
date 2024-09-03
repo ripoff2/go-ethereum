@@ -25,17 +25,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state/snapshot"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth/protocols/snap"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state/snapshot"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/eth/protocols/snap"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/triedb"
 )
 
 var (
@@ -194,7 +194,9 @@ type BlockChain interface {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
-func New(stateDb ethdb.Database, mux *event.TypeMux, chain BlockChain, dropPeer peerDropFn, success func()) *Downloader {
+func New(
+	stateDb ethdb.Database, mux *event.TypeMux, chain BlockChain, dropPeer peerDropFn, success func(),
+) *Downloader {
 	dl := &Downloader{
 		stateDB:        stateDb,
 		mux:            mux,
@@ -418,7 +420,10 @@ func (d *Downloader) syncToHead() (err error) {
 				headers := d.readHeaderRange(oldest, count)
 				if len(headers) == count {
 					pivot = headers[len(headers)-1]
-					log.Warn("Retrieved pivot header from local", "number", pivot.Number, "hash", pivot.Hash(), "latest", latest.Number, "oldest", oldest.Number)
+					log.Warn(
+						"Retrieved pivot header from local", "number", pivot.Number, "hash", pivot.Hash(), "latest",
+						latest.Number, "oldest", oldest.Number,
+					)
 				}
 			}
 		}
@@ -683,7 +688,10 @@ func (d *Downloader) processHeaders(origin uint64) error {
 					// that any transition is rejected at this point.
 					if len(chunkHeaders) > 0 {
 						if n, err := d.blockchain.InsertHeaderChain(chunkHeaders); err != nil {
-							log.Warn("Invalid header encountered", "number", chunkHeaders[n].Number, "hash", chunkHashes[n], "parent", chunkHeaders[n].ParentHash, "err", err)
+							log.Warn(
+								"Invalid header encountered", "number", chunkHeaders[n].Number, "hash", chunkHashes[n],
+								"parent", chunkHeaders[n].ParentHash, "err", err,
+							)
 							return fmt.Errorf("%w: %v", errInvalidChain, err)
 						}
 					}
@@ -753,7 +761,8 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	}
 	// Retrieve a batch of results to import
 	first, last := results[0].Header, results[len(results)-1].Header
-	log.Debug("Inserting downloaded chain", "items", len(results),
+	log.Debug(
+		"Inserting downloaded chain", "items", len(results),
 		"firstnum", first.Number, "firsthash", first.Hash(),
 		"lastnum", last.Number, "lasthash", last.Hash(),
 	)
@@ -766,7 +775,10 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	// consensus-layer.
 	if index, err := d.blockchain.InsertChain(blocks); err != nil {
 		if index < len(results) {
-			log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
+			log.Debug(
+				"Downloaded item processing failed", "number", results[index].Header.Number, "hash",
+				results[index].Header.Hash(), "err", err,
+			)
 
 			// In post-merge, notify the engine API of encountered bad chains
 			if d.badBlock != nil {
@@ -886,7 +898,10 @@ func (d *Downloader) processSnapSyncContent() error {
 			// need to be taken into account, otherwise we're detecting the pivot move
 			// late and will drop peers due to unavailable state!!!
 			if height := latest.Number.Uint64(); height >= pivot.Number.Uint64()+2*uint64(fsMinFullBlocks)-uint64(reorgProtHeaderDelay) {
-				log.Warn("Pivot became stale, moving", "old", pivot.Number.Uint64(), "new", height-uint64(fsMinFullBlocks)+uint64(reorgProtHeaderDelay))
+				log.Warn(
+					"Pivot became stale, moving", "old", pivot.Number.Uint64(), "new",
+					height-uint64(fsMinFullBlocks)+uint64(reorgProtHeaderDelay),
+				)
 				pivot = results[len(results)-1-fsMinFullBlocks+reorgProtHeaderDelay].Header // must exist as lower old pivot is uncommitted
 
 				d.pivotLock.Lock()
@@ -974,7 +989,8 @@ func (d *Downloader) commitSnapSyncData(results []*fetchResult, stateSync *state
 	}
 	// Retrieve the batch of results to import
 	first, last := results[0].Header, results[len(results)-1].Header
-	log.Debug("Inserting snap-sync blocks", "items", len(results),
+	log.Debug(
+		"Inserting snap-sync blocks", "items", len(results),
 		"firstnum", first.Number, "firsthash", first.Hash(),
 		"lastnumn", last.Number, "lasthash", last.Hash(),
 	)
@@ -985,7 +1001,10 @@ func (d *Downloader) commitSnapSyncData(results []*fetchResult, stateSync *state
 		receipts[i] = result.Receipts
 	}
 	if index, err := d.blockchain.InsertReceiptChain(blocks, receipts, d.ancientLimit); err != nil {
-		log.Debug("Downloaded item processing failed", "number", results[index].Header.Number, "hash", results[index].Header.Hash(), "err", err)
+		log.Debug(
+			"Downloaded item processing failed", "number", results[index].Header.Number, "hash",
+			results[index].Header.Hash(), "err", err,
+		)
 		return fmt.Errorf("%w: %v", errInvalidChain, err)
 	}
 	return nil
@@ -996,7 +1015,9 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 	log.Debug("Committing snap sync pivot as new head", "number", block.Number(), "hash", block.Hash())
 
 	// Commit the pivot block as the new head, will require full sync from here on
-	if _, err := d.blockchain.InsertReceiptChain([]*types.Block{block}, []types.Receipts{result.Receipts}, d.ancientLimit); err != nil {
+	if _, err := d.blockchain.InsertReceiptChain(
+		[]*types.Block{block}, []types.Receipts{result.Receipts}, d.ancientLimit,
+	); err != nil {
 		return err
 	}
 	if err := d.blockchain.SnapSyncCommitHead(block.Hash()); err != nil {
@@ -1099,10 +1120,19 @@ func (d *Downloader) reportSnapSyncProgress(force bool) {
 		eta  = time.Since(d.syncStartTime) / time.Duration(syncedBlocks) * time.Duration(left)
 
 		progress = fmt.Sprintf("%.2f%%", float64(block.Number.Uint64())*100/float64(latest.Number.Uint64()))
-		headers  = fmt.Sprintf("%v@%v", log.FormatLogfmtUint64(header.Number.Uint64()), common.StorageSize(headerBytes).TerminalString())
-		bodies   = fmt.Sprintf("%v@%v", log.FormatLogfmtUint64(block.Number.Uint64()), common.StorageSize(bodyBytes).TerminalString())
-		receipts = fmt.Sprintf("%v@%v", log.FormatLogfmtUint64(block.Number.Uint64()), common.StorageSize(receiptBytes).TerminalString())
+		headers  = fmt.Sprintf(
+			"%v@%v", log.FormatLogfmtUint64(header.Number.Uint64()), common.StorageSize(headerBytes).TerminalString(),
+		)
+		bodies = fmt.Sprintf(
+			"%v@%v", log.FormatLogfmtUint64(block.Number.Uint64()), common.StorageSize(bodyBytes).TerminalString(),
+		)
+		receipts = fmt.Sprintf(
+			"%v@%v", log.FormatLogfmtUint64(block.Number.Uint64()), common.StorageSize(receiptBytes).TerminalString(),
+		)
 	)
-	log.Info("Syncing: chain download in progress", "synced", progress, "chain", syncedBytes, "headers", headers, "bodies", bodies, "receipts", receipts, "eta", common.PrettyDuration(eta))
+	log.Info(
+		"Syncing: chain download in progress", "synced", progress, "chain", syncedBytes, "headers", headers, "bodies",
+		bodies, "receipts", receipts, "eta", common.PrettyDuration(eta),
+	)
 	d.syncLogTime = time.Now()
 }

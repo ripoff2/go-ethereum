@@ -3,7 +3,7 @@ package request
 import (
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/common/mclock"
 )
 
 const (
@@ -129,16 +129,21 @@ func TestServerEventRateLimit(t *testing.T) {
 	clock := &mclock.Simulated{}
 	srv := NewServer(rs, clock)
 	var eventCount int
-	srv.subscribe(func(event Event) {
-		eventCount++
-	})
+	srv.subscribe(
+		func(event Event) {
+			eventCount++
+		},
+	)
 	expEvents := func(send, expAllowed int) {
 		eventCount = 0
 		for sent := 0; sent < send; sent++ {
 			rs.eventCb(Event{Type: testEventType})
 		}
 		if eventCount != expAllowed {
-			t.Errorf("Wrong number of server events passing rate limitation (sent %d, expected %d, got %d)", send, expAllowed, eventCount)
+			t.Errorf(
+				"Wrong number of server events passing rate limitation (sent %d, expected %d, got %d)", send,
+				expAllowed, eventCount,
+			)
 		}
 	}
 	expEvents(maxServerEventBuffer+5, maxServerEventBuffer)
@@ -154,9 +159,11 @@ func TestServerUnsubscribe(t *testing.T) {
 	clock := &mclock.Simulated{}
 	srv := NewServer(rs, clock)
 	var eventCount int
-	srv.subscribe(func(event Event) {
-		eventCount++
-	})
+	srv.subscribe(
+		func(event Event) {
+			eventCount++
+		},
+	)
 	eventCb := rs.eventCb
 	eventCb(Event{Type: testEventType})
 	if eventCount != 1 {

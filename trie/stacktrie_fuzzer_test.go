@@ -23,17 +23,19 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/trie/trienode"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
 )
 
 func FuzzStackTrie(f *testing.F) {
-	f.Fuzz(func(t *testing.T, data []byte) {
-		fuzz(data, false)
-	})
+	f.Fuzz(
+		func(t *testing.T, data []byte) {
+			fuzz(data, false)
+		},
+	)
 }
 
 func fuzz(data []byte, debugging bool) {
@@ -45,9 +47,11 @@ func fuzz(data []byte, debugging bool) {
 		trieA   = NewEmpty(dbA)
 		spongeB = &spongeDb{sponge: crypto.NewKeccakState()}
 		dbB     = newTestDatabase(rawdb.NewDatabase(spongeB), rawdb.HashScheme)
-		trieB   = NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
-			rawdb.WriteTrieNode(spongeB, common.Hash{}, path, hash, blob, dbB.Scheme())
-		})
+		trieB   = NewStackTrie(
+			func(path []byte, hash common.Hash, blob []byte) {
+				rawdb.WriteTrieNode(spongeB, common.Hash{}, path, hash, blob, dbB.Scheme())
+			},
+		)
 		vals        []*kv
 		maxElements = 10000
 		// operate on unique keys only
@@ -108,12 +112,14 @@ func fuzz(data []byte, debugging bool) {
 	// Ensure all the nodes are persisted correctly
 	var (
 		nodeset = make(map[string][]byte) // path -> blob
-		trieC   = NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
-			if crypto.Keccak256Hash(blob) != hash {
-				panic("invalid node blob")
-			}
-			nodeset[string(path)] = common.CopyBytes(blob)
-		})
+		trieC   = NewStackTrie(
+			func(path []byte, hash common.Hash, blob []byte) {
+				if crypto.Keccak256Hash(blob) != hash {
+					panic("invalid node blob")
+				}
+				nodeset[string(path)] = common.CopyBytes(blob)
+			},
+		)
 		checked int
 	)
 	for _, kv := range vals {

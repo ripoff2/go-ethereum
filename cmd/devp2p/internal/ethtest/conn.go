@@ -25,12 +25,12 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/eth/protocols/snap"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/rlpx"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/eth/protocols/eth"
+	"github.com/ripoff2/go-ethereum/eth/protocols/snap"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/p2p/rlpx"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 var (
@@ -265,11 +265,17 @@ func (c *Conn) handshake() error {
 		}
 		c.negotiateEthProtocol(msg.Caps)
 		if c.negotiatedProtoVersion == 0 {
-			return fmt.Errorf("could not negotiate eth protocol (remote caps: %v, local eth version: %v)", msg.Caps, c.ourHighestProtoVersion)
+			return fmt.Errorf(
+				"could not negotiate eth protocol (remote caps: %v, local eth version: %v)", msg.Caps,
+				c.ourHighestProtoVersion,
+			)
 		}
 		// If we require snap, verify that it was negotiated.
 		if c.ourHighestSnapProtoVersion != c.negotiatedSnapProtoVersion {
-			return fmt.Errorf("could not negotiate snap protocol (remote caps: %v, local snap version: %v)", msg.Caps, c.ourHighestSnapProtoVersion)
+			return fmt.Errorf(
+				"could not negotiate snap protocol (remote caps: %v, local snap version: %v)", msg.Caps,
+				c.ourHighestSnapProtoVersion,
+			)
 		}
 		return nil
 	default:
@@ -313,8 +319,10 @@ loop:
 				return fmt.Errorf("error decoding status packet: %w", err)
 			}
 			if have, want := msg.Head, chain.blocks[chain.Len()-1].Hash(); have != want {
-				return fmt.Errorf("wrong head block in status, want:  %#x (block %d) have %#x",
-					want, chain.blocks[chain.Len()-1].NumberU64(), have)
+				return fmt.Errorf(
+					"wrong head block in status, want:  %#x (block %d) have %#x",
+					want, chain.blocks[chain.Len()-1].NumberU64(), have,
+				)
 			}
 			if have, want := msg.TD.Cmp(chain.TD()), 0; have != want {
 				return fmt.Errorf("wrong TD in status: have %v want %v", have, want)

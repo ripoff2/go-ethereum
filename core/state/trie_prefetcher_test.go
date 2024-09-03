@@ -20,14 +20,14 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/internal/testrand"
-	"github.com/ethereum/go-ethereum/triedb"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/internal/testrand"
+	"github.com/ripoff2/go-ethereum/triedb"
 )
 
 func filledStateDB() *StateDB {
@@ -53,12 +53,16 @@ func TestUseAfterTerminate(t *testing.T) {
 	prefetcher := newTriePrefetcher(db.db, db.originalRoot, "", true)
 	skey := common.HexToHash("aaa")
 
-	if err := prefetcher.prefetch(common.Hash{}, db.originalRoot, common.Address{}, [][]byte{skey.Bytes()}, false); err != nil {
+	if err := prefetcher.prefetch(
+		common.Hash{}, db.originalRoot, common.Address{}, [][]byte{skey.Bytes()}, false,
+	); err != nil {
 		t.Errorf("Prefetch failed before terminate: %v", err)
 	}
 	prefetcher.terminate(false)
 
-	if err := prefetcher.prefetch(common.Hash{}, db.originalRoot, common.Address{}, [][]byte{skey.Bytes()}, false); err == nil {
+	if err := prefetcher.prefetch(
+		common.Hash{}, db.originalRoot, common.Address{}, [][]byte{skey.Bytes()}, false,
+	); err == nil {
 		t.Errorf("Prefetch succeeded after terminate: %v", err)
 	}
 	if tr := prefetcher.trie(common.Hash{}, db.originalRoot); tr == nil {
@@ -87,14 +91,18 @@ func TestVerklePrefetcher(t *testing.T) {
 	fetcher := newTriePrefetcher(db, root, "", false)
 
 	// Read account
-	fetcher.prefetch(common.Hash{}, root, common.Address{}, [][]byte{
-		addr.Bytes(),
-	}, false)
+	fetcher.prefetch(
+		common.Hash{}, root, common.Address{}, [][]byte{
+			addr.Bytes(),
+		}, false,
+	)
 
 	// Read storage slot
-	fetcher.prefetch(crypto.Keccak256Hash(addr.Bytes()), sRoot, addr, [][]byte{
-		skey.Bytes(),
-	}, false)
+	fetcher.prefetch(
+		crypto.Keccak256Hash(addr.Bytes()), sRoot, addr, [][]byte{
+			skey.Bytes(),
+		}, false,
+	)
 
 	fetcher.terminate(false)
 	accountTrie := fetcher.trie(common.Hash{}, root)

@@ -30,12 +30,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/netutil"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/netutil"
 )
 
 const (
@@ -287,9 +287,11 @@ func (tab *Table) appendLiveNodes(dist uint, result []*enode.Node) []*enode.Node
 	tab.mutex.Unlock()
 
 	// Shuffle result to avoid always returning same nodes in FINDNODE/v5.
-	tab.rand.Shuffle(len(result), func(i, j int) {
-		result[i], result[j] = result[j], result[i]
-	})
+	tab.rand.Shuffle(
+		len(result), func(i, j int) {
+			result[i], result[j] = result[j], result[i]
+		},
+	)
 	return result
 }
 
@@ -610,16 +612,20 @@ func (tab *Table) deleteInBucket(b *bucket, id enode.ID) *tableNode {
 	b.replacements = slices.Delete(b.replacements, rindex, rindex+1)
 	b.entries = append(b.entries, rep)
 	tab.nodeAdded(b, rep)
-	tab.log.Debug("Replaced dead node", "b", b.index, "id", n.ID(), "ip", n.IPAddr(), "r", rep.ID(), "rip", rep.IPAddr())
+	tab.log.Debug(
+		"Replaced dead node", "b", b.index, "id", n.ID(), "ip", n.IPAddr(), "r", rep.ID(), "rip", rep.IPAddr(),
+	)
 	return rep
 }
 
 // bumpInBucket updates a node record if it exists in the bucket.
 // The second return value reports whether the node's endpoint (IP/port) was updated.
 func (tab *Table) bumpInBucket(b *bucket, newRecord *enode.Node, isInbound bool) (n *tableNode, endpointChanged bool) {
-	i := slices.IndexFunc(b.entries, func(elem *tableNode) bool {
-		return elem.ID() == newRecord.ID()
-	})
+	i := slices.IndexFunc(
+		b.entries, func(elem *tableNode) bool {
+			return elem.ID() == newRecord.ID()
+		},
+	)
 	if i == -1 {
 		return nil, false // not in bucket
 	}

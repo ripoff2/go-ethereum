@@ -27,8 +27,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common/math"
 )
 
 func TestStreamKind(t *testing.T) {
@@ -159,7 +159,10 @@ func TestStreamErrors(t *testing.T) {
 		{"C801", calls{"List"}, nil, ErrValueTooLarge},
 
 		// Test for list element size check overflow.
-		{"CD04040404FFFFFFFFFFFFFFFFFF0303", calls{"List", "Uint", "Uint", "Uint", "Uint", "List"}, nil, ErrElemTooLarge},
+		{
+			"CD04040404FFFFFFFFFFFFFFFFFF0303", calls{"List", "Uint", "Uint", "Uint", "Uint", "List"}, nil,
+			ErrElemTooLarge,
+		},
 
 		// Test for input limit overflow. Since we are counting the limit
 		// down toward zero in Stream.remaining, reading too far can overflow
@@ -181,19 +184,21 @@ func TestStreamErrors(t *testing.T) {
 		// This test verifies that the input position is advanced
 		// correctly when calling Bytes for empty strings. Kind can be called
 		// any number of times in between and doesn't advance.
-		{"C3808080", calls{
-			"List",  // enter the list
-			"Bytes", // past first element
+		{
+			"C3808080", calls{
+				"List",  // enter the list
+				"Bytes", // past first element
 
-			"Kind", "Kind", "Kind", // this shouldn't advance
+				"Kind", "Kind", "Kind", // this shouldn't advance
 
-			"Bytes", // past second element
+				"Bytes", // past second element
 
-			"Kind", "Kind", // can't hurt to try
+				"Kind", "Kind", // can't hurt to try
 
-			"Bytes", // past final element
-			"Bytes", // this one should fail
-		}, nil, EOL},
+				"Bytes", // past final element
+				"Bytes", // this one should fail
+			}, nil, EOL,
+		},
 	}
 
 testfor:
@@ -217,8 +222,10 @@ testfor:
 				}
 				if err != want {
 					t.Log(test)
-					t.Errorf("test %d: last call (%s) error mismatch\ngot:  %s\nwant: %s",
-						i, call, err, test.error)
+					t.Errorf(
+						"test %d: last call (%s) error mismatch\ngot:  %s\nwant: %s",
+						i, call, err, test.error,
+					)
 				}
 			} else if err != "<nil>" {
 				t.Log(test)
@@ -309,22 +316,24 @@ func TestStreamReadBytes(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		name := fmt.Sprintf("input_%s/size_%d", test.input, test.size)
-		t.Run(name, func(t *testing.T) {
-			s := NewStream(bytes.NewReader(unhex(test.input)), 0)
-			b := make([]byte, test.size)
-			err := s.ReadBytes(b)
-			if test.err == "" {
-				if err != nil {
-					t.Errorf("unexpected error %q", err)
+		t.Run(
+			name, func(t *testing.T) {
+				s := NewStream(bytes.NewReader(unhex(test.input)), 0)
+				b := make([]byte, test.size)
+				err := s.ReadBytes(b)
+				if test.err == "" {
+					if err != nil {
+						t.Errorf("unexpected error %q", err)
+					}
+				} else {
+					if err == nil {
+						t.Errorf("expected error, got nil")
+					} else if err.Error() != test.err {
+						t.Errorf("wrong error %q", err)
+					}
 				}
-			} else {
-				if err == nil {
-					t.Errorf("expected error, got nil")
-				} else if err.Error() != test.err {
-					t.Errorf("wrong error %q", err)
-				}
-			}
-		})
+			},
+		)
 	}
 }
 
@@ -544,7 +553,10 @@ var decodeTests = []decodeTest{
 	{input: "80", ptr: new(*big.Int), value: big.NewInt(0)},
 	{input: "01", ptr: new(*big.Int), value: big.NewInt(1)},
 	{input: "89FFFFFFFFFFFFFFFFFF", ptr: new(*big.Int), value: veryBigInt},
-	{input: "B848FFFFFFFFFFFFFFFFF800000000000000001BFFFFFFFFFFFFFFFFC8000000000000000045FFFFFFFFFFFFFFFFC800000000000000001BFFFFFFFFFFFFFFFFF8000000000000000001", ptr: new(*big.Int), value: veryVeryBigInt},
+	{
+		input: "B848FFFFFFFFFFFFFFFFF800000000000000001BFFFFFFFFFFFFFFFFC8000000000000000045FFFFFFFFFFFFFFFFC800000000000000001BFFFFFFFFFFFFFFFFF8000000000000000001",
+		ptr:   new(*big.Int), value: veryVeryBigInt,
+	},
 	{input: "10", ptr: new(big.Int), value: *big.NewInt(16)}, // non-pointer also works
 
 	// big int errors
@@ -563,9 +575,15 @@ var decodeTests = []decodeTest{
 	// uint256 errors
 	{input: "C0", ptr: new(*uint256.Int), error: "rlp: expected input string or byte for *uint256.Int"},
 	{input: "00", ptr: new(*uint256.Int), error: "rlp: non-canonical integer (leading zero bytes) for *uint256.Int"},
-	{input: "820001", ptr: new(*uint256.Int), error: "rlp: non-canonical integer (leading zero bytes) for *uint256.Int"},
+	{
+		input: "820001", ptr: new(*uint256.Int),
+		error: "rlp: non-canonical integer (leading zero bytes) for *uint256.Int",
+	},
 	{input: "8105", ptr: new(*uint256.Int), error: "rlp: non-canonical size information for *uint256.Int"},
-	{input: "A1FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00", ptr: new(*uint256.Int), error: "rlp: value too large for uint256"},
+	{
+		input: "A1FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00", ptr: new(*uint256.Int),
+		error: "rlp: value too large for uint256",
+	},
 
 	// structs
 	{
@@ -887,27 +905,35 @@ func runTests(t *testing.T, decode func([]byte, interface{}) error) {
 		}
 		err = decode(input, test.ptr)
 		if err != nil && test.error == "" {
-			t.Errorf("test %d: unexpected Decode error: %v\ndecoding into %T\ninput %q",
-				i, err, test.ptr, test.input)
+			t.Errorf(
+				"test %d: unexpected Decode error: %v\ndecoding into %T\ninput %q",
+				i, err, test.ptr, test.input,
+			)
 			continue
 		}
 		if test.error != "" && fmt.Sprint(err) != test.error {
-			t.Errorf("test %d: Decode error mismatch\ngot  %v\nwant %v\ndecoding into %T\ninput %q",
-				i, err, test.error, test.ptr, test.input)
+			t.Errorf(
+				"test %d: Decode error mismatch\ngot  %v\nwant %v\ndecoding into %T\ninput %q",
+				i, err, test.error, test.ptr, test.input,
+			)
 			continue
 		}
 		deref := reflect.ValueOf(test.ptr).Elem().Interface()
 		if err == nil && !reflect.DeepEqual(deref, test.value) {
-			t.Errorf("test %d: value mismatch\ngot  %#v\nwant %#v\ndecoding into %T\ninput %q",
-				i, deref, test.value, test.ptr, test.input)
+			t.Errorf(
+				"test %d: value mismatch\ngot  %#v\nwant %#v\ndecoding into %T\ninput %q",
+				i, deref, test.value, test.ptr, test.input,
+			)
 		}
 	}
 }
 
 func TestDecodeWithByteReader(t *testing.T) {
-	runTests(t, func(input []byte, into interface{}) error {
-		return Decode(bytes.NewReader(input), into)
-	})
+	runTests(
+		t, func(input []byte, into interface{}) error {
+			return Decode(bytes.NewReader(input), into)
+		},
+	)
 }
 
 func testDecodeWithEncReader(t *testing.T, n int) {
@@ -950,17 +976,21 @@ func (r *plainReader) Read(buf []byte) (n int, err error) {
 }
 
 func TestDecodeWithNonByteReader(t *testing.T) {
-	runTests(t, func(input []byte, into interface{}) error {
-		return Decode(newPlainReader(input), into)
-	})
+	runTests(
+		t, func(input []byte, into interface{}) error {
+			return Decode(newPlainReader(input), into)
+		},
+	)
 }
 
 func TestDecodeStreamReset(t *testing.T) {
 	s := NewStream(nil, 0)
-	runTests(t, func(input []byte, into interface{}) error {
-		s.Reset(bytes.NewReader(input), 0)
-		return s.Decode(into)
-	})
+	runTests(
+		t, func(input []byte, into interface{}) error {
+			s.Reset(bytes.NewReader(input), 0)
+			return s.Decode(into)
+		},
+	)
 }
 
 type testDecoder struct{ called bool }
@@ -1086,7 +1116,10 @@ func TestInvalidOptionalField(t *testing.T) {
 		v   interface{}
 		err string
 	}{
-		{v: new(invalid1), err: `rlp: invalid struct tag "" for rlp.invalid1.B (must be optional because preceding field "A" is optional)`},
+		{
+			v:   new(invalid1),
+			err: `rlp: invalid struct tag "" for rlp.invalid1.B (must be optional because preceding field "A" is optional)`,
+		},
 		{v: new(invalid2), err: `rlp: invalid struct tag "optional" for rlp.invalid2.T (also has "tail" tag)`},
 		{v: new(invalid3), err: `rlp: invalid struct tag "tail" for rlp.invalid3.T (also has "optional" tag)`},
 	}

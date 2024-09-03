@@ -25,7 +25,7 @@ import (
 
 	gokzg4844 "github.com/crate-crypto/go-kzg-4844"
 	ckzg4844 "github.com/ethereum/c-kzg-4844/bindings/go"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
 )
 
 // ckzgAvailable signals whether the library was compiled into Geth.
@@ -88,7 +88,9 @@ func ckzgComputeProof(blob *Blob, point Point) (Proof, Claim, error) {
 func ckzgVerifyProof(commitment Commitment, point Point, claim Claim, proof Proof) error {
 	ckzgIniter.Do(ckzgInit)
 
-	valid, err := ckzg4844.VerifyKZGProof((ckzg4844.Bytes48)(commitment), (ckzg4844.Bytes32)(point), (ckzg4844.Bytes32)(claim), (ckzg4844.Bytes48)(proof))
+	valid, err := ckzg4844.VerifyKZGProof(
+		(ckzg4844.Bytes48)(commitment), (ckzg4844.Bytes32)(point), (ckzg4844.Bytes32)(claim), (ckzg4844.Bytes48)(proof),
+	)
 	if err != nil {
 		return err
 	}
@@ -116,7 +118,9 @@ func ckzgComputeBlobProof(blob *Blob, commitment Commitment) (Proof, error) {
 func ckzgVerifyBlobProof(blob *Blob, commitment Commitment, proof Proof) error {
 	ckzgIniter.Do(ckzgInit)
 
-	valid, err := ckzg4844.VerifyBlobKZGProof((*ckzg4844.Blob)(blob), (ckzg4844.Bytes48)(commitment), (ckzg4844.Bytes48)(proof))
+	valid, err := ckzg4844.VerifyBlobKZGProof(
+		(*ckzg4844.Blob)(blob), (ckzg4844.Bytes48)(commitment), (ckzg4844.Bytes48)(proof),
+	)
 	if err != nil {
 		return err
 	}

@@ -24,41 +24,49 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
 	fuzz "github.com/google/gofuzz"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 func FuzzARange(f *testing.F) {
-	f.Fuzz(func(t *testing.T, data []byte) {
-		doFuzz(data, &GetAccountRangePacket{}, GetAccountRangeMsg)
-	})
+	f.Fuzz(
+		func(t *testing.T, data []byte) {
+			doFuzz(data, &GetAccountRangePacket{}, GetAccountRangeMsg)
+		},
+	)
 }
 
 func FuzzSRange(f *testing.F) {
-	f.Fuzz(func(t *testing.T, data []byte) {
-		doFuzz(data, &GetStorageRangesPacket{}, GetStorageRangesMsg)
-	})
+	f.Fuzz(
+		func(t *testing.T, data []byte) {
+			doFuzz(data, &GetStorageRangesPacket{}, GetStorageRangesMsg)
+		},
+	)
 }
 
 func FuzzByteCodes(f *testing.F) {
-	f.Fuzz(func(t *testing.T, data []byte) {
-		doFuzz(data, &GetByteCodesPacket{}, GetByteCodesMsg)
-	})
+	f.Fuzz(
+		func(t *testing.T, data []byte) {
+			doFuzz(data, &GetByteCodesPacket{}, GetByteCodesMsg)
+		},
+	)
 }
 
 func FuzzTrieNodes(f *testing.F) {
-	f.Fuzz(func(t *testing.T, data []byte) {
-		doFuzz(data, &GetTrieNodesPacket{}, GetTrieNodesMsg)
-	})
+	f.Fuzz(
+		func(t *testing.T, data []byte) {
+			doFuzz(data, &GetTrieNodesPacket{}, GetTrieNodesMsg)
+		},
+	)
 }
 
 func doFuzz(input []byte, obj interface{}, code int) {
@@ -126,7 +134,9 @@ func getChain() *core.BlockChain {
 		SnapshotWait:        true,
 	}
 	trieRoot = blocks[len(blocks)-1].Root()
-	bc, _ := core.NewBlockChain(rawdb.NewMemoryDatabase(), cacheConf, gspec, nil, ethash.NewFaker(), vm.Config{}, nil, nil)
+	bc, _ := core.NewBlockChain(
+		rawdb.NewMemoryDatabase(), cacheConf, gspec, nil, ethash.NewFaker(), vm.Config{}, nil, nil,
+	)
 	if _, err := bc.InsertChain(blocks); err != nil {
 		panic(err)
 	}

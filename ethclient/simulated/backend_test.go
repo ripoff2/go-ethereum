@@ -24,11 +24,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/accounts/abi/bind"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 var _ bind.ContractBackend = (Client)(nil)
@@ -58,14 +58,16 @@ func newTx(sim *Backend, key *ecdsa.PrivateKey) (*types.Transaction, error) {
 	if err != nil {
 		return nil, err
 	}
-	tx := types.NewTx(&types.DynamicFeeTx{
-		ChainID:   chainid,
-		Nonce:     nonce,
-		GasTipCap: big.NewInt(params.GWei),
-		GasFeeCap: gasPrice,
-		Gas:       21000,
-		To:        &addr,
-	})
+	tx := types.NewTx(
+		&types.DynamicFeeTx{
+			ChainID:   chainid,
+			Nonce:     nonce,
+			GasTipCap: big.NewInt(params.GWei),
+			GasFeeCap: gasPrice,
+			Gas:       21000,
+			To:        &addr,
+		},
+	)
 	return types.SignTx(tx, types.LatestSignerForChainID(chainid), key)
 }
 
@@ -134,7 +136,10 @@ func TestSendTransaction(t *testing.T) {
 	}
 
 	if signedTx.Hash() != block.Transactions()[0].Hash() {
-		t.Errorf("did not commit sent transaction. expected hash %v got hash %v", block.Transactions()[0].Hash(), signedTx.Hash())
+		t.Errorf(
+			"did not commit sent transaction. expected hash %v got hash %v", block.Transactions()[0].Hash(),
+			signedTx.Hash(),
+		)
 	}
 }
 

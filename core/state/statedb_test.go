@@ -31,19 +31,19 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state/snapshot"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/trie/trienode"
-	"github.com/ethereum/go-ethereum/triedb"
-	"github.com/ethereum/go-ethereum/triedb/hashdb"
-	"github.com/ethereum/go-ethereum/triedb/pathdb"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state/snapshot"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
+	"github.com/ripoff2/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum/triedb/hashdb"
+	"github.com/ripoff2/go-ethereum/triedb/pathdb"
 )
 
 // Tests that updating a state trie does not leak any database writes prior to
@@ -163,7 +163,7 @@ func TestIntermediateLeaks(t *testing.T) {
 
 // TestCopy tests that copying a StateDB object indeed makes the original and
 // the copy independent of each other. This test is a regression test against
-// https://github.com/ethereum/go-ethereum/pull/15549.
+// https://github.com/ripoff2/go-ethereum/pull/15549.
 func TestCopy(t *testing.T) {
 	// Create a random state test to copy and modify "independently"
 	orig, _ := New(types.EmptyRootHash, NewDatabase(rawdb.NewMemoryDatabase()), nil)
@@ -288,7 +288,9 @@ func TestCopyObjectState(t *testing.T) {
 	cpy := orig.Copy()
 	for _, op := range cpy.mutations {
 		if have, want := op.applied, false; have != want {
-			t.Fatalf("Error in test itself, the 'done' flag should not be set before Commit, have %v want %v", have, want)
+			t.Fatalf(
+				"Error in test itself, the 'done' flag should not be set before Commit, have %v want %v", have, want,
+			)
 		}
 	}
 	orig.Commit(0, true)
@@ -455,8 +457,10 @@ func newTestAction(addr common.Address, r *rand.Rand) testAction {
 		{
 			name: "AddSlotToAccessList",
 			fn: func(a testAction, s *StateDB) {
-				s.AddSlotToAccessList(addr,
-					common.Hash{byte(a.args[0])})
+				s.AddSlotToAccessList(
+					addr,
+					common.Hash{byte(a.args[0])},
+				)
 			},
 			args: make([]int64, 1),
 		},
@@ -618,12 +622,16 @@ func (test *snapshotTest) checkEqual(state, checkstate *StateDB) error {
 		}
 		// Check storage.
 		if obj := state.getStateObject(addr); obj != nil {
-			forEachStorage(state, addr, func(key, value common.Hash) bool {
-				return checkeq("GetState("+key.Hex()+")", checkstate.GetState(addr, key), value)
-			})
-			forEachStorage(checkstate, addr, func(key, value common.Hash) bool {
-				return checkeq("GetState("+key.Hex()+")", checkstate.GetState(addr, key), value)
-			})
+			forEachStorage(
+				state, addr, func(key, value common.Hash) bool {
+					return checkeq("GetState("+key.Hex()+")", checkstate.GetState(addr, key), value)
+				},
+			)
+			forEachStorage(
+				checkstate, addr, func(key, value common.Hash) bool {
+					return checkeq("GetState("+key.Hex()+")", checkstate.GetState(addr, key), value)
+				},
+			)
 			other := checkstate.getStateObject(addr)
 			// Check dirty storage which is not in trie
 			if !maps.Equal(obj.dirtyStorage, other.dirtyStorage) {
@@ -639,23 +647,29 @@ func (test *snapshotTest) checkEqual(state, checkstate *StateDB) error {
 					}
 					return out.String()
 				}
-				return fmt.Errorf("dirty storage err, have\n%v\nwant\n%v",
+				return fmt.Errorf(
+					"dirty storage err, have\n%v\nwant\n%v",
 					print(obj.dirtyStorage),
-					print(other.dirtyStorage))
+					print(other.dirtyStorage),
+				)
 			}
 		}
 		// Check transient storage.
 		{
 			have := state.transientStorage
 			want := checkstate.transientStorage
-			eq := maps.EqualFunc(have, want,
+			eq := maps.EqualFunc(
+				have, want,
 				func(a Storage, b Storage) bool {
 					return maps.Equal(a, b)
-				})
+				},
+			)
 			if !eq {
-				return fmt.Errorf("transient storage differs ,have\n%v\nwant\n%v",
+				return fmt.Errorf(
+					"transient storage differs ,have\n%v\nwant\n%v",
 					have.PrettyPrint(),
-					want.PrettyPrint())
+					want.PrettyPrint(),
+				)
 			}
 		}
 		if err != nil {
@@ -663,17 +677,25 @@ func (test *snapshotTest) checkEqual(state, checkstate *StateDB) error {
 		}
 	}
 	if !checkstate.accessList.Equal(state.accessList) { // Check access lists
-		return fmt.Errorf("AccessLists are wrong, have \n%v\nwant\n%v",
+		return fmt.Errorf(
+			"AccessLists are wrong, have \n%v\nwant\n%v",
 			checkstate.accessList.PrettyPrint(),
-			state.accessList.PrettyPrint())
+			state.accessList.PrettyPrint(),
+		)
 	}
 	if state.GetRefund() != checkstate.GetRefund() {
-		return fmt.Errorf("got GetRefund() == %d, want GetRefund() == %d",
-			state.GetRefund(), checkstate.GetRefund())
+		return fmt.Errorf(
+			"got GetRefund() == %d, want GetRefund() == %d",
+			state.GetRefund(), checkstate.GetRefund(),
+		)
 	}
-	if !reflect.DeepEqual(state.GetLogs(common.Hash{}, 0, common.Hash{}), checkstate.GetLogs(common.Hash{}, 0, common.Hash{})) {
-		return fmt.Errorf("got GetLogs(common.Hash{}) == %v, want GetLogs(common.Hash{}) == %v",
-			state.GetLogs(common.Hash{}, 0, common.Hash{}), checkstate.GetLogs(common.Hash{}, 0, common.Hash{}))
+	if !reflect.DeepEqual(
+		state.GetLogs(common.Hash{}, 0, common.Hash{}), checkstate.GetLogs(common.Hash{}, 0, common.Hash{}),
+	) {
+		return fmt.Errorf(
+			"got GetLogs(common.Hash{}) == %v, want GetLogs(common.Hash{}) == %v",
+			state.GetLogs(common.Hash{}, 0, common.Hash{}), checkstate.GetLogs(common.Hash{}, 0, common.Hash{}),
+		)
 	}
 	if !maps.Equal(state.journal.dirties, checkstate.journal.dirties) {
 		getKeys := func(dirty map[common.Address]int) string {
@@ -714,7 +736,7 @@ func TestTouchDelete(t *testing.T) {
 }
 
 // TestCopyOfCopy tests that modified objects are carried over to the copy, and the copy of the copy.
-// See https://github.com/ethereum/go-ethereum/pull/15225#issuecomment-380191512
+// See https://github.com/ripoff2/go-ethereum/pull/15225#issuecomment-380191512
 func TestCopyOfCopy(t *testing.T) {
 	state, _ := New(types.EmptyRootHash, NewDatabase(rawdb.NewMemoryDatabase()), nil)
 	addr := common.HexToAddress("aaaa")
@@ -731,7 +753,7 @@ func TestCopyOfCopy(t *testing.T) {
 // Tests a regression where committing a copy lost some internal meta information,
 // leading to corrupted subsequent copies.
 //
-// See https://github.com/ethereum/go-ethereum/issues/20106.
+// See https://github.com/ripoff2/go-ethereum/issues/20106.
 func TestCopyCommitCopy(t *testing.T) {
 	tdb := NewDatabase(rawdb.NewMemoryDatabase())
 	state, _ := New(types.EmptyRootHash, tdb, nil)
@@ -805,7 +827,7 @@ func TestCopyCommitCopy(t *testing.T) {
 // Tests a regression where committing a copy lost some internal meta information,
 // leading to corrupted subsequent copies.
 //
-// See https://github.com/ethereum/go-ethereum/issues/20106.
+// See https://github.com/ripoff2/go-ethereum/issues/20106.
 func TestCopyCopyCommitCopy(t *testing.T) {
 	state, _ := New(types.EmptyRootHash, NewDatabase(rawdb.NewMemoryDatabase()), nil)
 
@@ -983,14 +1005,22 @@ func testMissingTrieNodes(t *testing.T, scheme string) {
 		memDb = rawdb.NewMemoryDatabase()
 	)
 	if scheme == rawdb.PathScheme {
-		tdb = triedb.NewDatabase(memDb, &triedb.Config{PathDB: &pathdb.Config{
-			CleanCacheSize: 0,
-			DirtyCacheSize: 0,
-		}}) // disable caching
+		tdb = triedb.NewDatabase(
+			memDb, &triedb.Config{
+				PathDB: &pathdb.Config{
+					CleanCacheSize: 0,
+					DirtyCacheSize: 0,
+				},
+			},
+		) // disable caching
 	} else {
-		tdb = triedb.NewDatabase(memDb, &triedb.Config{HashDB: &hashdb.Config{
-			CleanCacheSize: 0,
-		}}) // disable caching
+		tdb = triedb.NewDatabase(
+			memDb, &triedb.Config{
+				HashDB: &hashdb.Config{
+					CleanCacheSize: 0,
+				},
+			},
+		) // disable caching
 	}
 	db := NewDatabaseWithNodeDB(memDb, tdb)
 
@@ -1318,15 +1348,17 @@ func TestDeleteStorage(t *testing.T) {
 	}
 	check := func(set *trienode.NodeSet) string {
 		var a []string
-		set.ForEachWithOrder(func(path string, n *trienode.Node) {
-			if n.Hash != (common.Hash{}) {
-				t.Fatal("delete should have empty hashes")
-			}
-			if len(n.Blob) != 0 {
-				t.Fatal("delete should have empty blobs")
-			}
-			a = append(a, fmt.Sprintf("%x", path))
-		})
+		set.ForEachWithOrder(
+			func(path string, n *trienode.Node) {
+				if n.Hash != (common.Hash{}) {
+					t.Fatal("delete should have empty hashes")
+				}
+				if len(n.Blob) != 0 {
+					t.Fatal("delete should have empty blobs")
+				}
+				a = append(a, fmt.Sprintf("%x", path))
+			},
+		)
 		return strings.Join(a, ",")
 	}
 	slowRes := check(slowNodes)

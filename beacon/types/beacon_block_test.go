@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 func TestBlockFromJSON(t *testing.T) {
@@ -50,28 +50,30 @@ func TestBlockFromJSON(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.file, func(t *testing.T) {
-			data, err := os.ReadFile(filepath.Join("testdata", test.file))
-			if err != nil {
-				t.Fatal(err)
-			}
-			beaconBlock, err := BlockFromJSON(test.version, data)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if beaconBlock.Slot() != test.wantSlot {
-				t.Errorf("wrong slot number %d", beaconBlock.Slot())
-			}
-			execBlock, err := beaconBlock.ExecutionPayload()
-			if err != nil {
-				t.Fatalf("payload extraction failed: %v", err)
-			}
-			if execBlock.NumberU64() != test.wantBlockNumber {
-				t.Errorf("wrong block number: %v", execBlock.NumberU64())
-			}
-			if execBlock.Hash() != test.wantBlockHash {
-				t.Errorf("wrong block hash: %v", execBlock.Hash())
-			}
-		})
+		t.Run(
+			test.file, func(t *testing.T) {
+				data, err := os.ReadFile(filepath.Join("testdata", test.file))
+				if err != nil {
+					t.Fatal(err)
+				}
+				beaconBlock, err := BlockFromJSON(test.version, data)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if beaconBlock.Slot() != test.wantSlot {
+					t.Errorf("wrong slot number %d", beaconBlock.Slot())
+				}
+				execBlock, err := beaconBlock.ExecutionPayload()
+				if err != nil {
+					t.Fatalf("payload extraction failed: %v", err)
+				}
+				if execBlock.NumberU64() != test.wantBlockNumber {
+					t.Errorf("wrong block number: %v", execBlock.NumberU64())
+				}
+				if execBlock.Hash() != test.wantBlockHash {
+					t.Errorf("wrong block hash: %v", execBlock.Hash())
+				}
+			},
+		)
 	}
 }

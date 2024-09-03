@@ -24,12 +24,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/eth/filters"
-	"github.com/ethereum/go-ethereum/internal/ethapi"
-	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/graph-gophers/graphql-go"
 	gqlErrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/ripoff2/go-ethereum/eth/filters"
+	"github.com/ripoff2/go-ethereum/internal/ethapi"
+	"github.com/ripoff2/go-ethereum/node"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 type handler struct {
@@ -57,52 +57,58 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	if timeout, ok := rpc.ContextRequestTimeout(ctx); ok {
-		timer = time.AfterFunc(timeout, func() {
-			responded.Do(func() {
-				// Cancel request handling.
-				cancel()
+		timer = time.AfterFunc(
+			timeout, func() {
+				responded.Do(
+					func() {
+						// Cancel request handling.
+						cancel()
 
-				// Create the timeout response.
-				response := &graphql.Response{
-					Errors: []*gqlErrors.QueryError{{Message: "request timed out"}},
-				}
-				responseJSON, err := json.Marshal(response)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
+						// Create the timeout response.
+						response := &graphql.Response{
+							Errors: []*gqlErrors.QueryError{{Message: "request timed out"}},
+						}
+						responseJSON, err := json.Marshal(response)
+						if err != nil {
+							http.Error(w, err.Error(), http.StatusInternalServerError)
+							return
+						}
 
-				// Setting this disables gzip compression in package node.
-				w.Header().Set("Transfer-Encoding", "identity")
+						// Setting this disables gzip compression in package node.
+						w.Header().Set("Transfer-Encoding", "identity")
 
-				// Flush the response. Since we are writing close to the response timeout,
-				// chunked transfer encoding must be disabled by setting content-length.
-				w.Header().Set("Content-Type", "application/json")
-				w.Header().Set("Content-Length", strconv.Itoa(len(responseJSON)))
-				w.Write(responseJSON)
-				if flush, ok := w.(http.Flusher); ok {
-					flush.Flush()
-				}
-			})
-		})
+						// Flush the response. Since we are writing close to the response timeout,
+						// chunked transfer encoding must be disabled by setting content-length.
+						w.Header().Set("Content-Type", "application/json")
+						w.Header().Set("Content-Length", strconv.Itoa(len(responseJSON)))
+						w.Write(responseJSON)
+						if flush, ok := w.(http.Flusher); ok {
+							flush.Flush()
+						}
+					},
+				)
+			},
+		)
 	}
 
 	response := h.Schema.Exec(ctx, params.Query, params.OperationName, params.Variables)
 	if timer != nil {
 		timer.Stop()
 	}
-	responded.Do(func() {
-		responseJSON, err := json.Marshal(response)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		if len(response.Errors) > 0 {
-			w.WriteHeader(http.StatusBadRequest)
-		}
-		w.Write(responseJSON)
-	})
+	responded.Do(
+		func() {
+			responseJSON, err := json.Marshal(response)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			if len(response.Errors) > 0 {
+				w.WriteHeader(http.StatusBadRequest)
+			}
+			w.Write(responseJSON)
+		},
+	)
 }
 
 // New constructs a new GraphQL service instance.
@@ -113,7 +119,9 @@ func New(stack *node.Node, backend ethapi.Backend, filterSystem *filters.FilterS
 
 // newHandler returns a new `http.Handler` that will answer GraphQL queries.
 // It additionally exports an interactive query browser on the / endpoint.
-func newHandler(stack *node.Node, backend ethapi.Backend, filterSystem *filters.FilterSystem, cors, vhosts []string) (*handler, error) {
+func newHandler(
+	stack *node.Node, backend ethapi.Backend, filterSystem *filters.FilterSystem, cors, vhosts []string,
+) (*handler, error) {
 	q := Resolver{backend, filterSystem}
 
 	s, err := graphql.ParseSchema(schema, &q)

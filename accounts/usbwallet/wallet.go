@@ -25,13 +25,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/karalabe/hid"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // Maximum time between wallet health checks to detect USB unplugs.
@@ -66,7 +66,9 @@ type driver interface {
 
 	// SignTx sends the transaction to the USB device and waits for the user to confirm
 	// or deny the transaction.
-	SignTx(path accounts.DerivationPath, tx *types.Transaction, chainID *big.Int) (common.Address, *types.Transaction, error)
+	SignTx(path accounts.DerivationPath, tx *types.Transaction, chainID *big.Int) (
+		common.Address, *types.Transaction, error,
+	)
 
 	SignTypedMessage(path accounts.DerivationPath, messageHash []byte, domainHash []byte) ([]byte, error)
 }
@@ -380,8 +382,10 @@ func (w *wallet) selfDerive() {
 					// of legacy-ledger, the first account on the legacy-path will
 					// be shown to the user, even if we don't actively track it
 					if i < len(nextAddrs)-1 {
-						w.log.Info("Skipping tracking first account on legacy path, use personal.deriveAccount(<url>,<path>, false) to track",
-							"path", path, "address", nextAddrs[i])
+						w.log.Info(
+							"Skipping tracking first account on legacy path, use personal.deriveAccount(<url>,<path>, false) to track",
+							"path", path, "address", nextAddrs[i],
+						)
 						break
 					}
 				}
@@ -394,7 +398,10 @@ func (w *wallet) selfDerive() {
 
 				// Display a log message to the user for new (or previously empty accounts)
 				if _, known := w.paths[nextAddrs[i]]; !known || (!empty && nextAddrs[i] == w.deriveNextAddrs[i]) {
-					w.log.Info("USB wallet discovered new account", "address", nextAddrs[i], "path", path, "balance", balance, "nonce", nonce)
+					w.log.Info(
+						"USB wallet discovered new account", "address", nextAddrs[i], "path", path, "balance", balance,
+						"nonce", nonce,
+					)
 				}
 				// Fetch the next potential account
 				if !empty {
@@ -574,7 +581,9 @@ func (w *wallet) SignData(account accounts.Account, mimeType string, data []byte
 // SignDataWithPassphrase implements accounts.Wallet, attempting to sign the given
 // data with the given account using passphrase as extra authentication.
 // Since USB wallets don't rely on passphrases, these are silently ignored.
-func (w *wallet) SignDataWithPassphrase(account accounts.Account, passphrase, mimeType string, data []byte) ([]byte, error) {
+func (w *wallet) SignDataWithPassphrase(account accounts.Account, passphrase, mimeType string, data []byte) (
+	[]byte, error,
+) {
 	return w.SignData(account, mimeType, data)
 }
 
@@ -638,6 +647,8 @@ func (w *wallet) SignTextWithPassphrase(account accounts.Account, passphrase str
 // SignTxWithPassphrase implements accounts.Wallet, attempting to sign the given
 // transaction with the given account using passphrase as extra authentication.
 // Since USB wallets don't rely on passphrases, these are silently ignored.
-func (w *wallet) SignTxWithPassphrase(account accounts.Account, passphrase string, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
+func (w *wallet) SignTxWithPassphrase(
+	account accounts.Account, passphrase string, tx *types.Transaction, chainID *big.Int,
+) (*types.Transaction, error) {
 	return w.SignTx(account, tx, chainID)
 }

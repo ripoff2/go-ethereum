@@ -79,15 +79,18 @@ func TestAccountNew(t *testing.T) {
 	t.Parallel()
 	geth := runGeth(t, "account", "new", "--lightkdf")
 	defer geth.ExpectExit()
-	geth.Expect(`
+	geth.Expect(
+		`
 Your new account is locked with a password. Please give a password. Do not forget this password.
 !! Unsupported terminal, password will be echoed.
 Password: {{.InputLine "foobar"}}
 Repeat password: {{.InputLine "foobar"}}
 
 Your new key was generated
-`)
-	geth.ExpectRegexp(`
+`,
+	)
+	geth.ExpectRegexp(
+		`
 Public address of the key:   0x[0-9a-fA-F]{40}
 Path of the secret key file: .*UTC--.+--[0-9a-f]{40}
 
@@ -95,7 +98,8 @@ Path of the secret key file: .*UTC--.+--[0-9a-f]{40}
 - You must NEVER share the secret key with anyone! The key controls access to your funds!
 - You must BACKUP your key file! Without the key, it's impossible to access account funds!
 - You must REMEMBER your password! Without the password, it's impossible to decrypt the key!
-`)
+`,
+	)
 }
 
 func TestAccountImport(t *testing.T) {
@@ -114,10 +118,12 @@ func TestAccountImport(t *testing.T) {
 	}
 	for _, test := range tests {
 		test := test
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			importAccountWithExpect(t, test.key, test.output)
-		})
+		t.Run(
+			test.name, func(t *testing.T) {
+				t.Parallel()
+				importAccountWithExpect(t, test.key, test.output)
+			},
+		)
 	}
 }
 
@@ -155,41 +161,49 @@ func TestAccountNewBadRepeat(t *testing.T) {
 	t.Parallel()
 	geth := runGeth(t, "account", "new", "--lightkdf")
 	defer geth.ExpectExit()
-	geth.Expect(`
+	geth.Expect(
+		`
 Your new account is locked with a password. Please give a password. Do not forget this password.
 !! Unsupported terminal, password will be echoed.
 Password: {{.InputLine "something"}}
 Repeat password: {{.InputLine "something else"}}
 Fatal: Passwords do not match
-`)
+`,
+	)
 }
 
 func TestAccountUpdate(t *testing.T) {
 	t.Parallel()
 	datadir := tmpDatadirWithKeystore(t)
-	geth := runGeth(t, "account", "update",
+	geth := runGeth(
+		t, "account", "update",
 		"--datadir", datadir, "--lightkdf",
-		"f466859ead1932d743d622cb74fc058882e8648a")
+		"f466859ead1932d743d622cb74fc058882e8648a",
+	)
 	defer geth.ExpectExit()
-	geth.Expect(`
+	geth.Expect(
+		`
 Unlocking account f466859ead1932d743d622cb74fc058882e8648a | Attempt 1/3
 !! Unsupported terminal, password will be echoed.
 Password: {{.InputLine "foobar"}}
 Please give a new password. Do not forget this password.
 Password: {{.InputLine "foobar2"}}
 Repeat password: {{.InputLine "foobar2"}}
-`)
+`,
+	)
 }
 
 func TestWalletImport(t *testing.T) {
 	t.Parallel()
 	geth := runGeth(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
 	defer geth.ExpectExit()
-	geth.Expect(`
+	geth.Expect(
+		`
 !! Unsupported terminal, password will be echoed.
 Password: {{.InputLine "foo"}}
 Address: {d4584b5f6229b7be90727b0fc8c6b91bb427821f}
-`)
+`,
+	)
 
 	files, err := os.ReadDir(filepath.Join(geth.Datadir, "keystore"))
 	if len(files) != 1 {
@@ -201,23 +215,29 @@ func TestWalletImportBadPassword(t *testing.T) {
 	t.Parallel()
 	geth := runGeth(t, "wallet", "import", "--lightkdf", "testdata/guswallet.json")
 	defer geth.ExpectExit()
-	geth.Expect(`
+	geth.Expect(
+		`
 !! Unsupported terminal, password will be echoed.
 Password: {{.InputLine "wrong"}}
 Fatal: could not decrypt key with given password
-`)
+`,
+	)
 }
 
 func TestUnlockFlag(t *testing.T) {
 	t.Parallel()
-	geth := runMinimalGeth(t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
-		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a", "console", "--exec", "loadScript('testdata/empty.js')")
-	geth.Expect(`
+	geth := runMinimalGeth(
+		t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
+		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a", "console", "--exec", "loadScript('testdata/empty.js')",
+	)
+	geth.Expect(
+		`
 Unlocking account f466859ead1932d743d622cb74fc058882e8648a | Attempt 1/3
 !! Unsupported terminal, password will be echoed.
 Password: {{.InputLine "foobar"}}
 undefined
-`)
+`,
+	)
 	geth.ExpectExit()
 
 	wantMessages := []string{
@@ -233,11 +253,14 @@ undefined
 
 func TestUnlockFlagWrongPassword(t *testing.T) {
 	t.Parallel()
-	geth := runMinimalGeth(t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
-		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a", "console", "--exec", "loadScript('testdata/empty.js')")
+	geth := runMinimalGeth(
+		t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
+		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a", "console", "--exec", "loadScript('testdata/empty.js')",
+	)
 
 	defer geth.ExpectExit()
-	geth.Expect(`
+	geth.Expect(
+		`
 Unlocking account f466859ead1932d743d622cb74fc058882e8648a | Attempt 1/3
 !! Unsupported terminal, password will be echoed.
 Password: {{.InputLine "wrong1"}}
@@ -246,23 +269,29 @@ Password: {{.InputLine "wrong2"}}
 Unlocking account f466859ead1932d743d622cb74fc058882e8648a | Attempt 3/3
 Password: {{.InputLine "wrong3"}}
 Fatal: Failed to unlock account f466859ead1932d743d622cb74fc058882e8648a (could not decrypt key with given password)
-`)
+`,
+	)
 }
 
-// https://github.com/ethereum/go-ethereum/issues/1785
+// https://github.com/ripoff2/go-ethereum/issues/1785
 func TestUnlockFlagMultiIndex(t *testing.T) {
 	t.Parallel()
-	geth := runMinimalGeth(t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
-		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a", "--unlock", "0,2", "console", "--exec", "loadScript('testdata/empty.js')")
+	geth := runMinimalGeth(
+		t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
+		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a", "--unlock", "0,2", "console", "--exec",
+		"loadScript('testdata/empty.js')",
+	)
 
-	geth.Expect(`
+	geth.Expect(
+		`
 Unlocking account 0 | Attempt 1/3
 !! Unsupported terminal, password will be echoed.
 Password: {{.InputLine "foobar"}}
 Unlocking account 2 | Attempt 1/3
 Password: {{.InputLine "foobar"}}
 undefined
-`)
+`,
+	)
 	geth.ExpectExit()
 
 	wantMessages := []string{
@@ -279,12 +308,17 @@ undefined
 
 func TestUnlockFlagPasswordFile(t *testing.T) {
 	t.Parallel()
-	geth := runMinimalGeth(t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
-		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a", "--password", "testdata/passwords.txt", "--unlock", "0,2", "console", "--exec", "loadScript('testdata/empty.js')")
+	geth := runMinimalGeth(
+		t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
+		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a", "--password", "testdata/passwords.txt", "--unlock",
+		"0,2", "console", "--exec", "loadScript('testdata/empty.js')",
+	)
 
-	geth.Expect(`
+	geth.Expect(
+		`
 undefined
-`)
+`,
+	)
 	geth.ExpectExit()
 
 	wantMessages := []string{
@@ -301,30 +335,39 @@ undefined
 
 func TestUnlockFlagPasswordFileWrongPassword(t *testing.T) {
 	t.Parallel()
-	geth := runMinimalGeth(t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
+	geth := runMinimalGeth(
+		t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a", "--password",
-		"testdata/wrong-passwords.txt", "--unlock", "0,2")
+		"testdata/wrong-passwords.txt", "--unlock", "0,2",
+	)
 	defer geth.ExpectExit()
-	geth.Expect(`
+	geth.Expect(
+		`
 Fatal: Failed to unlock account 0 (could not decrypt key with given password)
-`)
+`,
+	)
 }
 
 func TestUnlockFlagAmbiguous(t *testing.T) {
 	t.Parallel()
 	store := filepath.Join("..", "..", "accounts", "keystore", "testdata", "dupes")
-	geth := runMinimalGeth(t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
+	geth := runMinimalGeth(
+		t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a", "--keystore",
 		store, "--unlock", "f466859ead1932d743d622cb74fc058882e8648a",
-		"console", "--exec", "loadScript('testdata/empty.js')")
+		"console", "--exec", "loadScript('testdata/empty.js')",
+	)
 	defer geth.ExpectExit()
 
 	// Helper for the expect template, returns absolute keystore path.
-	geth.SetTemplateFunc("keypath", func(file string) string {
-		abs, _ := filepath.Abs(filepath.Join(store, file))
-		return abs
-	})
-	geth.Expect(`
+	geth.SetTemplateFunc(
+		"keypath", func(file string) string {
+			abs, _ := filepath.Abs(filepath.Join(store, file))
+			return abs
+		},
+	)
+	geth.Expect(
+		`
 Unlocking account f466859ead1932d743d622cb74fc058882e8648a | Attempt 1/3
 !! Unsupported terminal, password will be echoed.
 Password: {{.InputLine "foobar"}}
@@ -336,7 +379,8 @@ Your password unlocked keystore://{{keypath "1"}}
 In order to avoid this warning, you need to remove the following duplicate key files:
    keystore://{{keypath "2"}}
 undefined
-`)
+`,
+	)
 	geth.ExpectExit()
 
 	wantMessages := []string{
@@ -353,18 +397,23 @@ undefined
 func TestUnlockFlagAmbiguousWrongPassword(t *testing.T) {
 	t.Parallel()
 	store := filepath.Join("..", "..", "accounts", "keystore", "testdata", "dupes")
-	geth := runMinimalGeth(t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
+	geth := runMinimalGeth(
+		t, "--port", "0", "--ipcdisable", "--datadir", tmpDatadirWithKeystore(t),
 		"--unlock", "f466859ead1932d743d622cb74fc058882e8648a", "--keystore",
-		store, "--unlock", "f466859ead1932d743d622cb74fc058882e8648a")
+		store, "--unlock", "f466859ead1932d743d622cb74fc058882e8648a",
+	)
 
 	defer geth.ExpectExit()
 
 	// Helper for the expect template, returns absolute keystore path.
-	geth.SetTemplateFunc("keypath", func(file string) string {
-		abs, _ := filepath.Abs(filepath.Join(store, file))
-		return abs
-	})
-	geth.Expect(`
+	geth.SetTemplateFunc(
+		"keypath", func(file string) string {
+			abs, _ := filepath.Abs(filepath.Join(store, file))
+			return abs
+		},
+	)
+	geth.Expect(
+		`
 Unlocking account f466859ead1932d743d622cb74fc058882e8648a | Attempt 1/3
 !! Unsupported terminal, password will be echoed.
 Password: {{.InputLine "wrong"}}
@@ -373,6 +422,7 @@ Multiple key files exist for address f466859ead1932d743d622cb74fc058882e8648a:
    keystore://{{keypath "2"}}
 Testing your password against all of them...
 Fatal: None of the listed files could be unlocked.
-`)
+`,
+	)
 	geth.ExpectExit()
 }

@@ -26,23 +26,23 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/consensus/beacon"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/triedb"
-	"github.com/ethereum/go-ethereum/triedb/hashdb"
-	"github.com/ethereum/go-ethereum/triedb/pathdb"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/consensus/beacon"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum/triedb/hashdb"
+	"github.com/ripoff2/go-ethereum/triedb/pathdb"
 )
 
 // A BlockTest checks handling of entire blocks.
@@ -110,7 +110,9 @@ type btHeaderMarshaling struct {
 	ExcessBlobGas *math.HexOrDecimal64
 }
 
-func (t *BlockTest) Run(snapshotter bool, scheme string, witness bool, tracer *tracing.Hooks, postCheck func(error, *core.BlockChain)) (result error) {
+func (t *BlockTest) Run(
+	snapshotter bool, scheme string, witness bool, tracer *tracing.Hooks, postCheck func(error, *core.BlockChain),
+) (result error) {
 	config, ok := Forks[t.json.Network]
 	if !ok {
 		return UnsupportedForkError{t.json.Network}
@@ -137,10 +139,16 @@ func (t *BlockTest) Run(snapshotter bool, scheme string, witness bool, tracer *t
 	triedb.Close() // close the db to prevent memory leak
 
 	if gblock.Hash() != t.json.Genesis.Hash {
-		return fmt.Errorf("genesis block hash doesn't match test: computed=%x, test=%x", gblock.Hash().Bytes()[:6], t.json.Genesis.Hash[:6])
+		return fmt.Errorf(
+			"genesis block hash doesn't match test: computed=%x, test=%x", gblock.Hash().Bytes()[:6],
+			t.json.Genesis.Hash[:6],
+		)
 	}
 	if gblock.Root() != t.json.Genesis.StateRoot {
-		return fmt.Errorf("genesis block state root does not match test: computed=%x, test=%x", gblock.Root().Bytes()[:6], t.json.Genesis.StateRoot[:6])
+		return fmt.Errorf(
+			"genesis block state root does not match test: computed=%x, test=%x", gblock.Root().Bytes()[:6],
+			t.json.Genesis.StateRoot[:6],
+		)
 	}
 	// Wrap the original engine within the beacon-engine
 	engine := beacon.New(ethash.NewFaker())
@@ -150,10 +158,12 @@ func (t *BlockTest) Run(snapshotter bool, scheme string, witness bool, tracer *t
 		cache.SnapshotLimit = 1
 		cache.SnapshotWait = true
 	}
-	chain, err := core.NewBlockChain(db, cache, gspec, nil, engine, vm.Config{
-		Tracer:                  tracer,
-		EnableWitnessCollection: witness,
-	}, nil, nil)
+	chain, err := core.NewBlockChain(
+		db, cache, gspec, nil, engine, vm.Config{
+			Tracer:                  tracer,
+			EnableWitnessCollection: witness,
+		}, nil, nil,
+	)
 	if err != nil {
 		return err
 	}
@@ -245,11 +255,15 @@ func (t *BlockTest) insertBlocks(blockchain *core.BlockChain) ([]btBlock, error)
 		}
 		if b.BlockHeader == nil {
 			if data, err := json.MarshalIndent(cb.Header(), "", "  "); err == nil {
-				fmt.Fprintf(os.Stderr, "block (index %d) insertion should have failed due to: %v:\n%v\n",
-					bi, b.ExpectException, string(data))
+				fmt.Fprintf(
+					os.Stderr, "block (index %d) insertion should have failed due to: %v:\n%v\n",
+					bi, b.ExpectException, string(data),
+				)
 			}
-			return nil, fmt.Errorf("block (index %d) insertion should have failed due to: %v",
-				bi, b.ExpectException)
+			return nil, fmt.Errorf(
+				"block (index %d) insertion should have failed due to: %v",
+				bi, b.ExpectException,
+			)
 		}
 
 		// validate RLP decoding by checking all values against test file JSON
@@ -333,7 +347,9 @@ func (t *BlockTest) validatePostState(statedb *state.StateDB) error {
 		balance2 := statedb.GetBalance(addr).ToBig()
 		nonce2 := statedb.GetNonce(addr)
 		if !bytes.Equal(code2, acct.Code) {
-			return fmt.Errorf("account code mismatch for addr: %s want: %v have: %s", addr, acct.Code, hex.EncodeToString(code2))
+			return fmt.Errorf(
+				"account code mismatch for addr: %s want: %v have: %s", addr, acct.Code, hex.EncodeToString(code2),
+			)
 		}
 		if balance2.Cmp(acct.Balance) != 0 {
 			return fmt.Errorf("account balance mismatch for addr: %s, want: %d, have: %d", addr, acct.Balance, balance2)

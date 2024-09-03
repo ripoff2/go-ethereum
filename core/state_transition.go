@@ -21,14 +21,14 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	cmath "github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto/kzg4844"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	cmath "github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/crypto/kzg4844"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 // ExecutionResult includes all output after executing given evm
@@ -68,7 +68,9 @@ func (result *ExecutionResult) Revert() []byte {
 }
 
 // IntrinsicGas computes the 'intrinsic gas' for a message with the given data.
-func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation, isHomestead, isEIP2028, isEIP3860 bool) (uint64, error) {
+func IntrinsicGas(
+	data []byte, accessList types.AccessList, isContractCreation, isHomestead, isEIP2028, isEIP3860 bool,
+) (uint64, error) {
 	// Set the starting gas for the raw transaction
 	var gas uint64
 	if isContractCreation && isHomestead {
@@ -284,20 +286,28 @@ func (st *StateTransition) preCheck() error {
 		// Make sure this transaction's nonce is correct.
 		stNonce := st.state.GetNonce(msg.From)
 		if msgNonce := msg.Nonce; stNonce < msgNonce {
-			return fmt.Errorf("%w: address %v, tx: %d state: %d", ErrNonceTooHigh,
-				msg.From.Hex(), msgNonce, stNonce)
+			return fmt.Errorf(
+				"%w: address %v, tx: %d state: %d", ErrNonceTooHigh,
+				msg.From.Hex(), msgNonce, stNonce,
+			)
 		} else if stNonce > msgNonce {
-			return fmt.Errorf("%w: address %v, tx: %d state: %d", ErrNonceTooLow,
-				msg.From.Hex(), msgNonce, stNonce)
+			return fmt.Errorf(
+				"%w: address %v, tx: %d state: %d", ErrNonceTooLow,
+				msg.From.Hex(), msgNonce, stNonce,
+			)
 		} else if stNonce+1 < stNonce {
-			return fmt.Errorf("%w: address %v, nonce: %d", ErrNonceMax,
-				msg.From.Hex(), stNonce)
+			return fmt.Errorf(
+				"%w: address %v, nonce: %d", ErrNonceMax,
+				msg.From.Hex(), stNonce,
+			)
 		}
 		// Make sure the sender is an EOA
 		codeHash := st.state.GetCodeHash(msg.From)
 		if codeHash != (common.Hash{}) && codeHash != types.EmptyCodeHash {
-			return fmt.Errorf("%w: address %v, codehash: %s", ErrSenderNoEOA,
-				msg.From.Hex(), codeHash)
+			return fmt.Errorf(
+				"%w: address %v, codehash: %s", ErrSenderNoEOA,
+				msg.From.Hex(), codeHash,
+			)
 		}
 	}
 	// Make sure that transaction gasFeeCap is greater than the baseFee (post london)
@@ -306,22 +316,30 @@ func (st *StateTransition) preCheck() error {
 		skipCheck := st.evm.Config.NoBaseFee && msg.GasFeeCap.BitLen() == 0 && msg.GasTipCap.BitLen() == 0
 		if !skipCheck {
 			if l := msg.GasFeeCap.BitLen(); l > 256 {
-				return fmt.Errorf("%w: address %v, maxFeePerGas bit length: %d", ErrFeeCapVeryHigh,
-					msg.From.Hex(), l)
+				return fmt.Errorf(
+					"%w: address %v, maxFeePerGas bit length: %d", ErrFeeCapVeryHigh,
+					msg.From.Hex(), l,
+				)
 			}
 			if l := msg.GasTipCap.BitLen(); l > 256 {
-				return fmt.Errorf("%w: address %v, maxPriorityFeePerGas bit length: %d", ErrTipVeryHigh,
-					msg.From.Hex(), l)
+				return fmt.Errorf(
+					"%w: address %v, maxPriorityFeePerGas bit length: %d", ErrTipVeryHigh,
+					msg.From.Hex(), l,
+				)
 			}
 			if msg.GasFeeCap.Cmp(msg.GasTipCap) < 0 {
-				return fmt.Errorf("%w: address %v, maxPriorityFeePerGas: %s, maxFeePerGas: %s", ErrTipAboveFeeCap,
-					msg.From.Hex(), msg.GasTipCap, msg.GasFeeCap)
+				return fmt.Errorf(
+					"%w: address %v, maxPriorityFeePerGas: %s, maxFeePerGas: %s", ErrTipAboveFeeCap,
+					msg.From.Hex(), msg.GasTipCap, msg.GasFeeCap,
+				)
 			}
 			// This will panic if baseFee is nil, but basefee presence is verified
 			// as part of header validation.
 			if msg.GasFeeCap.Cmp(st.evm.Context.BaseFee) < 0 {
-				return fmt.Errorf("%w: address %v, maxFeePerGas: %s, baseFee: %s", ErrFeeCapTooLow,
-					msg.From.Hex(), msg.GasFeeCap, st.evm.Context.BaseFee)
+				return fmt.Errorf(
+					"%w: address %v, maxFeePerGas: %s, baseFee: %s", ErrFeeCapTooLow,
+					msg.From.Hex(), msg.GasFeeCap, st.evm.Context.BaseFee,
+				)
 			}
 		}
 	}
@@ -351,8 +369,10 @@ func (st *StateTransition) preCheck() error {
 				// This will panic if blobBaseFee is nil, but blobBaseFee presence
 				// is verified as part of header validation.
 				if msg.BlobGasFeeCap.Cmp(st.evm.Context.BlobBaseFee) < 0 {
-					return fmt.Errorf("%w: address %v blobGasFeeCap: %v, blobBaseFee: %v", ErrBlobFeeCapTooLow,
-						msg.From.Hex(), msg.BlobGasFeeCap, st.evm.Context.BlobBaseFee)
+					return fmt.Errorf(
+						"%w: address %v blobGasFeeCap: %v, blobBaseFee: %v", ErrBlobFeeCapTooLow,
+						msg.From.Hex(), msg.BlobGasFeeCap, st.evm.Context.BlobBaseFee,
+					)
 				}
 			}
 		}
@@ -387,14 +407,18 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	}
 
 	var (
-		msg              = st.msg
-		sender           = vm.AccountRef(msg.From)
-		rules            = st.evm.ChainConfig().Rules(st.evm.Context.BlockNumber, st.evm.Context.Random != nil, st.evm.Context.Time)
+		msg    = st.msg
+		sender = vm.AccountRef(msg.From)
+		rules  = st.evm.ChainConfig().Rules(
+			st.evm.Context.BlockNumber, st.evm.Context.Random != nil, st.evm.Context.Time,
+		)
 		contractCreation = msg.To == nil
 	)
 
 	// Check clauses 4-5, subtract intrinsic gas if everything is correct
-	gas, err := IntrinsicGas(msg.Data, msg.AccessList, contractCreation, rules.IsHomestead, rules.IsIstanbul, rules.IsShanghai)
+	gas, err := IntrinsicGas(
+		msg.Data, msg.AccessList, contractCreation, rules.IsHomestead, rules.IsIstanbul, rules.IsShanghai,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -425,7 +449,9 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 
 	// Check whether the init code size has been exceeded.
 	if rules.IsShanghai && contractCreation && len(msg.Data) > params.MaxInitCodeSize {
-		return nil, fmt.Errorf("%w: code size %v limit %v", ErrMaxInitCodeSizeExceeded, len(msg.Data), params.MaxInitCodeSize)
+		return nil, fmt.Errorf(
+			"%w: code size %v limit %v", ErrMaxInitCodeSizeExceeded, len(msg.Data), params.MaxInitCodeSize,
+		)
 	}
 
 	// Execute the preparatory steps for state transition which includes:

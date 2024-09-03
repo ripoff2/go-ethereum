@@ -22,7 +22,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/cmd/utils"
+	"github.com/ripoff2/go-ethereum/cmd/utils"
 	"github.com/urfave/cli/v2"
 )
 
@@ -35,8 +35,10 @@ func getPassphrase(ctx *cli.Context, confirmation bool) string {
 	if passphraseFile != "" {
 		content, err := os.ReadFile(passphraseFile)
 		if err != nil {
-			utils.Fatalf("Failed to read password file '%s': %v",
-				passphraseFile, err)
+			utils.Fatalf(
+				"Failed to read password file '%s': %v",
+				passphraseFile, err,
+			)
 		}
 		return strings.TrimRight(string(content), "\r\n")
 	}

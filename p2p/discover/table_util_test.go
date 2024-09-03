@@ -29,10 +29,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/p2p/discover/v4wire"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/p2p/discover/v4wire"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
 )
 
 var nullNode *enode.Node
@@ -169,10 +169,12 @@ func (t *pingRecorder) waitPing(timeout time.Duration) *enode.Node {
 
 	// Wake up the loop on timeout.
 	var timedout atomic.Bool
-	timer := time.AfterFunc(timeout, func() {
-		timedout.Store(true)
-		t.cond.Broadcast()
-	})
+	timer := time.AfterFunc(
+		timeout, func() {
+			timedout.Store(true)
+			t.cond.Broadcast()
+		},
+	)
 	defer timer.Stop()
 
 	// Wait for a ping.
@@ -260,15 +262,19 @@ func nodeEqual(n1 *enode.Node, n2 *enode.Node) bool {
 }
 
 func sortByID[N nodeType](nodes []N) {
-	slices.SortFunc(nodes, func(a, b N) int {
-		return bytes.Compare(a.ID().Bytes(), b.ID().Bytes())
-	})
+	slices.SortFunc(
+		nodes, func(a, b N) int {
+			return bytes.Compare(a.ID().Bytes(), b.ID().Bytes())
+		},
+	)
 }
 
 func sortedByDistanceTo(distbase enode.ID, slice []*enode.Node) bool {
-	return slices.IsSortedFunc(slice, func(a, b *enode.Node) int {
-		return enode.DistCmp(distbase, a.ID(), b.ID())
-	})
+	return slices.IsSortedFunc(
+		slice, func(a, b *enode.Node) int {
+			return enode.DistCmp(distbase, a.ID(), b.ID())
+		},
+	)
 }
 
 // hexEncPrivkey decodes h as a private key.

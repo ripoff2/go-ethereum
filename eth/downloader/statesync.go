@@ -19,8 +19,8 @@ package downloader
 import (
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // syncState starts downloading state with the given root hash.
@@ -116,8 +116,10 @@ func (s *stateSync) Wait() error {
 
 // Cancel cancels the sync and waits until it has shut down.
 func (s *stateSync) Cancel() error {
-	s.cancelOnce.Do(func() {
-		close(s.cancel)
-	})
+	s.cancelOnce.Do(
+		func() {
+			close(s.cancel)
+		},
+	)
 	return s.Wait()
 }

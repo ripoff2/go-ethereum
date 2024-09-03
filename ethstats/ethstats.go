@@ -30,19 +30,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
-	ethproto "github.com/ethereum/go-ethereum/eth/protocols/eth"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/gorilla/websocket"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/consensus"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/types"
+	ethproto "github.com/ripoff2/go-ethereum/eth/protocols/eth"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/node"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 const (
@@ -535,10 +535,12 @@ func (s *Service) reportLatency(conn *connWrapper) error {
 	start := time.Now()
 
 	ping := map[string][]interface{}{
-		"emit": {"node-ping", map[string]string{
-			"id":         s.node,
-			"clientTime": start.String(),
-		}},
+		"emit": {
+			"node-ping", map[string]string{
+				"id":         s.node,
+				"clientTime": start.String(),
+			},
+		},
 	}
 	if err := conn.WriteJSON(ping); err != nil {
 		return err
@@ -560,10 +562,12 @@ func (s *Service) reportLatency(conn *connWrapper) error {
 	log.Trace("Sending measured latency to ethstats", "latency", latency)
 
 	stats := map[string][]interface{}{
-		"emit": {"latency", map[string]string{
-			"id":      s.node,
-			"latency": latency,
-		}},
+		"emit": {
+			"latency", map[string]string{
+				"id":      s.node,
+				"latency": latency,
+			},
+		},
 	}
 	return conn.WriteJSON(stats)
 }
@@ -712,7 +716,9 @@ func (s *Service) reportHistory(conn *connWrapper, list []uint64) error {
 		// Retrieve the next block if it's known to us
 		var block *types.Block
 		if ok {
-			block, _ = fullBackend.BlockByNumber(context.Background(), rpc.BlockNumber(number)) // TODO ignore error here ?
+			block, _ = fullBackend.BlockByNumber(
+				context.Background(), rpc.BlockNumber(number),
+			) // TODO ignore error here ?
 		} else {
 			if header, _ := s.backend.HeaderByNumber(context.Background(), rpc.BlockNumber(number)); header != nil {
 				block = types.NewBlockWithHeader(header)
@@ -729,7 +735,9 @@ func (s *Service) reportHistory(conn *connWrapper, list []uint64) error {
 	}
 	// Assemble the history report and send it to the server
 	if len(history) > 0 {
-		log.Trace("Sending historical blocks to ethstats", "first", history[0].Number, "last", history[len(history)-1].Number)
+		log.Trace(
+			"Sending historical blocks to ethstats", "first", history[0].Number, "last", history[len(history)-1].Number,
+		)
 	} else {
 		log.Trace("No history to send to stats server")
 	}

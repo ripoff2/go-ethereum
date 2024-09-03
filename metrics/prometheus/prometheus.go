@@ -22,31 +22,35 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
 )
 
 // Handler returns an HTTP handler which dump metrics in Prometheus format.
 func Handler(reg metrics.Registry) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Gather and pre-sort the metrics to avoid random listings
-		var names []string
-		reg.Each(func(name string, i interface{}) {
-			names = append(names, name)
-		})
-		sort.Strings(names)
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			// Gather and pre-sort the metrics to avoid random listings
+			var names []string
+			reg.Each(
+				func(name string, i interface{}) {
+					names = append(names, name)
+				},
+			)
+			sort.Strings(names)
 
-		// Aggregate all the metrics into a Prometheus collector
-		c := newCollector()
+			// Aggregate all the metrics into a Prometheus collector
+			c := newCollector()
 
-		for _, name := range names {
-			i := reg.Get(name)
-			if err := c.Add(name, i); err != nil {
-				log.Warn("Unknown Prometheus metric type", "type", fmt.Sprintf("%T", i))
+			for _, name := range names {
+				i := reg.Get(name)
+				if err := c.Add(name, i); err != nil {
+					log.Warn("Unknown Prometheus metric type", "type", fmt.Sprintf("%T", i))
+				}
 			}
-		}
-		w.Header().Add("Content-Type", "text/plain")
-		w.Header().Add("Content-Length", fmt.Sprint(c.buff.Len()))
-		w.Write(c.buff.Bytes())
-	})
+			w.Header().Add("Content-Type", "text/plain")
+			w.Header().Add("Content-Length", fmt.Sprint(c.buff.Len()))
+			w.Write(c.buff.Bytes())
+		},
+	)
 }

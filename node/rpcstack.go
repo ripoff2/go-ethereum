@@ -31,8 +31,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rpc"
 	"github.com/rs/cors"
 )
 
@@ -172,7 +172,8 @@ func (h *httpServer) start() error {
 		return nil
 	}
 	// Log http endpoint.
-	h.log.Info("HTTP server started",
+	h.log.Info(
+		"HTTP server started",
 		"endpoint", listener.Addr(), "auth", (h.httpConfig.jwtSecret != nil),
 		"prefix", h.httpConfig.prefix,
 		"cors", strings.Join(h.httpConfig.CorsAllowedOrigins, ","),
@@ -313,10 +314,12 @@ func (h *httpServer) enableRPC(apis []rpc.API, config httpConfig) error {
 		return err
 	}
 	h.httpConfig = config
-	h.httpHandler.Store(&rpcHandler{
-		Handler: NewHTTPHandlerStack(srv, config.CorsAllowedOrigins, config.Vhosts, config.jwtSecret),
-		server:  srv,
-	})
+	h.httpHandler.Store(
+		&rpcHandler{
+			Handler: NewHTTPHandlerStack(srv, config.CorsAllowedOrigins, config.Vhosts, config.jwtSecret),
+			server:  srv,
+		},
+	)
 	return nil
 }
 
@@ -348,10 +351,12 @@ func (h *httpServer) enableWS(apis []rpc.API, config wsConfig) error {
 		return err
 	}
 	h.wsConfig = config
-	h.wsHandler.Store(&rpcHandler{
-		Handler: NewWSHandlerStack(srv.WebsocketHandler(config.Origins), config.jwtSecret),
-		server:  srv,
-	})
+	h.wsHandler.Store(
+		&rpcHandler{
+			Handler: NewWSHandlerStack(srv.WebsocketHandler(config.Origins), config.jwtSecret),
+			server:  srv,
+		},
+	)
 	return nil
 }
 
@@ -417,12 +422,14 @@ func newCorsHandler(srv http.Handler, allowedOrigins []string) http.Handler {
 	if len(allowedOrigins) == 0 {
 		return srv
 	}
-	c := cors.New(cors.Options{
-		AllowedOrigins: allowedOrigins,
-		AllowedMethods: []string{http.MethodPost, http.MethodGet},
-		AllowedHeaders: []string{"*"},
-		MaxAge:         600,
-	})
+	c := cors.New(
+		cors.Options{
+			AllowedOrigins: allowedOrigins,
+			AllowedMethods: []string{http.MethodPost, http.MethodGet},
+			AllowedHeaders: []string{"*"},
+			MaxAge:         600,
+		},
+	)
 	return c.Handler(srv)
 }
 
@@ -571,17 +578,19 @@ func (w *gzipResponseWriter) close() {
 }
 
 func newGzipHandler(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-			next.ServeHTTP(w, r)
-			return
-		}
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+				next.ServeHTTP(w, r)
+				return
+			}
 
-		wrapper := &gzipResponseWriter{resp: w}
-		defer wrapper.close()
+			wrapper := &gzipResponseWriter{resp: w}
+			defer wrapper.close()
 
-		next.ServeHTTP(wrapper, r)
-	})
+			next.ServeHTTP(wrapper, r)
+		},
+	)
 }
 
 type ipcServer struct {

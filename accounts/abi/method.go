@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/crypto"
 )
 
 // FunctionType represents different types of functions a contract might have.
@@ -91,7 +91,10 @@ type Method struct {
 // A method should always be created using NewMethod.
 // It also precomputes the sig representation and the string representation
 // of the method.
-func NewMethod(name string, rawName string, funType FunctionType, mutability string, isConst, isPayable bool, inputs Arguments, outputs Arguments) Method {
+func NewMethod(
+	name string, rawName string, funType FunctionType, mutability string, isConst, isPayable bool, inputs Arguments,
+	outputs Arguments,
+) Method {
 	var (
 		types       = make([]string, len(inputs))
 		inputNames  = make([]string, len(inputs))
@@ -130,9 +133,14 @@ func NewMethod(name string, rawName string, funType FunctionType, mutability str
 	// Extract meaningful state mutability of solidity method.
 	// If it's empty string or default value "nonpayable", never print it.
 	if mutability == "" || mutability == "nonpayable" {
-		str = fmt.Sprintf("%v(%v) returns(%v)", identity, strings.Join(inputNames, ", "), strings.Join(outputNames, ", "))
+		str = fmt.Sprintf(
+			"%v(%v) returns(%v)", identity, strings.Join(inputNames, ", "), strings.Join(outputNames, ", "),
+		)
 	} else {
-		str = fmt.Sprintf("%v(%v) %s returns(%v)", identity, strings.Join(inputNames, ", "), mutability, strings.Join(outputNames, ", "))
+		str = fmt.Sprintf(
+			"%v(%v) %s returns(%v)", identity, strings.Join(inputNames, ", "), mutability,
+			strings.Join(outputNames, ", "),
+		)
 	}
 
 	return Method{

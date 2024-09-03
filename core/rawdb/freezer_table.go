@@ -27,10 +27,10 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/golang/snappy"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
 )
 
 var (
@@ -122,13 +122,19 @@ type freezerTable struct {
 
 // newFreezerTable opens the given path as a freezer table.
 func newFreezerTable(path, name string, disableSnappy, readonly bool) (*freezerTable, error) {
-	return newTable(path, name, metrics.NilMeter{}, metrics.NilMeter{}, metrics.NilGauge{}, freezerTableSize, disableSnappy, readonly)
+	return newTable(
+		path, name, metrics.NilMeter{}, metrics.NilMeter{}, metrics.NilGauge{}, freezerTableSize, disableSnappy,
+		readonly,
+	)
 }
 
 // newTable opens a freezer table, creating the data and index files if they are
 // non-existent. Both files are truncated to the shortest common length to ensure
 // they don't go out of sync.
-func newTable(path string, name string, readMeter metrics.Meter, writeMeter metrics.Meter, sizeGauge metrics.Gauge, maxFilesize uint32, noCompression, readonly bool) (*freezerTable, error) {
+func newTable(
+	path string, name string, readMeter metrics.Meter, writeMeter metrics.Meter, sizeGauge metrics.Gauge,
+	maxFilesize uint32, noCompression, readonly bool,
+) (*freezerTable, error) {
 	// Ensure the containing directory exists and open the indexEntry file
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return nil, err
@@ -213,7 +219,9 @@ func (t *freezerTable) repair() error {
 	// Ensure the index is a multiple of indexEntrySize bytes
 	if overflow := stat.Size() % indexEntrySize; overflow != 0 {
 		if t.readonly {
-			return fmt.Errorf("index file(path: %s, name: %s) size is not a multiple of %d", t.path, t.name, indexEntrySize)
+			return fmt.Errorf(
+				"index file(path: %s, name: %s) size is not a multiple of %d", t.path, t.name, indexEntrySize,
+			)
 		}
 		if err := truncateFreezerFile(t.index, stat.Size()-overflow); err != nil {
 			return err
@@ -263,7 +271,9 @@ func (t *freezerTable) repair() error {
 	// last index item. While it is theoretically possible to have a zero offset
 	// by storing all zero-size items, it is highly unlikely to occur in practice.
 	if lastIndex.offset == 0 && offsetsSize/indexEntrySize > 1 {
-		log.Error("Corrupted index file detected", "lastOffset", lastIndex.offset, "indexes", offsetsSize/indexEntrySize)
+		log.Error(
+			"Corrupted index file detected", "lastOffset", lastIndex.offset, "indexes", offsetsSize/indexEntrySize,
+		)
 	}
 	if t.readonly {
 		t.head, err = t.openFile(lastIndex.filenum, openFreezerFileForReadOnly)
@@ -282,7 +292,9 @@ func (t *freezerTable) repair() error {
 	contentExp = int64(lastIndex.offset)
 	for contentExp != contentSize {
 		if t.readonly {
-			return fmt.Errorf("freezer table(path: %s, name: %s, num: %d) is corrupted", t.path, t.name, lastIndex.filenum)
+			return fmt.Errorf(
+				"freezer table(path: %s, name: %s, num: %d) is corrupted", t.path, t.name, lastIndex.filenum,
+			)
 		}
 		verbose = true
 		// Truncate the head file to the last offset pointer
@@ -295,7 +307,10 @@ func (t *freezerTable) repair() error {
 		}
 		// Truncate the index to point within the head file
 		if contentExp > contentSize {
-			t.logger.Warn("Truncating dangling indexes", "indexes", offsetsSize/indexEntrySize, "indexed", contentExp, "stored", contentSize)
+			t.logger.Warn(
+				"Truncating dangling indexes", "indexes", offsetsSize/indexEntrySize, "indexed", contentExp, "stored",
+				contentSize,
+			)
 			if err := truncateFreezerFile(t.index, offsetsSize-indexEntrySize); err != nil {
 				return err
 			}
@@ -357,7 +372,10 @@ func (t *freezerTable) repair() error {
 		return err
 	}
 	if verbose {
-		t.logger.Info("Chain freezer table opened", "items", t.items.Load(), "deleted", t.itemOffset.Load(), "hidden", t.itemHidden.Load(), "tailId", t.tailId, "headId", t.headId, "size", t.headBytes)
+		t.logger.Info(
+			"Chain freezer table opened", "items", t.items.Load(), "deleted", t.itemOffset.Load(), "hidden",
+			t.itemHidden.Load(), "tailId", t.tailId, "headId", t.headId, "size", t.headBytes,
+		)
 	} else {
 		t.logger.Debug("Chain freezer table opened", "items", t.items.Load(), "size", common.StorageSize(t.headBytes))
 	}
@@ -556,14 +574,16 @@ func (t *freezerTable) truncateTail(items uint64) error {
 		return err
 	}
 	// Truncate the deleted index entries from the index file.
-	err = copyFrom(t.index.Name(), t.index.Name(), indexEntrySize*(newDeleted-deleted+1), func(f *os.File) error {
-		tailIndex := indexEntry{
-			filenum: newTailId,
-			offset:  uint32(newDeleted),
-		}
-		_, err := f.Write(tailIndex.append(nil))
-		return err
-	})
+	err = copyFrom(
+		t.index.Name(), t.index.Name(), indexEntrySize*(newDeleted-deleted+1), func(f *os.File) error {
+			tailIndex := indexEntry{
+				filenum: newTailId,
+				offset:  uint32(newDeleted),
+			}
+			_, err := f.Write(tailIndex.append(nil))
+			return err
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -967,8 +987,10 @@ func (t *freezerTable) dumpIndex(w io.Writer, start, stop int64) {
 		fmt.Fprintf(w, "Failed to decode freezer table %v\n", err)
 		return
 	}
-	fmt.Fprintf(w, "Version %d count %d, deleted %d, hidden %d\n", meta.Version,
-		t.items.Load(), t.itemOffset.Load(), t.itemHidden.Load())
+	fmt.Fprintf(
+		w, "Version %d count %d, deleted %d, hidden %d\n", meta.Version,
+		t.items.Load(), t.itemOffset.Load(), t.itemHidden.Load(),
+	)
 
 	buf := make([]byte, indexEntrySize)
 

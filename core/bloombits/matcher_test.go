@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 const testSectionSize = 4096
@@ -31,16 +31,18 @@ const testSectionSize = 4096
 // Tests that wildcard filter rules (nil) can be specified and are handled well.
 func TestMatcherWildcards(t *testing.T) {
 	t.Parallel()
-	matcher := NewMatcher(testSectionSize, [][][]byte{
-		{common.Address{}.Bytes(), common.Address{0x01}.Bytes()}, // Default address is not a wildcard
-		{common.Hash{}.Bytes(), common.Hash{0x01}.Bytes()},       // Default hash is not a wildcard
-		{common.Hash{0x01}.Bytes()},                              // Plain rule, sanity check
-		{common.Hash{0x01}.Bytes(), nil},                         // Wildcard suffix, drop rule
-		{nil, common.Hash{0x01}.Bytes()},                         // Wildcard prefix, drop rule
-		{nil, nil},                                               // Wildcard combo, drop rule
-		{},                                                       // Inited wildcard rule, drop rule
-		nil,                                                      // Proper wildcard rule, drop rule
-	})
+	matcher := NewMatcher(
+		testSectionSize, [][][]byte{
+			{common.Address{}.Bytes(), common.Address{0x01}.Bytes()}, // Default address is not a wildcard
+			{common.Hash{}.Bytes(), common.Hash{0x01}.Bytes()},       // Default hash is not a wildcard
+			{common.Hash{0x01}.Bytes()},                              // Plain rule, sanity check
+			{common.Hash{0x01}.Bytes(), nil},                         // Wildcard suffix, drop rule
+			{nil, common.Hash{0x01}.Bytes()},                         // Wildcard prefix, drop rule
+			{nil, nil},                                               // Wildcard combo, drop rule
+			{},                                                       // Inited wildcard rule, drop rule
+			nil,                                                      // Proper wildcard rule, drop rule
+		},
+	)
 	if len(matcher.filters) != 3 {
 		t.Fatalf("filter system size mismatch: have %d, want %d", len(matcher.filters), 3)
 	}
@@ -60,7 +62,10 @@ func TestMatcherContinuous(t *testing.T) {
 	t.Parallel()
 	testMatcherDiffBatches(t, [][]bloomIndexes{{{10, 20, 30}}}, 0, 100000, false, 75)
 	testMatcherDiffBatches(t, [][]bloomIndexes{{{32, 3125, 100}}, {{40, 50, 10}}}, 0, 100000, false, 81)
-	testMatcherDiffBatches(t, [][]bloomIndexes{{{4, 8, 11}, {7, 8, 17}}, {{9, 9, 12}, {15, 20, 13}}, {{18, 15, 15}, {12, 10, 4}}}, 0, 10000, false, 36)
+	testMatcherDiffBatches(
+		t, [][]bloomIndexes{{{4, 8, 11}, {7, 8, 17}}, {{9, 9, 12}, {15, 20, 13}}, {{18, 15, 15}, {12, 10, 4}}}, 0,
+		10000, false, 36,
+	)
 }
 
 // Tests the matcher pipeline on a constantly interrupted and resumed work pattern
@@ -69,7 +74,10 @@ func TestMatcherIntermittent(t *testing.T) {
 	t.Parallel()
 	testMatcherDiffBatches(t, [][]bloomIndexes{{{10, 20, 30}}}, 0, 100000, true, 75)
 	testMatcherDiffBatches(t, [][]bloomIndexes{{{32, 3125, 100}}, {{40, 50, 10}}}, 0, 100000, true, 81)
-	testMatcherDiffBatches(t, [][]bloomIndexes{{{4, 8, 11}, {7, 8, 17}}, {{9, 9, 12}, {15, 20, 13}}, {{18, 15, 15}, {12, 10, 4}}}, 0, 10000, true, 36)
+	testMatcherDiffBatches(
+		t, [][]bloomIndexes{{{4, 8, 11}, {7, 8, 17}}, {{9, 9, 12}, {15, 20, 13}}, {{18, 15, 15}, {12, 10, 4}}}, 0,
+		10000, true, 36,
+	)
 }
 
 // Tests the matcher pipeline on random input to hopefully catch anomalies.
@@ -86,7 +94,7 @@ func TestMatcherRandom(t *testing.T) {
 
 // Tests that the matcher can properly find matches if the starting block is
 // shifted from a multiple of 8. This is needed to cover an optimisation with
-// bitset matching https://github.com/ethereum/go-ethereum/issues/15309.
+// bitset matching https://github.com/ripoff2/go-ethereum/issues/15309.
 func TestMatcherShifted(t *testing.T) {
 	t.Parallel()
 	// Block 0 always matches in the tests, skip ahead of first 8 blocks with the
@@ -125,12 +133,17 @@ func makeRandomIndexes(lengths []int, max int) [][]bloomIndexes {
 // testMatcherDiffBatches runs the given matches test in single-delivery and also
 // in batches delivery mode, verifying that all kinds of deliveries are handled
 // correctly within.
-func testMatcherDiffBatches(t *testing.T, filter [][]bloomIndexes, start, blocks uint64, intermittent bool, retrievals uint32) {
+func testMatcherDiffBatches(
+	t *testing.T, filter [][]bloomIndexes, start, blocks uint64, intermittent bool, retrievals uint32,
+) {
 	singleton := testMatcher(t, filter, start, blocks, intermittent, retrievals, 1)
 	batched := testMatcher(t, filter, start, blocks, intermittent, retrievals, 16)
 
 	if singleton != batched {
-		t.Errorf("filter = %v blocks = %v intermittent = %v: request count mismatch, %v in singleton vs. %v in batched mode", filter, blocks, intermittent, singleton, batched)
+		t.Errorf(
+			"filter = %v blocks = %v intermittent = %v: request count mismatch, %v in singleton vs. %v in batched mode",
+			filter, blocks, intermittent, singleton, batched,
+		)
 	}
 }
 
@@ -141,13 +154,18 @@ func testMatcherBothModes(t *testing.T, filter [][]bloomIndexes, start, blocks u
 	intermittent := testMatcher(t, filter, start, blocks, true, retrievals, 16)
 
 	if continuous != intermittent {
-		t.Errorf("filter = %v blocks = %v: request count mismatch, %v in continuous vs. %v in intermittent mode", filter, blocks, continuous, intermittent)
+		t.Errorf(
+			"filter = %v blocks = %v: request count mismatch, %v in continuous vs. %v in intermittent mode", filter,
+			blocks, continuous, intermittent,
+		)
 	}
 }
 
 // testMatcher is a generic tester to run the given matcher test and return the
 // number of requests made for cross validation between different modes.
-func testMatcher(t *testing.T, filter [][]bloomIndexes, start, blocks uint64, intermittent bool, retrievals uint32, maxReqCount int) uint32 {
+func testMatcher(
+	t *testing.T, filter [][]bloomIndexes, start, blocks uint64, intermittent bool, retrievals uint32, maxReqCount int,
+) uint32 {
 	// Create a new matcher an simulate our explicit random bitsets
 	matcher := NewMatcher(testSectionSize, nil)
 	matcher.filters = filter
@@ -177,11 +195,17 @@ func testMatcher(t *testing.T, filter [][]bloomIndexes, start, blocks uint64, in
 		if expMatch3(filter, i) {
 			match, ok := <-matches
 			if !ok {
-				t.Errorf("filter = %v  blocks = %v  intermittent = %v: expected #%v, results channel closed", filter, blocks, intermittent, i)
+				t.Errorf(
+					"filter = %v  blocks = %v  intermittent = %v: expected #%v, results channel closed", filter, blocks,
+					intermittent, i,
+				)
 				return 0
 			}
 			if match != i {
-				t.Errorf("filter = %v  blocks = %v  intermittent = %v: expected #%v, got #%v", filter, blocks, intermittent, i, match)
+				t.Errorf(
+					"filter = %v  blocks = %v  intermittent = %v: expected #%v, got #%v", filter, blocks, intermittent,
+					i, match,
+				)
 			}
 			// If we're testing intermittent mode, abort and restart the pipeline
 			if intermittent {
@@ -202,14 +226,20 @@ func testMatcher(t *testing.T, filter [][]bloomIndexes, start, blocks uint64, in
 	// Ensure the result channel is torn down after the last block
 	match, ok := <-matches
 	if ok {
-		t.Errorf("filter = %v  blocks = %v  intermittent = %v: expected closed channel, got #%v", filter, blocks, intermittent, match)
+		t.Errorf(
+			"filter = %v  blocks = %v  intermittent = %v: expected closed channel, got #%v", filter, blocks,
+			intermittent, match,
+		)
 	}
 	// Clean up the session and ensure we match the expected retrieval count
 	session.Close()
 	close(quit)
 
 	if retrievals != 0 && requested.Load() != retrievals {
-		t.Errorf("filter = %v  blocks = %v  intermittent = %v: request count mismatch, have #%v, want #%v", filter, blocks, intermittent, requested.Load(), retrievals)
+		t.Errorf(
+			"filter = %v  blocks = %v  intermittent = %v: request count mismatch, have #%v, want #%v", filter, blocks,
+			intermittent, requested.Load(), retrievals,
+		)
 	}
 	return requested.Load()
 }

@@ -21,7 +21,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
 )
 
 type BucketNode struct {
@@ -62,9 +62,11 @@ type nodesByDistance struct {
 
 // push adds the given node to the list, keeping the total size below maxElems.
 func (h *nodesByDistance) push(n *enode.Node, maxElems int) {
-	ix := sort.Search(len(h.entries), func(i int) bool {
-		return enode.DistCmp(h.target, h.entries[i].ID(), n.ID()) > 0
-	})
+	ix := sort.Search(
+		len(h.entries), func(i int) bool {
+			return enode.DistCmp(h.target, h.entries[i].ID(), n.ID()) > 0
+		},
+	)
 
 	end := len(h.entries)
 	if len(h.entries) < maxElems {
@@ -94,7 +96,9 @@ func containsID[N nodeType](ns []N, id enode.ID) bool {
 
 // deleteNode removes a node from the list.
 func deleteNode[N nodeType](list []N, id enode.ID) []N {
-	return slices.DeleteFunc(list, func(n N) bool {
-		return n.ID() == id
-	})
+	return slices.DeleteFunc(
+		list, func(n N) bool {
+			return n.ID() == id
+		},
+	)
 }

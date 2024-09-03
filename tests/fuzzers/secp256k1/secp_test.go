@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/ethereum/go-ethereum/crypto/secp256k1"
+	"github.com/ripoff2/go-ethereum/crypto/secp256k1"
 )
 
 func TestFuzzer(t *testing.T) {
@@ -30,9 +30,11 @@ func TestFuzzer(t *testing.T) {
 }
 
 func Fuzz(f *testing.F) {
-	f.Fuzz(func(t *testing.T, a, b []byte) {
-		fuzz(a, b)
-	})
+	f.Fuzz(
+		func(t *testing.T, a, b []byte) {
+			fuzz(a, b)
+		},
+	)
 }
 
 func fuzz(dataP1, dataP2 []byte) {

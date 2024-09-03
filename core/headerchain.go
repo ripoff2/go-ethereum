@@ -23,15 +23,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/lru"
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/lru"
+	"github.com/ripoff2/go-ethereum/consensus"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 const (
@@ -74,7 +74,9 @@ type HeaderChain struct {
 
 // NewHeaderChain creates a new HeaderChain structure. ProcInterrupt points
 // to the parent's interrupt semaphore.
-func NewHeaderChain(chainDb ethdb.Database, config *params.ChainConfig, engine consensus.Engine, procInterrupt func() bool) (*HeaderChain, error) {
+func NewHeaderChain(
+	chainDb ethdb.Database, config *params.ChainConfig, engine consensus.Engine, procInterrupt func() bool,
+) (*HeaderChain, error) {
 	hc := &HeaderChain{
 		config:        config,
 		chainDb:       chainDb,
@@ -299,11 +301,16 @@ func (hc *HeaderChain) ValidateHeaderChain(chain []*types.Header) (int, error) {
 			hash := chain[i].Hash()
 			parentHash := chain[i-1].Hash()
 			// Chain broke ancestry, log a message (programming error) and skip insertion
-			log.Error("Non contiguous header insert", "number", chain[i].Number, "hash", hash,
-				"parent", chain[i].ParentHash, "prevnumber", chain[i-1].Number, "prevhash", parentHash)
+			log.Error(
+				"Non contiguous header insert", "number", chain[i].Number, "hash", hash,
+				"parent", chain[i].ParentHash, "prevnumber", chain[i-1].Number, "prevhash", parentHash,
+			)
 
-			return 0, fmt.Errorf("non contiguous insert: item %d is #%d [%x..], item %d is #%d [%x..] (parent [%x..])", i-1, chain[i-1].Number,
-				parentHash.Bytes()[:4], i, chain[i].Number, hash.Bytes()[:4], chain[i].ParentHash[:4])
+			return 0, fmt.Errorf(
+				"non contiguous insert: item %d is #%d [%x..], item %d is #%d [%x..] (parent [%x..])", i-1,
+				chain[i-1].Number,
+				parentHash.Bytes()[:4], i, chain[i].Number, hash.Bytes()[:4], chain[i].ParentHash[:4],
+			)
 		}
 	}
 	// Start the parallel verifier
@@ -336,7 +343,9 @@ func (hc *HeaderChain) ValidateHeaderChain(chain []*types.Header) (int, error) {
 //
 // The returned 'write status' says if the inserted headers are part of the canonical chain
 // or a side chain.
-func (hc *HeaderChain) InsertHeaderChain(chain []*types.Header, start time.Time, forker *ForkChoice) (WriteStatus, error) {
+func (hc *HeaderChain) InsertHeaderChain(chain []*types.Header, start time.Time, forker *ForkChoice) (
+	WriteStatus, error,
+) {
 	if hc.procInterrupt() {
 		return 0, errors.New("aborted")
 	}
@@ -367,7 +376,9 @@ func (hc *HeaderChain) InsertHeaderChain(chain []*types.Header, start time.Time,
 // number of blocks to be individually checked before we reach the canonical chain.
 //
 // Note: ancestor == 0 returns the same block, 1 returns its parent and so on.
-func (hc *HeaderChain) GetAncestor(hash common.Hash, number, ancestor uint64, maxNonCanonical *uint64) (common.Hash, uint64) {
+func (hc *HeaderChain) GetAncestor(hash common.Hash, number, ancestor uint64, maxNonCanonical *uint64) (
+	common.Hash, uint64,
+) {
 	if ancestor > number {
 		return common.Hash{}, 0
 	}
@@ -540,13 +551,17 @@ func (hc *HeaderChain) SetHead(head uint64, updateFn UpdateHeadBlocksCallback, d
 
 // SetHeadWithTimestamp rewinds the local chain to a new head timestamp. Everything
 // above the new head will be deleted and the new one set.
-func (hc *HeaderChain) SetHeadWithTimestamp(time uint64, updateFn UpdateHeadBlocksCallback, delFn DeleteBlockContentCallback) {
+func (hc *HeaderChain) SetHeadWithTimestamp(
+	time uint64, updateFn UpdateHeadBlocksCallback, delFn DeleteBlockContentCallback,
+) {
 	hc.setHead(0, time, updateFn, delFn)
 }
 
 // setHead rewinds the local chain to a new head block or a head timestamp.
 // Everything above the new head will be deleted and the new one set.
-func (hc *HeaderChain) setHead(headBlock uint64, headTime uint64, updateFn UpdateHeadBlocksCallback, delFn DeleteBlockContentCallback) {
+func (hc *HeaderChain) setHead(
+	headBlock uint64, headTime uint64, updateFn UpdateHeadBlocksCallback, delFn DeleteBlockContentCallback,
+) {
 	// Sanity check that there's no attempt to undo the genesis block. This is
 	// a fairly synthetic case where someone enables a timestamp based fork
 	// below the genesis timestamp. It's nice to not allow that instead of the

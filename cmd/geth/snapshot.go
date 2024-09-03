@@ -24,18 +24,18 @@ import (
 	"os"
 	"time"
 
-	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/state/pruner"
-	"github.com/ethereum/go-ethereum/core/state/snapshot"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/internal/flags"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/cmd/utils"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/state/pruner"
+	"github.com/ripoff2/go-ethereum/core/state/snapshot"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/internal/flags"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie"
 	"github.com/urfave/cli/v2"
 )
 
@@ -50,9 +50,11 @@ var (
 				Usage:     "Prune stale ethereum state data based on the snapshot",
 				ArgsUsage: "<root>",
 				Action:    pruneState,
-				Flags: flags.Merge([]cli.Flag{
-					utils.BloomFilterSizeFlag,
-				}, utils.NetworkFlags, utils.DatabaseFlags),
+				Flags: flags.Merge(
+					[]cli.Flag{
+						utils.BloomFilterSizeFlag,
+					}, utils.NetworkFlags, utils.DatabaseFlags,
+				),
 				Description: `
 geth snapshot prune-state <state-root>
 will prune historical state data with the help of the state snapshot.
@@ -136,12 +138,14 @@ It's also usable without snapshot enabled.
 				Usage:     "Dump a specific block from storage (same as 'geth dump' but using snapshots)",
 				ArgsUsage: "[? <blockHash> | <blockNum>]",
 				Action:    dumpState,
-				Flags: flags.Merge([]cli.Flag{
-					utils.ExcludeCodeFlag,
-					utils.ExcludeStorageFlag,
-					utils.StartKeyFlag,
-					utils.DumpLimitFlag,
-				}, utils.NetworkFlags, utils.DatabaseFlags),
+				Flags: flags.Merge(
+					[]cli.Flag{
+						utils.ExcludeCodeFlag,
+						utils.ExcludeStorageFlag,
+						utils.StartKeyFlag,
+						utils.DumpLimitFlag,
+					}, utils.NetworkFlags, utils.DatabaseFlags,
+				),
 				Description: `
 This command is semantically equivalent to 'geth dump', but uses the snapshots
 as the backend data source, making this command a lot faster.
@@ -341,7 +345,10 @@ func traverseState(ctx *cli.Context) error {
 				slots += 1
 
 				if time.Since(lastReport) > time.Second*8 {
-					log.Info("Traversing state", "accounts", accounts, "slots", slots, "codes", codes, "elapsed", common.PrettyDuration(time.Since(start)))
+					log.Info(
+						"Traversing state", "accounts", accounts, "slots", slots, "codes", codes, "elapsed",
+						common.PrettyDuration(time.Since(start)),
+					)
 					lastReport = time.Now()
 				}
 			}
@@ -358,7 +365,10 @@ func traverseState(ctx *cli.Context) error {
 			codes += 1
 		}
 		if time.Since(lastReport) > time.Second*8 {
-			log.Info("Traversing state", "accounts", accounts, "slots", slots, "codes", codes, "elapsed", common.PrettyDuration(time.Since(start)))
+			log.Info(
+				"Traversing state", "accounts", accounts, "slots", slots, "codes", codes, "elapsed",
+				common.PrettyDuration(time.Since(start)),
+			)
 			lastReport = time.Now()
 		}
 	}
@@ -366,7 +376,10 @@ func traverseState(ctx *cli.Context) error {
 		log.Error("Failed to traverse state trie", "root", root, "err", accIter.Err)
 		return accIter.Err
 	}
-	log.Info("State is complete", "accounts", accounts, "slots", slots, "codes", codes, "elapsed", common.PrettyDuration(time.Since(start)))
+	log.Info(
+		"State is complete", "accounts", accounts, "slots", slots, "codes", codes, "elapsed",
+		common.PrettyDuration(time.Since(start)),
+	)
 	return nil
 }
 
@@ -499,7 +512,10 @@ func traverseRawState(ctx *cli.Context) error {
 						slots += 1
 					}
 					if time.Since(lastReport) > time.Second*8 {
-						log.Info("Traversing state", "nodes", nodes, "accounts", accounts, "slots", slots, "codes", codes, "elapsed", common.PrettyDuration(time.Since(start)))
+						log.Info(
+							"Traversing state", "nodes", nodes, "accounts", accounts, "slots", slots, "codes", codes,
+							"elapsed", common.PrettyDuration(time.Since(start)),
+						)
 						lastReport = time.Now()
 					}
 				}
@@ -516,7 +532,10 @@ func traverseRawState(ctx *cli.Context) error {
 				codes += 1
 			}
 			if time.Since(lastReport) > time.Second*8 {
-				log.Info("Traversing state", "nodes", nodes, "accounts", accounts, "slots", slots, "codes", codes, "elapsed", common.PrettyDuration(time.Since(start)))
+				log.Info(
+					"Traversing state", "nodes", nodes, "accounts", accounts, "slots", slots, "codes", codes, "elapsed",
+					common.PrettyDuration(time.Since(start)),
+				)
 				lastReport = time.Now()
 			}
 		}
@@ -525,7 +544,10 @@ func traverseRawState(ctx *cli.Context) error {
 		log.Error("Failed to traverse state trie", "root", root, "err", accIter.Error())
 		return accIter.Error()
 	}
-	log.Info("State is complete", "nodes", nodes, "accounts", accounts, "slots", slots, "codes", codes, "elapsed", common.PrettyDuration(time.Since(start)))
+	log.Info(
+		"State is complete", "nodes", nodes, "accounts", accounts, "slots", slots, "codes", codes, "elapsed",
+		common.PrettyDuration(time.Since(start)),
+	)
 	return nil
 }
 
@@ -574,9 +596,11 @@ func dumpState(ctx *cli.Context) error {
 		accounts uint64
 	)
 	enc := json.NewEncoder(os.Stdout)
-	enc.Encode(struct {
-		Root common.Hash `json:"root"`
-	}{root})
+	enc.Encode(
+		struct {
+			Root common.Hash `json:"root"`
+		}{root},
+	)
 	for accIt.Next() {
 		account, err := types.FullAccount(accIt.Account())
 		if err != nil {
@@ -606,16 +630,20 @@ func dumpState(ctx *cli.Context) error {
 		enc.Encode(da)
 		accounts++
 		if time.Since(logged) > 8*time.Second {
-			log.Info("Snapshot dumping in progress", "at", accIt.Hash(), "accounts", accounts,
-				"elapsed", common.PrettyDuration(time.Since(start)))
+			log.Info(
+				"Snapshot dumping in progress", "at", accIt.Hash(), "accounts", accounts,
+				"elapsed", common.PrettyDuration(time.Since(start)),
+			)
 			logged = time.Now()
 		}
 		if conf.Max > 0 && accounts >= conf.Max {
 			break
 		}
 	}
-	log.Info("Snapshot dumping complete", "accounts", accounts,
-		"elapsed", common.PrettyDuration(time.Since(start)))
+	log.Info(
+		"Snapshot dumping complete", "accounts", accounts,
+		"elapsed", common.PrettyDuration(time.Since(start)),
+	)
 	return nil
 }
 

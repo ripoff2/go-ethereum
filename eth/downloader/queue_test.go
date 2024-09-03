@@ -26,13 +26,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/trie"
 )
 
 // makeChain creates a chain of n blocks starting at and including parent.
@@ -40,18 +40,25 @@ import (
 // contains a transaction and every 5th an uncle to allow testing correct block
 // reassembly.
 func makeChain(n int, seed byte, parent *types.Block, empty bool) ([]*types.Block, []types.Receipts) {
-	blocks, receipts := core.GenerateChain(params.TestChainConfig, parent, ethash.NewFaker(), testDB, n, func(i int, block *core.BlockGen) {
-		block.SetCoinbase(common.Address{seed})
-		// Add one tx to every secondblock
-		if !empty && i%2 == 0 {
-			signer := types.MakeSigner(params.TestChainConfig, block.Number(), block.Timestamp())
-			tx, err := types.SignTx(types.NewTransaction(block.TxNonce(testAddress), common.Address{seed}, big.NewInt(1000), params.TxGas, block.BaseFee(), nil), signer, testKey)
-			if err != nil {
-				panic(err)
+	blocks, receipts := core.GenerateChain(
+		params.TestChainConfig, parent, ethash.NewFaker(), testDB, n, func(i int, block *core.BlockGen) {
+			block.SetCoinbase(common.Address{seed})
+			// Add one tx to every secondblock
+			if !empty && i%2 == 0 {
+				signer := types.MakeSigner(params.TestChainConfig, block.Number(), block.Timestamp())
+				tx, err := types.SignTx(
+					types.NewTransaction(
+						block.TxNonce(testAddress), common.Address{seed}, big.NewInt(1000), params.TxGas,
+						block.BaseFee(), nil,
+					), signer, testKey,
+				)
+				if err != nil {
+					panic(err)
+				}
+				block.AddTx(tx)
 			}
-			block.AddTx(tx)
-		}
-	})
+		},
+	)
 	return blocks, receipts
 }
 
@@ -395,8 +402,10 @@ func XTestDelivery(t *testing.T) {
 		defer wg.Done()
 		for {
 			time.Sleep(990 * time.Millisecond)
-			fmt.Printf("world block tip is %d\n",
-				world.chain[len(world.chain)-1].Header().Number.Uint64())
+			fmt.Printf(
+				"world block tip is %d\n",
+				world.chain[len(world.chain)-1].Header().Number.Uint64(),
+			)
 			fmt.Println(q.Stats())
 		}
 	}()

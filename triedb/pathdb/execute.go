@@ -20,12 +20,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/trie/trienode"
-	"github.com/ethereum/go-ethereum/triedb/database"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
+	"github.com/ripoff2/go-ethereum/triedb/database"
 )
 
 // context wraps all fields for executing state diffs.
@@ -43,7 +43,10 @@ type context struct {
 
 // apply processes the given state diffs, updates the corresponding post-state
 // and returns the trie nodes that have been modified.
-func apply(db database.Database, prevRoot common.Hash, postRoot common.Hash, accounts map[common.Address][]byte, storages map[common.Address]map[common.Hash][]byte) (map[common.Hash]map[string]*trienode.Node, error) {
+func apply(
+	db database.Database, prevRoot common.Hash, postRoot common.Hash, accounts map[common.Address][]byte,
+	storages map[common.Address]map[common.Hash][]byte,
+) (map[common.Hash]map[string]*trienode.Node, error) {
 	tr, err := trie.New(trie.TrieID(postRoot), db)
 	if err != nil {
 		return nil, err

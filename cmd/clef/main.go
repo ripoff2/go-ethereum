@@ -35,27 +35,27 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/internal/ethapi"
-	"github.com/ethereum/go-ethereum/internal/flags"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ethereum/go-ethereum/signer/core"
-	"github.com/ethereum/go-ethereum/signer/core/apitypes"
-	"github.com/ethereum/go-ethereum/signer/fourbyte"
-	"github.com/ethereum/go-ethereum/signer/rules"
-	"github.com/ethereum/go-ethereum/signer/storage"
 	"github.com/mattn/go-colorable"
 	"github.com/mattn/go-isatty"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/accounts/keystore"
+	"github.com/ripoff2/go-ethereum/cmd/utils"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/internal/ethapi"
+	"github.com/ripoff2/go-ethereum/internal/flags"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/node"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum/signer/core"
+	"github.com/ripoff2/go-ethereum/signer/core/apitypes"
+	"github.com/ripoff2/go-ethereum/signer/fourbyte"
+	"github.com/ripoff2/go-ethereum/signer/rules"
+	"github.com/ripoff2/go-ethereum/signer/storage"
 	"github.com/urfave/cli/v2"
 )
 
@@ -178,7 +178,8 @@ Clef that the file is 'safe' to execute.`,
 		},
 		Description: `
 The setpw command stores a password for a given address (keyfile).
-`}
+`,
+	}
 	delCredentialCommand = &cli.Command{
 		Action:    removeCredential,
 		Name:      "delpw",
@@ -191,7 +192,8 @@ The setpw command stores a password for a given address (keyfile).
 		},
 		Description: `
 The delpw command removes a password for a given address (keyfile).
-`}
+`,
+	}
 	newAccountCommand = &cli.Command{
 		Action:    newAccount,
 		Name:      "newaccount",
@@ -206,14 +208,16 @@ The delpw command removes a password for a given address (keyfile).
 		Description: `
 The newaccount command creates a new keystore-backed account. It is a convenience-method
 which can be used in lieu of an external UI.
-`}
+`,
+	}
 	gendocCommand = &cli.Command{
 		Action: GenDoc,
 		Name:   "gendoc",
 		Usage:  "Generate documentation about json-rpc format",
 		Description: `
 The gendoc generates example structures of the json-rpc communication types.
-`}
+`,
+	}
 	listAccountsCommand = &cli.Command{
 		Action: listAccounts,
 		Name:   "list-accounts",
@@ -226,7 +230,8 @@ The gendoc generates example structures of the json-rpc communication types.
 		},
 		Description: `
 	Lists the accounts in the keystore.
-	`}
+	`,
+	}
 	listWalletsCommand = &cli.Command{
 		Action: listWallets,
 		Name:   "list-wallets",
@@ -239,7 +244,8 @@ The gendoc generates example structures of the json-rpc communication types.
 		},
 		Description: `
 	Lists the wallets known to Clef.
-	`}
+	`,
+	}
 	importRawCommand = &cli.Command{
 		Action:    accountImport,
 		Name:      "importraw",
@@ -256,7 +262,8 @@ Imports an unencrypted private key from <keyfile> and creates a new account.
 Prints the address.
 The keyfile is assumed to contain an unencrypted private key in hexadecimal format.
 The account is saved in encrypted format, you are prompted for a password.
-`}
+`,
+	}
 )
 
 var app = flags.NewApp("Manage Ethereum account operations")
@@ -287,7 +294,8 @@ func init() {
 		acceptFlag,
 	}
 	app.Action = signer
-	app.Commands = []*cli.Command{initCommand,
+	app.Commands = []*cli.Command{
+		initCommand,
 		attestCommand,
 		setCredentialCommand,
 		delCredentialCommand,
@@ -360,7 +368,8 @@ func initializeSecrets(c *cli.Context) error {
 		return err
 	}
 	fmt.Printf("A master seed has been generated into %s\n", location)
-	fmt.Printf(`
+	fmt.Printf(
+		`
 This is required to be able to store credentials, such as:
 * Passwords for keystores (used by rule engine)
 * Storage for JavaScript auto-signing rules
@@ -370,7 +379,8 @@ You should treat 'masterseed.json' with utmost secrecy and make a backup of it!
 * The password is necessary but not enough, you need to back up the master seed too!
 * The master seed does not contain your accounts, those need to be backed up separately!
 
-`)
+`,
+	)
 	return nil
 }
 
@@ -563,11 +573,13 @@ func accountImport(c *cli.Context) error {
 		return err
 	}
 	readPw := func(prompt string) (string, error) {
-		resp, err := ui.OnInputRequired(core.UserInputRequest{
-			Title:      "Password",
-			Prompt:     prompt,
-			IsPassword: true,
-		})
+		resp, err := ui.OnInputRequired(
+			core.UserInputRequest{
+				Title:      "Password",
+				Prompt:     prompt,
+				IsPassword: true,
+			},
+		)
 		if err != nil {
 			return "", err
 		}
@@ -589,7 +601,9 @@ func accountImport(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	ui.ShowInfo(fmt.Sprintf(`Key imported:
+	ui.ShowInfo(
+		fmt.Sprintf(
+			`Key imported:
   Address %v
   Keystore file: %v
 
@@ -597,7 +611,9 @@ The key is now encrypted; losing the password will result in permanently losing
 access to the key and all associated funds!
 
 Make sure to backup keystore and passwords in a safe location.`,
-		acc.Address, acc.URL.Path))
+			acc.Address, acc.URL.Path,
+		),
+	)
 	return nil
 }
 
@@ -657,7 +673,9 @@ func signer(c *cli.Context) error {
 	if stretchedKey, err := readMasterKey(c, ui); err != nil {
 		log.Warn("Failed to open master, rules disabled", "err", err)
 	} else {
-		vaultLocation := filepath.Join(configDir, common.Bytes2Hex(crypto.Keccak256([]byte("vault"), stretchedKey)[:10]))
+		vaultLocation := filepath.Join(
+			configDir, common.Bytes2Hex(crypto.Keccak256([]byte("vault"), stretchedKey)[:10]),
+		)
 
 		// Generate domain specific keys
 		pwkey := crypto.Keccak256([]byte("credentials"), stretchedKey)
@@ -701,8 +719,10 @@ func signer(c *cli.Context) error {
 		nousb    = c.Bool(utils.NoUSBFlag.Name)
 		scpath   = c.String(utils.SmartCardDaemonPathFlag.Name)
 	)
-	log.Info("Starting signer", "chainid", chainId, "keystore", ksLoc,
-		"light-kdf", lightKdf, "advanced", advanced)
+	log.Info(
+		"Starting signer", "chainid", chainId, "keystore", ksLoc,
+		"light-kdf", lightKdf, "advanced", advanced,
+	)
 	am := core.StartClefAccountManager(ksLoc, nousb, lightKdf, scpath)
 	defer am.Close()
 	apiImpl := core.NewSignerAPI(am, chainId, nousb, ui, db, advanced, pwStorage)
@@ -778,13 +798,16 @@ func signer(c *cli.Context) error {
 		log.Info("Performing UI test")
 		go testExternalUI(apiImpl)
 	}
-	ui.OnSignerStartup(core.StartupInfo{
-		Info: map[string]interface{}{
-			"intapi_version": core.InternalAPIVersion,
-			"extapi_version": core.ExternalAPIVersion,
-			"extapi_http":    extapiURL,
-			"extapi_ipc":     ipcapiURL,
-		}})
+	ui.OnSignerStartup(
+		core.StartupInfo{
+			Info: map[string]interface{}{
+				"intapi_version": core.InternalAPIVersion,
+				"extapi_version": core.ExternalAPIVersion,
+				"extapi_http":    extapiURL,
+				"extapi_ipc":     ipcapiURL,
+			},
+		},
+	)
 
 	abortChan := make(chan os.Signal, 1)
 	signal.Notify(abortChan, os.Interrupt)
@@ -836,10 +859,13 @@ func readMasterKey(ctx *cli.Context, ui core.UIClientAPI) ([]byte, error) {
 	var password string
 	// If ui is not nil, get the password from ui.
 	if ui != nil {
-		resp, err := ui.OnInputRequired(core.UserInputRequest{
-			Title:      "Master Password",
-			Prompt:     "Please enter the password to decrypt the master seed",
-			IsPassword: true})
+		resp, err := ui.OnInputRequired(
+			core.UserInputRequest{
+				Title:      "Master Password",
+				Prompt:     "Please enter the password to decrypt the master seed",
+				IsPassword: true,
+			},
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -873,7 +899,7 @@ func checkFile(filename string) error {
 	}
 	// Check the unix permission bits
 	// However, on windows, we cannot use the unix perm-bits, see
-	// https://github.com/ethereum/go-ethereum/issues/20123
+	// https://github.com/ripoff2/go-ethereum/issues/20123
 	if runtime.GOOS != "windows" && info.Mode().Perm()&0377 != 0 {
 		return fmt.Errorf("file (%v) has insecure file permissions (%v)", filename, info.Mode().String())
 	}
@@ -908,10 +934,12 @@ func testExternalUI(api *core.SignerAPI) {
 	}
 
 	queryUser := func(q string) string {
-		resp, err := api.UI.OnInputRequired(core.UserInputRequest{
-			Title:  "Testing",
-			Prompt: q,
-		})
+		resp, err := api.UI.OnInputRequired(
+			core.UserInputRequest{
+				Title:  "Testing",
+				Prompt: q,
+			},
+		)
 		if err != nil {
 			addErr(err.Error())
 		}
@@ -1101,19 +1129,26 @@ func GenDoc(ctx *cli.Context) error {
 		sighash, msg := accounts.TextAndHash([]byte("hello world"))
 		messages := []*apitypes.NameValueType{{Name: "message", Value: msg, Typ: accounts.MimetypeTextPlain}}
 
-		add("SignDataRequest", desc, &core.SignDataRequest{
-			Address:     common.NewMixedcaseAddress(a),
-			Meta:        meta,
-			ContentType: accounts.MimetypeTextPlain,
-			Rawdata:     []byte(msg),
-			Messages:    messages,
-			Hash:        sighash})
+		add(
+			"SignDataRequest", desc, &core.SignDataRequest{
+				Address:     common.NewMixedcaseAddress(a),
+				Meta:        meta,
+				ContentType: accounts.MimetypeTextPlain,
+				Rawdata:     []byte(msg),
+				Messages:    messages,
+				Hash:        sighash,
+			},
+		)
 	}
 	{ // Sign plain text response
-		add("SignDataResponse - approve", "Response to SignDataRequest",
-			&core.SignDataResponse{Approved: true})
-		add("SignDataResponse - deny", "Response to SignDataRequest",
-			&core.SignDataResponse{})
+		add(
+			"SignDataResponse - approve", "Response to SignDataRequest",
+			&core.SignDataResponse{Approved: true},
+		)
+		add(
+			"SignDataResponse - deny", "Response to SignDataRequest",
+			&core.SignDataResponse{},
+		)
 	}
 	{ // Sign transaction request
 		desc := "SignTxRequest contains information about a pending request to sign a transaction. " +
@@ -1127,28 +1162,34 @@ func GenDoc(ctx *cli.Context) error {
 			"However, Clef will always use `data` when passing this struct on (if Clef does otherwise, please file a ticket)"
 
 		data := hexutil.Bytes([]byte{0x01, 0x02, 0x03, 0x04})
-		add("SignTxRequest", desc, &core.SignTxRequest{
-			Meta: meta,
-			Callinfo: []apitypes.ValidationInfo{
-				{Typ: "Warning", Message: "Something looks odd, show this message as a warning"},
-				{Typ: "Info", Message: "User should see this as well"},
+		add(
+			"SignTxRequest", desc, &core.SignTxRequest{
+				Meta: meta,
+				Callinfo: []apitypes.ValidationInfo{
+					{Typ: "Warning", Message: "Something looks odd, show this message as a warning"},
+					{Typ: "Info", Message: "User should see this as well"},
+				},
+				Transaction: apitypes.SendTxArgs{
+					Data:     &data,
+					Nonce:    0x1,
+					Value:    hexutil.Big(*big.NewInt(6)),
+					From:     common.NewMixedcaseAddress(a),
+					To:       nil,
+					GasPrice: (*hexutil.Big)(big.NewInt(5)),
+					Gas:      1000,
+					Input:    nil,
+				},
 			},
-			Transaction: apitypes.SendTxArgs{
-				Data:     &data,
-				Nonce:    0x1,
-				Value:    hexutil.Big(*big.NewInt(6)),
-				From:     common.NewMixedcaseAddress(a),
-				To:       nil,
-				GasPrice: (*hexutil.Big)(big.NewInt(5)),
-				Gas:      1000,
-				Input:    nil,
-			}})
+		)
 	}
 	{ // Sign tx response
 		data := hexutil.Bytes([]byte{0x04, 0x03, 0x02, 0x01})
-		add("SignTxResponse - approve", "Response to request to sign a transaction. This response needs to contain the `transaction`"+
-			", because the UI is free to make modifications to the transaction.",
-			&core.SignTxResponse{Approved: true,
+		add(
+			"SignTxResponse - approve",
+			"Response to request to sign a transaction. This response needs to contain the `transaction`"+
+				", because the UI is free to make modifications to the transaction.",
+			&core.SignTxResponse{
+				Approved: true,
 				Transaction: apitypes.SendTxArgs{
 					Data:     &data,
 					Nonce:    0x4,
@@ -1158,10 +1199,14 @@ func GenDoc(ctx *cli.Context) error {
 					GasPrice: (*hexutil.Big)(big.NewInt(5)),
 					Gas:      1000,
 					Input:    nil,
-				}})
-		add("SignTxResponse - deny", "Response to SignTxRequest. When denying a request, there's no need to "+
-			"provide the transaction in return",
-			&core.SignTxResponse{})
+				},
+			},
+		)
+		add(
+			"SignTxResponse - deny", "Response to SignTxRequest. When denying a request, there's no need to "+
+				"provide the transaction in return",
+			&core.SignTxResponse{},
+		)
 	}
 	{ // WHen a signed tx is ready to go out
 		desc := "SignTransactionResult is used in the call `clef` -> `OnApprovedTx(result)`" +
@@ -1184,24 +1229,34 @@ func GenDoc(ctx *cli.Context) error {
 		add("OnApproved - SignTransactionResult", desc, &ethapi.SignTransactionResult{Raw: rlpdata, Tx: &tx})
 	}
 	{ // User input
-		add("UserInputRequest", "Sent when clef needs the user to provide data. If 'password' is true, the input field should be treated accordingly (echo-free)",
-			&core.UserInputRequest{IsPassword: true, Title: "The title here", Prompt: "The question to ask the user"})
-		add("UserInputResponse", "Response to UserInputRequest",
-			&core.UserInputResponse{Text: "The textual response from user"})
+		add(
+			"UserInputRequest",
+			"Sent when clef needs the user to provide data. If 'password' is true, the input field should be treated accordingly (echo-free)",
+			&core.UserInputRequest{IsPassword: true, Title: "The title here", Prompt: "The question to ask the user"},
+		)
+		add(
+			"UserInputResponse", "Response to UserInputRequest",
+			&core.UserInputResponse{Text: "The textual response from user"},
+		)
 	}
 	{ // List request
-		add("ListRequest", "Sent when a request has been made to list addresses. The UI is provided with the "+
-			"full `account`s, including local directory names. Note: this information is not passed back to the external caller, "+
-			"who only sees the `address`es. ",
+		add(
+			"ListRequest", "Sent when a request has been made to list addresses. The UI is provided with the "+
+				"full `account`s, including local directory names. Note: this information is not passed back to the external caller, "+
+				"who only sees the `address`es. ",
 			&core.ListRequest{
 				Meta: meta,
 				Accounts: []accounts.Account{
 					{Address: a, URL: accounts.URL{Scheme: "keystore", Path: "/path/to/keyfile/a"}},
-					{Address: b, URL: accounts.URL{Scheme: "keystore", Path: "/path/to/keyfile/b"}}},
-			})
+					{Address: b, URL: accounts.URL{Scheme: "keystore", Path: "/path/to/keyfile/b"}},
+				},
+			},
+		)
 
-		add("ListResponse", "Response to list request. The response contains a list of all addresses to show to the caller. "+
-			"Note: the UI is free to respond with any address the caller, regardless of whether it exists or not",
+		add(
+			"ListResponse",
+			"Response to list request. The response contains a list of all addresses to show to the caller. "+
+				"Note: the UI is free to respond with any address the caller, regardless of whether it exists or not",
 			&core.ListResponse{
 				Accounts: []accounts.Account{
 					{
@@ -1211,12 +1266,16 @@ func GenDoc(ctx *cli.Context) error {
 					{
 						Address: common.MaxAddress,
 					},
-				}})
+				},
+			},
+		)
 	}
 
-	fmt.Println(`## UI Client interface
+	fmt.Println(
+		`## UI Client interface
 
-These data types are defined in the channel between clef and the UI`)
+These data types are defined in the channel between clef and the UI`,
+	)
 	for _, elem := range output {
 		fmt.Println(elem)
 	}

@@ -27,10 +27,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-verkle"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 // A BlockNonce is a 64-bit hash which proves (combined with the
@@ -332,12 +332,14 @@ func (b *Block) DecodeRLP(s *rlp.Stream) error {
 
 // EncodeRLP serializes a block as RLP.
 func (b *Block) EncodeRLP(w io.Writer) error {
-	return rlp.Encode(w, &extblock{
-		Header:      b.header,
-		Txs:         b.transactions,
-		Uncles:      b.uncles,
-		Withdrawals: b.withdrawals,
-	})
+	return rlp.Encode(
+		w, &extblock{
+			Header:      b.header,
+			Txs:         b.transactions,
+			Uncles:      b.uncles,
+			Withdrawals: b.withdrawals,
+		},
+	)
 }
 
 // Body returns the non-header content of the block.

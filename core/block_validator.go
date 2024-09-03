@@ -20,13 +20,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/stateless"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/stateless"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/trie"
 )
 
 // BlockValidator is responsible for validating block headers, uncles and
@@ -76,7 +76,9 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 			return errors.New("missing withdrawals in block body")
 		}
 		if hash := types.DeriveSha(block.Withdrawals(), trie.NewStackTrie(nil)); hash != *header.WithdrawalsHash {
-			return fmt.Errorf("withdrawals root hash mismatch (header value %x, calculated %x)", *header.WithdrawalsHash, hash)
+			return fmt.Errorf(
+				"withdrawals root hash mismatch (header value %x, calculated %x)", *header.WithdrawalsHash, hash,
+			)
 		}
 	} else if block.Withdrawals() != nil {
 		// Withdrawals are not allowed prior to Shanghai fork
@@ -101,7 +103,10 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 	// Check blob gas usage.
 	if header.BlobGasUsed != nil {
 		if want := *header.BlobGasUsed / params.BlobTxBlobGasPerBlob; uint64(blobs) != want { // div because the header is surely good vs the body might be bloated
-			return fmt.Errorf("blob gas used mismatch (header %v, calculated %v)", *header.BlobGasUsed, blobs*params.BlobTxBlobGasPerBlob)
+			return fmt.Errorf(
+				"blob gas used mismatch (header %v, calculated %v)", *header.BlobGasUsed,
+				blobs*params.BlobTxBlobGasPerBlob,
+			)
 		}
 	} else {
 		if blobs > 0 {
@@ -121,7 +126,9 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 
 // ValidateState validates the various changes that happen after a state transition,
 // such as amount of used gas, the receipt roots and the state root itself.
-func (v *BlockValidator) ValidateState(block *types.Block, statedb *state.StateDB, receipts types.Receipts, usedGas uint64, stateless bool) error {
+func (v *BlockValidator) ValidateState(
+	block *types.Block, statedb *state.StateDB, receipts types.Receipts, usedGas uint64, stateless bool,
+) error {
 	header := block.Header()
 	if block.GasUsed() != usedGas {
 		return fmt.Errorf("invalid gas used (remote: %d local: %d)", block.GasUsed(), usedGas)
@@ -155,7 +162,9 @@ func (v *BlockValidator) ValidateState(block *types.Block, statedb *state.StateD
 // Normally we'd distribute the block witness to remote cross validators, wait
 // for them to respond and then merge the results. For now, however, it's only
 // Geth, so do an internal stateless run.
-func (v *BlockValidator) ValidateWitness(witness *stateless.Witness, receiptRoot common.Hash, stateRoot common.Hash) error {
+func (v *BlockValidator) ValidateWitness(
+	witness *stateless.Witness, receiptRoot common.Hash, stateRoot common.Hash,
+) error {
 	// Run the cross client stateless execution
 	// TODO(karalabe): Self-stateless for now, swap with other clients
 	crossReceiptRoot, crossStateRoot, err := ExecuteStateless(v.config, witness)

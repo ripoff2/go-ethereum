@@ -26,13 +26,13 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/internal/testlog"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/internal/testlog"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
 )
 
 var signingKeyForTesting, _ = crypto.ToECDSA(hexutil.MustDecode("0xdc599867fc513f8f5e2c2c9c489cde5e71362d1d9ec6e693e0de063236ed1240"))
@@ -109,11 +109,13 @@ func TestIterator(t *testing.T) {
 		r         = mapResolver(tree.ToTXT("n"))
 	)
 
-	c := NewClient(Config{
-		Resolver:  r,
-		Logger:    testlog.Logger(t, log.LvlTrace),
-		RateLimit: 500,
-	})
+	c := NewClient(
+		Config{
+			Resolver:  r,
+			Logger:    testlog.Logger(t, log.LvlTrace),
+			RateLimit: 500,
+		},
+	)
 	it, err := c.NewIterator(url)
 	if err != nil {
 		t.Fatal(err)
@@ -173,11 +175,13 @@ func TestIteratorLinks(t *testing.T) {
 		tree2, url2 = makeTestTree("t2", nodes[10:], []string{url1})
 	)
 
-	c := NewClient(Config{
-		Resolver:  newMapResolver(tree1.ToTXT("t1"), tree2.ToTXT("t2")),
-		Logger:    testlog.Logger(t, log.LvlTrace),
-		RateLimit: 500,
-	})
+	c := NewClient(
+		Config{
+			Resolver:  newMapResolver(tree1.ToTXT("t1"), tree2.ToTXT("t2")),
+			Logger:    testlog.Logger(t, log.LvlTrace),
+			RateLimit: 500,
+		},
+	)
 	it, err := c.NewIterator(url2)
 	if err != nil {
 		t.Fatal(err)
@@ -194,12 +198,14 @@ func TestIteratorNodeUpdates(t *testing.T) {
 		keys     = testKeys(30)
 		nodes    = testNodes(keys)
 		resolver = newMapResolver()
-		c        = NewClient(Config{
-			Resolver:        resolver,
-			Logger:          testlog.Logger(t, log.LvlTrace),
-			RecheckInterval: 20 * time.Minute,
-			RateLimit:       500,
-		})
+		c        = NewClient(
+			Config{
+				Resolver:        resolver,
+				Logger:          testlog.Logger(t, log.LvlTrace),
+				RecheckInterval: 20 * time.Minute,
+				RateLimit:       500,
+			},
+		)
 	)
 	c.clock = clock
 	tree1, url := makeTestTree("n", nodes[:25], nil)
@@ -232,15 +238,17 @@ func TestIteratorRootRecheckOnFail(t *testing.T) {
 		keys     = testKeys(30)
 		nodes    = testNodes(keys)
 		resolver = newMapResolver()
-		c        = NewClient(Config{
-			Resolver:        resolver,
-			Logger:          testlog.Logger(t, log.LvlTrace),
-			RecheckInterval: 20 * time.Minute,
-			RateLimit:       500,
-			// Disabling the cache is required for this test because the client doesn't
-			// notice leaf failures if all records are cached.
-			CacheLimit: 1,
-		})
+		c        = NewClient(
+			Config{
+				Resolver:        resolver,
+				Logger:          testlog.Logger(t, log.LvlTrace),
+				RecheckInterval: 20 * time.Minute,
+				RateLimit:       500,
+				// Disabling the cache is required for this test because the client doesn't
+				// notice leaf failures if all records are cached.
+				CacheLimit: 1,
+			},
+		)
 	)
 	c.clock = clock
 	tree1, url := makeTestTree("n", nodes[:25], nil)
@@ -270,12 +278,14 @@ func TestIteratorEmptyTree(t *testing.T) {
 		keys     = testKeys(1)
 		nodes    = testNodes(keys)
 		resolver = newMapResolver()
-		c        = NewClient(Config{
-			Resolver:        resolver,
-			Logger:          testlog.Logger(t, log.LvlTrace),
-			RecheckInterval: 20 * time.Minute,
-			RateLimit:       500,
-		})
+		c        = NewClient(
+			Config{
+				Resolver:        resolver,
+				Logger:          testlog.Logger(t, log.LvlTrace),
+				RecheckInterval: 20 * time.Minute,
+				RateLimit:       500,
+			},
+		)
 	)
 	c.clock = clock
 	tree1, url := makeTestTree("n", nil, nil)
@@ -331,12 +341,14 @@ func TestIteratorLinkUpdates(t *testing.T) {
 		keys     = testKeys(30)
 		nodes    = testNodes(keys)
 		resolver = newMapResolver()
-		c        = NewClient(Config{
-			Resolver:        resolver,
-			Logger:          testlog.Logger(t, log.LvlTrace),
-			RecheckInterval: 20 * time.Minute,
-			RateLimit:       500,
-		})
+		c        = NewClient(
+			Config{
+				Resolver:        resolver,
+				Logger:          testlog.Logger(t, log.LvlTrace),
+				RecheckInterval: 20 * time.Minute,
+				RateLimit:       500,
+			},
+		)
 	)
 	c.clock = clock
 	tree3, url3 := makeTestTree("t3", nodes[20:30], nil)

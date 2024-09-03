@@ -27,13 +27,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/internal/era"
-	"github.com/ethereum/go-ethereum/internal/ethapi"
-	"github.com/ethereum/go-ethereum/internal/flags"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/internal/era"
+	"github.com/ripoff2/go-ethereum/internal/ethapi"
+	"github.com/ripoff2/go-ethereum/internal/flags"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/trie"
 	"github.com/urfave/cli/v2"
 )
 
@@ -229,7 +229,9 @@ func verify(ctx *cli.Context) error {
 			}
 			// Give the user some feedback that something is happening.
 			if time.Since(reported) >= 8*time.Second {
-				fmt.Printf("Verifying Era1 files \t\t verified=%d,\t elapsed=%s\n", i, common.PrettyDuration(time.Since(start)))
+				fmt.Printf(
+					"Verifying Era1 files \t\t verified=%d,\t elapsed=%s\n", i, common.PrettyDuration(time.Since(start)),
+				)
 				reported = time.Now()
 			}
 			return nil
@@ -288,7 +290,9 @@ func checkAccumulator(e *era.Era) error {
 		// 3) recompute receipt root and check value against block.
 		rr := types.DeriveSha(receipts, trie.NewStackTrie(nil))
 		if rr != block.ReceiptHash() {
-			return fmt.Errorf("receipt root in block %d mismatch: want %s, got %s", block.NumberU64(), block.ReceiptHash(), rr)
+			return fmt.Errorf(
+				"receipt root in block %d mismatch: want %s, got %s", block.NumberU64(), block.ReceiptHash(), rr,
+			)
 		}
 		hashes = append(hashes, block.Hash())
 		td.Add(td, block.Difficulty())

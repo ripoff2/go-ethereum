@@ -22,7 +22,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common"
 )
 
 func TestEncode(t *testing.T) {
@@ -51,34 +51,36 @@ func TestEncode(t *testing.T) {
 		},
 	} {
 		tt := test
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			var (
-				b = bytes.NewBuffer(nil)
-				w = NewWriter(b)
-			)
-			for _, e := range tt.entries {
-				if _, err := w.Write(e.Type, e.Value); err != nil {
-					t.Fatalf("encoding error: %v", err)
+		t.Run(
+			tt.name, func(t *testing.T) {
+				t.Parallel()
+				var (
+					b = bytes.NewBuffer(nil)
+					w = NewWriter(b)
+				)
+				for _, e := range tt.entries {
+					if _, err := w.Write(e.Type, e.Value); err != nil {
+						t.Fatalf("encoding error: %v", err)
+					}
 				}
-			}
-			if want, have := common.FromHex(tt.want), b.Bytes(); !bytes.Equal(want, have) {
-				t.Fatalf("encoding mismatch (want %x, have %x", want, have)
-			}
-			r := NewReader(bytes.NewReader(b.Bytes()))
-			for _, want := range tt.entries {
-				have, err := r.Read()
-				if err != nil {
-					t.Fatalf("decoding error: %v", err)
+				if want, have := common.FromHex(tt.want), b.Bytes(); !bytes.Equal(want, have) {
+					t.Fatalf("encoding mismatch (want %x, have %x", want, have)
 				}
-				if have.Type != want.Type {
-					t.Fatalf("decoded entry does type mismatch (want %v, got %v)", want.Type, have.Type)
+				r := NewReader(bytes.NewReader(b.Bytes()))
+				for _, want := range tt.entries {
+					have, err := r.Read()
+					if err != nil {
+						t.Fatalf("decoding error: %v", err)
+					}
+					if have.Type != want.Type {
+						t.Fatalf("decoded entry does type mismatch (want %v, got %v)", want.Type, have.Type)
+					}
+					if !bytes.Equal(have.Value, want.Value) {
+						t.Fatalf("decoded entry does not match (want %#x, got %#x)", want.Value, have.Value)
+					}
 				}
-				if !bytes.Equal(have.Value, want.Value) {
-					t.Fatalf("decoded entry does not match (want %#x, got %#x)", want.Value, have.Value)
-				}
-			}
-		})
+			},
+		)
 	}
 }
 
@@ -87,26 +89,32 @@ func TestDecode(t *testing.T) {
 		have string
 		err  error
 	}{
-		{ // basic valid decoding
+		{
+			// basic valid decoding
 			have: "ffff000000000000",
 		},
-		{ // basic invalid decoding
+		{
+			// basic invalid decoding
 			have: "ffff000000000001",
 			err:  errors.New("reserved bytes are non-zero"),
 		},
-		{ // no more entries to read, returns EOF
+		{
+			// no more entries to read, returns EOF
 			have: "",
 			err:  io.EOF,
 		},
-		{ // malformed type
+		{
+			// malformed type
 			have: "bad",
 			err:  io.ErrUnexpectedEOF,
 		},
-		{ // malformed length
+		{
+			// malformed length
 			have: "badbeef",
 			err:  io.ErrUnexpectedEOF,
 		},
-		{ // specified length longer than actual value
+		{
+			// specified length longer than actual value
 			have: "beef010000000000",
 			err:  io.ErrUnexpectedEOF,
 		},
@@ -129,22 +137,24 @@ func TestDecode(t *testing.T) {
 }
 
 func FuzzCodec(f *testing.F) {
-	f.Fuzz(func(t *testing.T, input []byte) {
-		r := NewReader(bytes.NewReader(input))
-		entry, err := r.Read()
-		if err != nil {
-			return
-		}
-		var (
-			b = bytes.NewBuffer(nil)
-			w = NewWriter(b)
-		)
-		w.Write(entry.Type, entry.Value)
-		output := b.Bytes()
-		// Only care about the input that was actually consumed
-		input = input[:r.offset]
-		if !bytes.Equal(input, output) {
-			t.Fatalf("decode-encode mismatch, input %#x output %#x", input, output)
-		}
-	})
+	f.Fuzz(
+		func(t *testing.T, input []byte) {
+			r := NewReader(bytes.NewReader(input))
+			entry, err := r.Read()
+			if err != nil {
+				return
+			}
+			var (
+				b = bytes.NewBuffer(nil)
+				w = NewWriter(b)
+			)
+			w.Write(entry.Type, entry.Value)
+			output := b.Bytes()
+			// Only care about the input that was actually consumed
+			input = input[:r.offset]
+			if !bytes.Equal(input, output) {
+				t.Fatalf("decode-encode mismatch, input %#x output %#x", input, output)
+			}
+		},
+	)
 }

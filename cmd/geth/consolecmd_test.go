@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 const (
@@ -41,9 +41,11 @@ func runMinimalGeth(t *testing.T, args ...string) *testgeth {
 	// --holesky to make the 'writing genesis to disk' faster (no accounts)
 	// --networkid=1337 to avoid cache bump
 	// --syncmode=full to avoid allocating fast sync bloom
-	allArgs := []string{"--holesky", "--networkid", "1337", "--authrpc.port", "0", "--syncmode=full", "--port", "0",
+	allArgs := []string{
+		"--holesky", "--networkid", "1337", "--authrpc.port", "0", "--syncmode=full", "--port", "0",
 		"--nat", "none", "--nodiscover", "--maxpeers", "0", "--cache", "64",
-		"--datadir.minfreedisk", "0"}
+		"--datadir.minfreedisk", "0",
+	}
 	return runGeth(t, append(allArgs, args...)...)
 }
 
@@ -61,13 +63,16 @@ func TestConsoleWelcome(t *testing.T) {
 	geth.SetTemplateFunc("goarch", func() string { return runtime.GOARCH })
 	geth.SetTemplateFunc("gover", runtime.Version)
 	geth.SetTemplateFunc("gethver", func() string { return params.VersionWithCommit("", "") })
-	geth.SetTemplateFunc("niltime", func() string {
-		return time.Unix(1695902100, 0).Format("Mon Jan 02 2006 15:04:05 GMT-0700 (MST)")
-	})
+	geth.SetTemplateFunc(
+		"niltime", func() string {
+			return time.Unix(1695902100, 0).Format("Mon Jan 02 2006 15:04:05 GMT-0700 (MST)")
+		},
+	)
 	geth.SetTemplateFunc("apis", func() string { return ipcAPIs })
 
 	// Verify the actual welcome message to the required template
-	geth.Expect(`
+	geth.Expect(
+		`
 Welcome to the Geth JavaScript console!
 
 instance: Geth/v{{gethver}}/{{goos}}-{{goarch}}/{{gover}}
@@ -77,7 +82,8 @@ at block: 0 ({{niltime}})
 
 To exit, press ctrl-d or type exit
 > {{.InputLine "exit"}}
-`)
+`,
+	)
 	geth.ExpectExit()
 }
 
@@ -98,24 +104,32 @@ func TestAttachWelcome(t *testing.T) {
 	p := trulyRandInt(1024, 65533) // Yeah, sometimes this will fail, sorry :P
 	httpPort = strconv.Itoa(p)
 	wsPort = strconv.Itoa(p + 1)
-	geth := runMinimalGeth(t, "--miner.etherbase", "0x8605cdbbdb6d264aa742e77020dcbc58fcdce182",
+	geth := runMinimalGeth(
+		t, "--miner.etherbase", "0x8605cdbbdb6d264aa742e77020dcbc58fcdce182",
 		"--ipcpath", ipc,
 		"--http", "--http.port", httpPort,
-		"--ws", "--ws.port", wsPort)
-	t.Run("ipc", func(t *testing.T) {
-		waitForEndpoint(t, ipc, 4*time.Second)
-		testAttachWelcome(t, geth, "ipc:"+ipc, ipcAPIs)
-	})
-	t.Run("http", func(t *testing.T) {
-		endpoint := "http://127.0.0.1:" + httpPort
-		waitForEndpoint(t, endpoint, 4*time.Second)
-		testAttachWelcome(t, geth, endpoint, httpAPIs)
-	})
-	t.Run("ws", func(t *testing.T) {
-		endpoint := "ws://127.0.0.1:" + wsPort
-		waitForEndpoint(t, endpoint, 4*time.Second)
-		testAttachWelcome(t, geth, endpoint, httpAPIs)
-	})
+		"--ws", "--ws.port", wsPort,
+	)
+	t.Run(
+		"ipc", func(t *testing.T) {
+			waitForEndpoint(t, ipc, 4*time.Second)
+			testAttachWelcome(t, geth, "ipc:"+ipc, ipcAPIs)
+		},
+	)
+	t.Run(
+		"http", func(t *testing.T) {
+			endpoint := "http://127.0.0.1:" + httpPort
+			waitForEndpoint(t, endpoint, 4*time.Second)
+			testAttachWelcome(t, geth, endpoint, httpAPIs)
+		},
+	)
+	t.Run(
+		"ws", func(t *testing.T) {
+			endpoint := "ws://127.0.0.1:" + wsPort
+			waitForEndpoint(t, endpoint, 4*time.Second)
+			testAttachWelcome(t, geth, endpoint, httpAPIs)
+		},
+	)
 	geth.Kill()
 }
 
@@ -130,15 +144,18 @@ func testAttachWelcome(t *testing.T, geth *testgeth, endpoint, apis string) {
 	attach.SetTemplateFunc("goarch", func() string { return runtime.GOARCH })
 	attach.SetTemplateFunc("gover", runtime.Version)
 	attach.SetTemplateFunc("gethver", func() string { return params.VersionWithCommit("", "") })
-	attach.SetTemplateFunc("niltime", func() string {
-		return time.Unix(1695902100, 0).Format("Mon Jan 02 2006 15:04:05 GMT-0700 (MST)")
-	})
+	attach.SetTemplateFunc(
+		"niltime", func() string {
+			return time.Unix(1695902100, 0).Format("Mon Jan 02 2006 15:04:05 GMT-0700 (MST)")
+		},
+	)
 	attach.SetTemplateFunc("ipc", func() bool { return strings.HasPrefix(endpoint, "ipc") })
 	attach.SetTemplateFunc("datadir", func() string { return geth.Datadir })
 	attach.SetTemplateFunc("apis", func() string { return apis })
 
 	// Verify the actual welcome message to the required template
-	attach.Expect(`
+	attach.Expect(
+		`
 Welcome to the Geth JavaScript console!
 
 instance: Geth/v{{gethver}}/{{goos}}-{{goarch}}/{{gover}}
@@ -148,7 +165,8 @@ at block: 0 ({{niltime}}){{if ipc}}
 
 To exit, press ctrl-d or type exit
 > {{.InputLine "exit" }}
-`)
+`,
+	)
 	attach.ExpectExit()
 }
 

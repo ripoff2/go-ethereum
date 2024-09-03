@@ -23,15 +23,15 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/beacon"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/triedb"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus/beacon"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/triedb"
 )
 
 func TestGeneratePOSChain(t *testing.T) {
@@ -82,45 +82,57 @@ func TestGeneratePOSChain(t *testing.T) {
 	}
 	genesis := gspec.MustCommit(gendb, triedb.NewDatabase(gendb, triedb.HashDefaults))
 
-	genchain, genreceipts := GenerateChain(gspec.Config, genesis, beacon.NewFaker(), gendb, 4, func(i int, gen *BlockGen) {
-		gen.SetParentBeaconRoot(common.Hash{byte(i + 1)})
+	genchain, genreceipts := GenerateChain(
+		gspec.Config, genesis, beacon.NewFaker(), gendb, 4, func(i int, gen *BlockGen) {
+			gen.SetParentBeaconRoot(common.Hash{byte(i + 1)})
 
-		// Add value transfer tx.
-		tx := types.MustSignNewTx(key, gen.Signer(), &types.LegacyTx{
-			Nonce:    gen.TxNonce(address),
-			To:       &address,
-			Value:    big.NewInt(1000),
-			Gas:      params.TxGas,
-			GasPrice: new(big.Int).Add(gen.BaseFee(), common.Big1),
-		})
-		gen.AddTx(tx)
+			// Add value transfer tx.
+			tx := types.MustSignNewTx(
+				key, gen.Signer(), &types.LegacyTx{
+					Nonce:    gen.TxNonce(address),
+					To:       &address,
+					Value:    big.NewInt(1000),
+					Gas:      params.TxGas,
+					GasPrice: new(big.Int).Add(gen.BaseFee(), common.Big1),
+				},
+			)
+			gen.AddTx(tx)
 
-		// Add withdrawals.
-		if i == 1 {
-			gen.AddWithdrawal(&types.Withdrawal{
-				Validator: 42,
-				Address:   common.Address{0xee},
-				Amount:    1337,
-			})
-			gen.AddWithdrawal(&types.Withdrawal{
-				Validator: 13,
-				Address:   common.Address{0xee},
-				Amount:    1,
-			})
-		}
-		if i == 3 {
-			gen.AddWithdrawal(&types.Withdrawal{
-				Validator: 42,
-				Address:   common.Address{0xee},
-				Amount:    1337,
-			})
-			gen.AddWithdrawal(&types.Withdrawal{
-				Validator: 13,
-				Address:   common.Address{0xee},
-				Amount:    1,
-			})
-		}
-	})
+			// Add withdrawals.
+			if i == 1 {
+				gen.AddWithdrawal(
+					&types.Withdrawal{
+						Validator: 42,
+						Address:   common.Address{0xee},
+						Amount:    1337,
+					},
+				)
+				gen.AddWithdrawal(
+					&types.Withdrawal{
+						Validator: 13,
+						Address:   common.Address{0xee},
+						Amount:    1,
+					},
+				)
+			}
+			if i == 3 {
+				gen.AddWithdrawal(
+					&types.Withdrawal{
+						Validator: 42,
+						Address:   common.Address{0xee},
+						Amount:    1337,
+					},
+				)
+				gen.AddWithdrawal(
+					&types.Withdrawal{
+						Validator: 13,
+						Address:   common.Address{0xee},
+						Amount:    1,
+					},
+				)
+			}
+		},
+	)
 
 	// Import the chain. This runs all block validation rules.
 	blockchain, _ := NewBlockChain(db, nil, gspec, nil, beacon.NewFaker(), vm.Config{}, nil, nil)
@@ -158,7 +170,10 @@ func TestGeneratePOSChain(t *testing.T) {
 		}
 		blockchainReceipts := blockchain.GetReceiptsByHash(block.Hash())
 		if !reflect.DeepEqual(genBlockReceipts, blockchainReceipts) {
-			t.Fatalf("receipts mismatch\ngenerated: %s\nblockchain: %s", spew.Sdump(genBlockReceipts), spew.Sdump(blockchainReceipts))
+			t.Fatalf(
+				"receipts mismatch\ngenerated: %s\nblockchain: %s", spew.Sdump(genBlockReceipts),
+				spew.Sdump(blockchainReceipts),
+			)
 		}
 
 		// Verify withdrawals.
@@ -167,7 +182,10 @@ func TestGeneratePOSChain(t *testing.T) {
 		}
 		for j := 0; j < len(block.Withdrawals()); j++ {
 			if block.Withdrawals()[j].Index != withdrawalIndex {
-				t.Fatalf("withdrawal index %d does not equal expected index %d", block.Withdrawals()[j].Index, withdrawalIndex)
+				t.Fatalf(
+					"withdrawal index %d does not equal expected index %d", block.Withdrawals()[j].Index,
+					withdrawalIndex,
+				)
 			}
 			withdrawalIndex += 1
 		}
@@ -209,36 +227,52 @@ func ExampleGenerateChain() {
 	// each block and adds different features to gen based on the
 	// block index.
 	signer := types.HomesteadSigner{}
-	chain, _ := GenerateChain(gspec.Config, genesis, ethash.NewFaker(), genDb, 5, func(i int, gen *BlockGen) {
-		switch i {
-		case 0:
-			// In block 1, addr1 sends addr2 some ether.
-			tx, _ := types.SignTx(types.NewTransaction(gen.TxNonce(addr1), addr2, big.NewInt(10000), params.TxGas, nil, nil), signer, key1)
-			gen.AddTx(tx)
-		case 1:
-			// In block 2, addr1 sends some more ether to addr2.
-			// addr2 passes it on to addr3.
-			tx1, _ := types.SignTx(types.NewTransaction(gen.TxNonce(addr1), addr2, big.NewInt(1000), params.TxGas, nil, nil), signer, key1)
-			tx2, _ := types.SignTx(types.NewTransaction(gen.TxNonce(addr2), addr3, big.NewInt(1000), params.TxGas, nil, nil), signer, key2)
-			gen.AddTx(tx1)
-			gen.AddTx(tx2)
-		case 2:
-			// Block 3 is empty but was mined by addr3.
-			gen.SetCoinbase(addr3)
-			gen.SetExtra([]byte("yeehaw"))
-		case 3:
-			// Block 4 includes blocks 2 and 3 as uncle headers (with modified extra data).
-			b2 := gen.PrevBlock(1).Header()
-			b2.Extra = []byte("foo")
-			gen.AddUncle(b2)
-			b3 := gen.PrevBlock(2).Header()
-			b3.Extra = []byte("foo")
-			gen.AddUncle(b3)
-		}
-	})
+	chain, _ := GenerateChain(
+		gspec.Config, genesis, ethash.NewFaker(), genDb, 5, func(i int, gen *BlockGen) {
+			switch i {
+			case 0:
+				// In block 1, addr1 sends addr2 some ether.
+				tx, _ := types.SignTx(
+					types.NewTransaction(
+						gen.TxNonce(addr1), addr2, big.NewInt(10000), params.TxGas, nil, nil,
+					), signer, key1,
+				)
+				gen.AddTx(tx)
+			case 1:
+				// In block 2, addr1 sends some more ether to addr2.
+				// addr2 passes it on to addr3.
+				tx1, _ := types.SignTx(
+					types.NewTransaction(
+						gen.TxNonce(addr1), addr2, big.NewInt(1000), params.TxGas, nil, nil,
+					), signer, key1,
+				)
+				tx2, _ := types.SignTx(
+					types.NewTransaction(
+						gen.TxNonce(addr2), addr3, big.NewInt(1000), params.TxGas, nil, nil,
+					), signer, key2,
+				)
+				gen.AddTx(tx1)
+				gen.AddTx(tx2)
+			case 2:
+				// Block 3 is empty but was mined by addr3.
+				gen.SetCoinbase(addr3)
+				gen.SetExtra([]byte("yeehaw"))
+			case 3:
+				// Block 4 includes blocks 2 and 3 as uncle headers (with modified extra data).
+				b2 := gen.PrevBlock(1).Header()
+				b2.Extra = []byte("foo")
+				gen.AddUncle(b2)
+				b3 := gen.PrevBlock(2).Header()
+				b3.Extra = []byte("foo")
+				gen.AddUncle(b3)
+			}
+		},
+	)
 
 	// Import the chain. This runs all block validation rules.
-	blockchain, _ := NewBlockChain(db, DefaultCacheConfigWithScheme(rawdb.HashScheme), gspec, nil, ethash.NewFaker(), vm.Config{}, nil, nil)
+	blockchain, _ := NewBlockChain(
+		db, DefaultCacheConfigWithScheme(rawdb.HashScheme), gspec, nil, ethash.NewFaker(), vm.Config{}, nil, nil,
+	)
 	defer blockchain.Stop()
 
 	if i, err := blockchain.InsertChain(chain); err != nil {

@@ -20,9 +20,9 @@ package ethash
 import (
 	"time"
 
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum/consensus"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 // Ethash is a consensus engine based on proof-of-work implementing the ethash
@@ -80,6 +80,8 @@ func (ethash *Ethash) APIs(chain consensus.ChainHeaderReader) []rpc.API {
 // Seal generates a new sealing request for the given input block and pushes
 // the result into the given channel. For the ethash engine, this method will
 // just panic as sealing is not supported anymore.
-func (ethash *Ethash) Seal(chain consensus.ChainHeaderReader, block *types.Block, results chan<- *types.Block, stop <-chan struct{}) error {
+func (ethash *Ethash) Seal(
+	chain consensus.ChainHeaderReader, block *types.Block, results chan<- *types.Block, stop <-chan struct{},
+) error {
 	panic("ethash (pow) sealing not supported any more")
 }

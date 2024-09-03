@@ -19,10 +19,10 @@ package shutdowncheck
 import (
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // ShutdownTracker is a service that reports previous unclean shutdowns
@@ -54,8 +54,10 @@ func (t *ShutdownTracker) MarkStartup() {
 		}
 		for _, tstamp := range uncleanShutdowns {
 			t := time.Unix(int64(tstamp), 0)
-			log.Warn("Unclean shutdown detected", "booted", t,
-				"age", common.PrettyAge(t))
+			log.Warn(
+				"Unclean shutdown detected", "booted", t,
+				"age", common.PrettyAge(t),
+			)
 		}
 	}
 }

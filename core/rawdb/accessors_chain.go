@@ -23,27 +23,29 @@ import (
 	"math/big"
 	"slices"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/misc/eip4844"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus/misc/eip4844"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 // ReadCanonicalHash retrieves the hash assigned to a canonical block number.
 func ReadCanonicalHash(db ethdb.Reader, number uint64) common.Hash {
 	var data []byte
-	db.ReadAncients(func(reader ethdb.AncientReaderOp) error {
-		data, _ = reader.Ancient(ChainFreezerHashTable, number)
-		if len(data) == 0 {
-			// Get it by hash from leveldb
-			data, _ = db.Get(headerHashKey(number))
-		}
-		return nil
-	})
+	db.ReadAncients(
+		func(reader ethdb.AncientReaderOp) error {
+			data, _ = reader.Ancient(ChainFreezerHashTable, number)
+			if len(data) == 0 {
+				// Get it by hash from leveldb
+				data, _ = db.Get(headerHashKey(number))
+			}
+			return nil
+		},
+	)
 	return common.BytesToHash(data)
 }
 
@@ -335,18 +337,20 @@ func ReadHeaderRange(db ethdb.Reader, number uint64, count uint64) []rlp.RawValu
 // ReadHeaderRLP retrieves a block header in its raw RLP database encoding.
 func ReadHeaderRLP(db ethdb.Reader, hash common.Hash, number uint64) rlp.RawValue {
 	var data []byte
-	db.ReadAncients(func(reader ethdb.AncientReaderOp) error {
-		// First try to look up the data in ancient database. Extra hash
-		// comparison is necessary since ancient database only maintains
-		// the canonical data.
-		data, _ = reader.Ancient(ChainFreezerHeaderTable, number)
-		if len(data) > 0 && crypto.Keccak256Hash(data) == hash {
+	db.ReadAncients(
+		func(reader ethdb.AncientReaderOp) error {
+			// First try to look up the data in ancient database. Extra hash
+			// comparison is necessary since ancient database only maintains
+			// the canonical data.
+			data, _ = reader.Ancient(ChainFreezerHeaderTable, number)
+			if len(data) > 0 && crypto.Keccak256Hash(data) == hash {
+				return nil
+			}
+			// If not, try reading from leveldb
+			data, _ = db.Get(headerKey(number, hash))
 			return nil
-		}
-		// If not, try reading from leveldb
-		data, _ = db.Get(headerKey(number, hash))
-		return nil
-	})
+		},
+	)
 	return data
 }
 
@@ -428,16 +432,18 @@ func ReadBodyRLP(db ethdb.Reader, hash common.Hash, number uint64) rlp.RawValue 
 	// comparison is necessary since ancient database only maintains
 	// the canonical data.
 	var data []byte
-	db.ReadAncients(func(reader ethdb.AncientReaderOp) error {
-		// Check if the data is in ancients
-		if isCanon(reader, number, hash) {
-			data, _ = reader.Ancient(ChainFreezerBodiesTable, number)
+	db.ReadAncients(
+		func(reader ethdb.AncientReaderOp) error {
+			// Check if the data is in ancients
+			if isCanon(reader, number, hash) {
+				data, _ = reader.Ancient(ChainFreezerBodiesTable, number)
+				return nil
+			}
+			// If not, try reading from leveldb
+			data, _ = db.Get(blockBodyKey(number, hash))
 			return nil
-		}
-		// If not, try reading from leveldb
-		data, _ = db.Get(blockBodyKey(number, hash))
-		return nil
-	})
+		},
+	)
 	return data
 }
 
@@ -445,18 +451,20 @@ func ReadBodyRLP(db ethdb.Reader, hash common.Hash, number uint64) rlp.RawValue 
 // block at number, in RLP encoding.
 func ReadCanonicalBodyRLP(db ethdb.Reader, number uint64) rlp.RawValue {
 	var data []byte
-	db.ReadAncients(func(reader ethdb.AncientReaderOp) error {
-		data, _ = reader.Ancient(ChainFreezerBodiesTable, number)
-		if len(data) > 0 {
+	db.ReadAncients(
+		func(reader ethdb.AncientReaderOp) error {
+			data, _ = reader.Ancient(ChainFreezerBodiesTable, number)
+			if len(data) > 0 {
+				return nil
+			}
+			// Block is not in ancients, read from leveldb by hash and number.
+			// Note: ReadCanonicalHash cannot be used here because it also
+			// calls ReadAncients internally.
+			hash, _ := db.Get(headerHashKey(number))
+			data, _ = db.Get(blockBodyKey(number, common.BytesToHash(hash)))
 			return nil
-		}
-		// Block is not in ancients, read from leveldb by hash and number.
-		// Note: ReadCanonicalHash cannot be used here because it also
-		// calls ReadAncients internally.
-		hash, _ := db.Get(headerHashKey(number))
-		data, _ = db.Get(blockBodyKey(number, common.BytesToHash(hash)))
-		return nil
-	})
+		},
+	)
 	return data
 }
 
@@ -511,16 +519,18 @@ func DeleteBody(db ethdb.KeyValueWriter, hash common.Hash, number uint64) {
 // ReadTdRLP retrieves a block's total difficulty corresponding to the hash in RLP encoding.
 func ReadTdRLP(db ethdb.Reader, hash common.Hash, number uint64) rlp.RawValue {
 	var data []byte
-	db.ReadAncients(func(reader ethdb.AncientReaderOp) error {
-		// Check if the data is in ancients
-		if isCanon(reader, number, hash) {
-			data, _ = reader.Ancient(ChainFreezerDifficultyTable, number)
+	db.ReadAncients(
+		func(reader ethdb.AncientReaderOp) error {
+			// Check if the data is in ancients
+			if isCanon(reader, number, hash) {
+				data, _ = reader.Ancient(ChainFreezerDifficultyTable, number)
+				return nil
+			}
+			// If not, try reading from leveldb
+			data, _ = db.Get(headerTDKey(number, hash))
 			return nil
-		}
-		// If not, try reading from leveldb
-		data, _ = db.Get(headerTDKey(number, hash))
-		return nil
-	})
+		},
+	)
 	return data
 }
 
@@ -571,16 +581,18 @@ func HasReceipts(db ethdb.Reader, hash common.Hash, number uint64) bool {
 // ReadReceiptsRLP retrieves all the transaction receipts belonging to a block in RLP encoding.
 func ReadReceiptsRLP(db ethdb.Reader, hash common.Hash, number uint64) rlp.RawValue {
 	var data []byte
-	db.ReadAncients(func(reader ethdb.AncientReaderOp) error {
-		// Check if the data is in ancients
-		if isCanon(reader, number, hash) {
-			data, _ = reader.Ancient(ChainFreezerReceiptTable, number)
+	db.ReadAncients(
+		func(reader ethdb.AncientReaderOp) error {
+			// Check if the data is in ancients
+			if isCanon(reader, number, hash) {
+				data, _ = reader.Ancient(ChainFreezerReceiptTable, number)
+				return nil
+			}
+			// If not, try reading from leveldb
+			data, _ = db.Get(blockReceiptsKey(number, hash))
 			return nil
-		}
-		// If not, try reading from leveldb
-		data, _ = db.Get(blockReceiptsKey(number, hash))
-		return nil
-	})
+		},
+	)
 	return data
 }
 
@@ -613,7 +625,9 @@ func ReadRawReceipts(db ethdb.Reader, hash common.Hash, number uint64) types.Rec
 // The current implementation populates these metadata fields by reading the receipts'
 // corresponding block body, so if the block body is not found it will return nil even
 // if the receipt itself is stored.
-func ReadReceipts(db ethdb.Reader, hash common.Hash, number uint64, time uint64, config *params.ChainConfig) types.Receipts {
+func ReadReceipts(
+	db ethdb.Reader, hash common.Hash, number uint64, time uint64, config *params.ChainConfig,
+) types.Receipts {
 	// We're deriving many fields from the block body, retrieve beside the receipt
 	receipts := ReadRawReceipts(db, hash, number)
 	if receipts == nil {
@@ -741,31 +755,37 @@ func WriteBlock(db ethdb.KeyValueWriter, block *types.Block) {
 }
 
 // WriteAncientBlocks writes entire block data into ancient store and returns the total written size.
-func WriteAncientBlocks(db ethdb.AncientWriter, blocks []*types.Block, receipts []types.Receipts, td *big.Int) (int64, error) {
+func WriteAncientBlocks(db ethdb.AncientWriter, blocks []*types.Block, receipts []types.Receipts, td *big.Int) (
+	int64, error,
+) {
 	var (
 		tdSum      = new(big.Int).Set(td)
 		stReceipts []*types.ReceiptForStorage
 	)
-	return db.ModifyAncients(func(op ethdb.AncientWriteOp) error {
-		for i, block := range blocks {
-			// Convert receipts to storage format and sum up total difficulty.
-			stReceipts = stReceipts[:0]
-			for _, receipt := range receipts[i] {
-				stReceipts = append(stReceipts, (*types.ReceiptForStorage)(receipt))
+	return db.ModifyAncients(
+		func(op ethdb.AncientWriteOp) error {
+			for i, block := range blocks {
+				// Convert receipts to storage format and sum up total difficulty.
+				stReceipts = stReceipts[:0]
+				for _, receipt := range receipts[i] {
+					stReceipts = append(stReceipts, (*types.ReceiptForStorage)(receipt))
+				}
+				header := block.Header()
+				if i > 0 {
+					tdSum.Add(tdSum, header.Difficulty)
+				}
+				if err := writeAncientBlock(op, block, header, stReceipts, tdSum); err != nil {
+					return err
+				}
 			}
-			header := block.Header()
-			if i > 0 {
-				tdSum.Add(tdSum, header.Difficulty)
-			}
-			if err := writeAncientBlock(op, block, header, stReceipts, tdSum); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+			return nil
+		},
+	)
 }
 
-func writeAncientBlock(op ethdb.AncientWriteOp, block *types.Block, header *types.Header, receipts []*types.ReceiptForStorage, td *big.Int) error {
+func writeAncientBlock(
+	op ethdb.AncientWriteOp, block *types.Block, header *types.Header, receipts []*types.ReceiptForStorage, td *big.Int,
+) error {
 	num := block.NumberU64()
 	if err := op.AppendRaw(ChainFreezerHashTable, num, block.Hash().Bytes()); err != nil {
 		return fmt.Errorf("can't add block %d hash: %v", num, err)
@@ -872,14 +892,18 @@ func WriteBadBlock(db ethdb.KeyValueStore, block *types.Block) {
 			return
 		}
 	}
-	badBlocks = append(badBlocks, &badBlock{
-		Header: block.Header(),
-		Body:   block.Body(),
-	})
-	slices.SortFunc(badBlocks, func(a, b *badBlock) int {
-		// Note: sorting in descending number order.
-		return -a.Header.Number.Cmp(b.Header.Number)
-	})
+	badBlocks = append(
+		badBlocks, &badBlock{
+			Header: block.Header(),
+			Body:   block.Body(),
+		},
+	)
+	slices.SortFunc(
+		badBlocks, func(a, b *badBlock) int {
+			// Note: sorting in descending number order.
+			return -a.Header.Number.Cmp(b.Header.Number)
+		},
+	)
 	if len(badBlocks) > badBlockToKeep {
 		badBlocks = badBlocks[:badBlockToKeep]
 	}

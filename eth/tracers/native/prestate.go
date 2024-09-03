@@ -22,15 +22,15 @@ import (
 	"math/big"
 	"sync/atomic"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/eth/tracers/internal"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/eth/tracers/internal"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 //go:generate go run github.com/fjl/gencodec -type account -field-override accountMarshaling -out gen_account_json.go
@@ -100,7 +100,9 @@ func newPrestateTracer(ctx *tracers.Context, cfg json.RawMessage) (*tracers.Trac
 }
 
 // OnOpcode implements the EVMLogger interface to trace a single step of VM execution.
-func (t *prestateTracer) OnOpcode(pc uint64, opcode byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error) {
+func (t *prestateTracer) OnOpcode(
+	pc uint64, opcode byte, gas, cost uint64, scope tracing.OpContext, rData []byte, depth int, err error,
+) {
 	if err != nil {
 		return
 	}
@@ -135,7 +137,9 @@ func (t *prestateTracer) OnOpcode(pc uint64, opcode byte, gas, cost uint64, scop
 		size := stackData[stackLen-3]
 		init, err := internal.GetMemoryCopyPadded(scope.MemoryData(), int64(offset.Uint64()), int64(size.Uint64()))
 		if err != nil {
-			log.Warn("failed to copy CREATE2 input", "err", err, "tracer", "prestateTracer", "offset", offset, "size", size)
+			log.Warn(
+				"failed to copy CREATE2 input", "err", err, "tracer", "prestateTracer", "offset", offset, "size", size,
+			)
 			return
 		}
 		inithash := crypto.Keccak256(init)
@@ -182,10 +186,12 @@ func (t *prestateTracer) GetResult() (json.RawMessage, error) {
 	var res []byte
 	var err error
 	if t.config.DiffMode {
-		res, err = json.Marshal(struct {
-			Post stateMap `json:"post"`
-			Pre  stateMap `json:"pre"`
-		}{t.post, t.pre})
+		res, err = json.Marshal(
+			struct {
+				Post stateMap `json:"post"`
+				Pre  stateMap `json:"pre"`
+			}{t.post, t.pre},
+		)
 	} else {
 		res, err = json.Marshal(t.pre)
 	}

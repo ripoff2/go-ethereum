@@ -21,12 +21,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/prque"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/prque"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 // InitDatabaseFromFreezer reinitializes an empty database from a previous batch
@@ -69,7 +69,10 @@ func InitDatabaseFromFreezer(db ethdb.Database) {
 		i += uint64(len(data))
 		// If we've spent too much time already, notify the user of what we're doing
 		if time.Since(logged) > 8*time.Second {
-			log.Info("Initializing database from freezer", "total", frozen, "number", i, "hash", hash, "elapsed", common.PrettyDuration(time.Since(start)))
+			log.Info(
+				"Initializing database from freezer", "total", frozen, "number", i, "hash", hash, "elapsed",
+				common.PrettyDuration(time.Since(start)),
+			)
 			logged = time.Now()
 		}
 	}
@@ -92,7 +95,9 @@ type blockTxHashes struct {
 // number(s) given, and yields the hashes on a channel. If there is a signal
 // received from interrupt channel, the iteration will be aborted and result
 // channel will be closed.
-func iterateTransactions(db ethdb.Database, from uint64, to uint64, reverse bool, interrupt chan struct{}) chan *blockTxHashes {
+func iterateTransactions(
+	db ethdb.Database, from uint64, to uint64, reverse bool, interrupt chan struct{},
+) chan *blockTxHashes {
 	// One thread sequentially reads data from db
 	type numberRlp struct {
 		number uint64
@@ -178,7 +183,9 @@ func iterateTransactions(db ethdb.Database, from uint64, to uint64, reverse bool
 //
 // There is a passed channel, the whole procedure will be interrupted if any
 // signal received.
-func indexTransactions(db ethdb.Database, from uint64, to uint64, interrupt chan struct{}, hook func(uint64) bool, report bool) {
+func indexTransactions(
+	db ethdb.Database, from uint64, to uint64, interrupt chan struct{}, hook func(uint64) bool, report bool,
+) {
 	// short circuit for invalid range
 	if from >= to {
 		return
@@ -227,7 +234,10 @@ func indexTransactions(db ethdb.Database, from uint64, to uint64, interrupt chan
 			}
 			// If we've spent too much time already, notify the user of what we're doing
 			if time.Since(logged) > 8*time.Second {
-				log.Info("Indexing transactions", "blocks", blocks, "txs", txs, "tail", lastNum, "total", to-from, "elapsed", common.PrettyDuration(time.Since(start)))
+				log.Info(
+					"Indexing transactions", "blocks", blocks, "txs", txs, "tail", lastNum, "total", to-from, "elapsed",
+					common.PrettyDuration(time.Since(start)),
+				)
 				logged = time.Now()
 			}
 		}
@@ -246,9 +256,15 @@ func indexTransactions(db ethdb.Database, from uint64, to uint64, interrupt chan
 	}
 	select {
 	case <-interrupt:
-		logger("Transaction indexing interrupted", "blocks", blocks, "txs", txs, "tail", lastNum, "elapsed", common.PrettyDuration(time.Since(start)))
+		logger(
+			"Transaction indexing interrupted", "blocks", blocks, "txs", txs, "tail", lastNum, "elapsed",
+			common.PrettyDuration(time.Since(start)),
+		)
 	default:
-		logger("Indexed transactions", "blocks", blocks, "txs", txs, "tail", lastNum, "elapsed", common.PrettyDuration(time.Since(start)))
+		logger(
+			"Indexed transactions", "blocks", blocks, "txs", txs, "tail", lastNum, "elapsed",
+			common.PrettyDuration(time.Since(start)),
+		)
 	}
 }
 
@@ -266,7 +282,9 @@ func IndexTransactions(db ethdb.Database, from uint64, to uint64, interrupt chan
 }
 
 // indexTransactionsForTesting is the internal debug version with an additional hook.
-func indexTransactionsForTesting(db ethdb.Database, from uint64, to uint64, interrupt chan struct{}, hook func(uint64) bool) {
+func indexTransactionsForTesting(
+	db ethdb.Database, from uint64, to uint64, interrupt chan struct{}, hook func(uint64) bool,
+) {
 	indexTransactions(db, from, to, interrupt, hook, false)
 }
 
@@ -274,7 +292,9 @@ func indexTransactionsForTesting(db ethdb.Database, from uint64, to uint64, inte
 //
 // There is a passed channel, the whole procedure will be interrupted if any
 // signal received.
-func unindexTransactions(db ethdb.Database, from uint64, to uint64, interrupt chan struct{}, hook func(uint64) bool, report bool) {
+func unindexTransactions(
+	db ethdb.Database, from uint64, to uint64, interrupt chan struct{}, hook func(uint64) bool, report bool,
+) {
 	// short circuit for invalid range
 	if from >= to {
 		return
@@ -323,7 +343,10 @@ func unindexTransactions(db ethdb.Database, from uint64, to uint64, interrupt ch
 			}
 			// If we've spent too much time already, notify the user of what we're doing
 			if time.Since(logged) > 8*time.Second {
-				log.Info("Unindexing transactions", "blocks", blocks, "txs", txs, "total", to-from, "elapsed", common.PrettyDuration(time.Since(start)))
+				log.Info(
+					"Unindexing transactions", "blocks", blocks, "txs", txs, "total", to-from, "elapsed",
+					common.PrettyDuration(time.Since(start)),
+				)
 				logged = time.Now()
 			}
 		}
@@ -342,9 +365,15 @@ func unindexTransactions(db ethdb.Database, from uint64, to uint64, interrupt ch
 	}
 	select {
 	case <-interrupt:
-		logger("Transaction unindexing interrupted", "blocks", blocks, "txs", txs, "tail", to, "elapsed", common.PrettyDuration(time.Since(start)))
+		logger(
+			"Transaction unindexing interrupted", "blocks", blocks, "txs", txs, "tail", to, "elapsed",
+			common.PrettyDuration(time.Since(start)),
+		)
 	default:
-		logger("Unindexed transactions", "blocks", blocks, "txs", txs, "tail", to, "elapsed", common.PrettyDuration(time.Since(start)))
+		logger(
+			"Unindexed transactions", "blocks", blocks, "txs", txs, "tail", to, "elapsed",
+			common.PrettyDuration(time.Since(start)),
+		)
 	}
 }
 
@@ -358,6 +387,8 @@ func UnindexTransactions(db ethdb.Database, from uint64, to uint64, interrupt ch
 }
 
 // unindexTransactionsForTesting is the internal debug version with an additional hook.
-func unindexTransactionsForTesting(db ethdb.Database, from uint64, to uint64, interrupt chan struct{}, hook func(uint64) bool) {
+func unindexTransactionsForTesting(
+	db ethdb.Database, from uint64, to uint64, interrupt chan struct{}, hook func(uint64) bool,
+) {
 	unindexTransactions(db, from, to, interrupt, hook, false)
 }

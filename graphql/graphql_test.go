@@ -27,20 +27,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/consensus/beacon"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/eth"
-	"github.com/ethereum/go-ethereum/eth/ethconfig"
-	"github.com/ethereum/go-ethereum/eth/filters"
-	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus"
+	"github.com/ripoff2/go-ethereum/consensus/beacon"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/eth"
+	"github.com/ripoff2/go-ethereum/eth/ethconfig"
+	"github.com/ripoff2/go-ethereum/eth/filters"
+	"github.com/ripoff2/go-ethereum/node"
+	"github.com/ripoff2/go-ethereum/params"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -81,12 +81,14 @@ func TestGraphQLBlockSerialization(t *testing.T) {
 		want string
 		code int
 	}{
-		{ // Should return latest block
+		{
+			// Should return latest block
 			body: `{"query": "{block{number}}","variables": null}`,
 			want: `{"data":{"block":{"number":"0xa"}}}`,
 			code: 200,
 		},
-		{ // Should return info about latest block
+		{
+			// Should return info about latest block
 			body: `{"query": "{block{number,gasUsed,gasLimit}}","variables": null}`,
 			want: `{"data":{"block":{"number":"0xa","gasUsed":"0x0","gasLimit":"0xaf79e0"}}}`,
 			code: 200,
@@ -155,7 +157,9 @@ func TestGraphQLBlockSerialization(t *testing.T) {
 			code: 400,
 		},
 	} {
-		resp, err := http.Post(fmt.Sprintf("%s/graphql", stack.HTTPEndpoint()), "application/json", strings.NewReader(tt.body))
+		resp, err := http.Post(
+			fmt.Sprintf("%s/graphql", stack.HTTPEndpoint()), "application/json", strings.NewReader(tt.body),
+		)
 		if err != nil {
 			t.Fatalf("could not post: %v", err)
 		}
@@ -202,30 +206,38 @@ func TestGraphQLBlockSerializationEIP2718(t *testing.T) {
 		BaseFee: big.NewInt(params.InitialBaseFee),
 	}
 	signer := types.LatestSigner(genesis.Config)
-	newGQLService(t, stack, false, genesis, 1, func(i int, gen *core.BlockGen) {
-		gen.SetCoinbase(common.Address{1})
-		tx, _ := types.SignNewTx(key, signer, &types.LegacyTx{
-			Nonce:    uint64(0),
-			To:       &dad,
-			Value:    big.NewInt(100),
-			Gas:      50000,
-			GasPrice: big.NewInt(params.InitialBaseFee),
-		})
-		gen.AddTx(tx)
-		tx, _ = types.SignNewTx(key, signer, &types.AccessListTx{
-			ChainID:  genesis.Config.ChainID,
-			Nonce:    uint64(1),
-			To:       &dad,
-			Gas:      30000,
-			GasPrice: big.NewInt(params.InitialBaseFee),
-			Value:    big.NewInt(50),
-			AccessList: types.AccessList{{
-				Address:     dad,
-				StorageKeys: []common.Hash{{0}},
-			}},
-		})
-		gen.AddTx(tx)
-	})
+	newGQLService(
+		t, stack, false, genesis, 1, func(i int, gen *core.BlockGen) {
+			gen.SetCoinbase(common.Address{1})
+			tx, _ := types.SignNewTx(
+				key, signer, &types.LegacyTx{
+					Nonce:    uint64(0),
+					To:       &dad,
+					Value:    big.NewInt(100),
+					Gas:      50000,
+					GasPrice: big.NewInt(params.InitialBaseFee),
+				},
+			)
+			gen.AddTx(tx)
+			tx, _ = types.SignNewTx(
+				key, signer, &types.AccessListTx{
+					ChainID:  genesis.Config.ChainID,
+					Nonce:    uint64(1),
+					To:       &dad,
+					Gas:      30000,
+					GasPrice: big.NewInt(params.InitialBaseFee),
+					Value:    big.NewInt(50),
+					AccessList: types.AccessList{
+						{
+							Address:     dad,
+							StorageKeys: []common.Hash{{0}},
+						},
+					},
+				},
+			)
+			gen.AddTx(tx)
+		},
+	)
 	// start node
 	if err := stack.Start(); err != nil {
 		t.Fatalf("could not start node: %v", err)
@@ -242,7 +254,9 @@ func TestGraphQLBlockSerializationEIP2718(t *testing.T) {
 			code: 200,
 		},
 	} {
-		resp, err := http.Post(fmt.Sprintf("%s/graphql", stack.HTTPEndpoint()), "application/json", strings.NewReader(tt.body))
+		resp, err := http.Post(
+			fmt.Sprintf("%s/graphql", stack.HTTPEndpoint()), "application/json", strings.NewReader(tt.body),
+		)
 		if err != nil {
 			t.Fatalf("could not post: %v", err)
 		}
@@ -303,14 +317,24 @@ func TestGraphQLConcurrentResolvers(t *testing.T) {
 	defer stack.Close()
 
 	var tx *types.Transaction
-	handler, chain := newGQLService(t, stack, false, genesis, 1, func(i int, gen *core.BlockGen) {
-		tx, _ = types.SignNewTx(key, signer, &types.LegacyTx{To: &dad, Gas: 100000, GasPrice: big.NewInt(params.InitialBaseFee)})
-		gen.AddTx(tx)
-		tx, _ = types.SignNewTx(key, signer, &types.LegacyTx{To: &dad, Nonce: 1, Gas: 100000, GasPrice: big.NewInt(params.InitialBaseFee)})
-		gen.AddTx(tx)
-		tx, _ = types.SignNewTx(key, signer, &types.LegacyTx{To: &dad, Nonce: 2, Gas: 100000, GasPrice: big.NewInt(params.InitialBaseFee)})
-		gen.AddTx(tx)
-	})
+	handler, chain := newGQLService(
+		t, stack, false, genesis, 1, func(i int, gen *core.BlockGen) {
+			tx, _ = types.SignNewTx(
+				key, signer, &types.LegacyTx{To: &dad, Gas: 100000, GasPrice: big.NewInt(params.InitialBaseFee)},
+			)
+			gen.AddTx(tx)
+			tx, _ = types.SignNewTx(
+				key, signer,
+				&types.LegacyTx{To: &dad, Nonce: 1, Gas: 100000, GasPrice: big.NewInt(params.InitialBaseFee)},
+			)
+			gen.AddTx(tx)
+			tx, _ = types.SignNewTx(
+				key, signer,
+				&types.LegacyTx{To: &dad, Nonce: 2, Gas: 100000, GasPrice: big.NewInt(params.InitialBaseFee)},
+			)
+			gen.AddTx(tx)
+		},
+	)
 	// start node
 	if err := stack.Start(); err != nil {
 		t.Fatalf("could not start node: %v", err)
@@ -323,7 +347,10 @@ func TestGraphQLConcurrentResolvers(t *testing.T) {
 		// Multiple txes race to get/set the block hash.
 		{
 			body: "{block { transactions { logs { account { address } } } } }",
-			want: fmt.Sprintf(`{"block":{"transactions":[{"logs":[{"account":{"address":"%s"}},{"account":{"address":"%s"}}]},{"logs":[{"account":{"address":"%s"}},{"account":{"address":"%s"}}]},{"logs":[{"account":{"address":"%s"}},{"account":{"address":"%s"}}]}]}}`, dadStr, dadStr, dadStr, dadStr, dadStr, dadStr),
+			want: fmt.Sprintf(
+				`{"block":{"transactions":[{"logs":[{"account":{"address":"%s"}},{"account":{"address":"%s"}}]},{"logs":[{"account":{"address":"%s"}},{"account":{"address":"%s"}}]},{"logs":[{"account":{"address":"%s"}},{"account":{"address":"%s"}}]}]}}`,
+				dadStr, dadStr, dadStr, dadStr, dadStr, dadStr,
+			),
 		},
 		// Multiple fields of a tx race to resolve it. Happens in this case
 		// because resolving the tx body belonging to a log is delayed.
@@ -339,12 +366,20 @@ func TestGraphQLConcurrentResolvers(t *testing.T) {
 		// Multiple fields of block race to resolve header and body.
 		{
 			body: "{ block { number hash gasLimit ommerCount transactionCount totalDifficulty } }",
-			want: fmt.Sprintf(`{"block":{"number":"0x1","hash":"%s","gasLimit":"0xaf79e0","ommerCount":"0x0","transactionCount":"0x3","totalDifficulty":"0x200000"}}`, chain[len(chain)-1].Hash()),
+			want: fmt.Sprintf(
+				`{"block":{"number":"0x1","hash":"%s","gasLimit":"0xaf79e0","ommerCount":"0x0","transactionCount":"0x3","totalDifficulty":"0x200000"}}`,
+				chain[len(chain)-1].Hash(),
+			),
 		},
 		// Multiple fields of a block race to resolve the header and body.
 		{
-			body: fmt.Sprintf(`{ transaction(hash: "%s") { block { number hash gasLimit ommerCount transactionCount } } }`, tx.Hash()),
-			want: fmt.Sprintf(`{"transaction":{"block":{"number":"0x1","hash":"%s","gasLimit":"0xaf79e0","ommerCount":"0x0","transactionCount":"0x3"}}}`, chain[len(chain)-1].Hash()),
+			body: fmt.Sprintf(
+				`{ transaction(hash: "%s") { block { number hash gasLimit ommerCount transactionCount } } }`, tx.Hash(),
+			),
+			want: fmt.Sprintf(
+				`{"transaction":{"block":{"number":"0x1","hash":"%s","gasLimit":"0xaf79e0","ommerCount":"0x0","transactionCount":"0x3"}}}`,
+				chain[len(chain)-1].Hash(),
+			),
 		},
 		// Account fields race the resolve the state object.
 		{
@@ -353,7 +388,10 @@ func TestGraphQLConcurrentResolvers(t *testing.T) {
 		},
 		// Test values for a non-existent account.
 		{
-			body: fmt.Sprintf(`{ block { account(address: "%s") { balance transactionCount code } } }`, "0x1111111111111111111111111111111111111111"),
+			body: fmt.Sprintf(
+				`{ block { account(address: "%s") { balance transactionCount code } } }`,
+				"0x1111111111111111111111111111111111111111",
+			),
 			want: `{"block":{"account":{"balance":"0x0","transactionCount":"0x0","code":"0x"}}}`,
 		},
 	} {
@@ -389,15 +427,22 @@ func TestWithdrawals(t *testing.T) {
 	)
 	defer stack.Close()
 
-	handler, _ := newGQLService(t, stack, true, genesis, 1, func(i int, gen *core.BlockGen) {
-		tx, _ := types.SignNewTx(key, signer, &types.LegacyTx{To: &common.Address{}, Gas: 100000, GasPrice: big.NewInt(params.InitialBaseFee)})
-		gen.AddTx(tx)
-		gen.AddWithdrawal(&types.Withdrawal{
-			Validator: 5,
-			Address:   common.Address{},
-			Amount:    10,
-		})
-	})
+	handler, _ := newGQLService(
+		t, stack, true, genesis, 1, func(i int, gen *core.BlockGen) {
+			tx, _ := types.SignNewTx(
+				key, signer,
+				&types.LegacyTx{To: &common.Address{}, Gas: 100000, GasPrice: big.NewInt(params.InitialBaseFee)},
+			)
+			gen.AddTx(tx)
+			gen.AddWithdrawal(
+				&types.Withdrawal{
+					Validator: 5,
+					Address:   common.Address{},
+					Amount:    10,
+				},
+			)
+		},
+	)
 	// start node
 	if err := stack.Start(); err != nil {
 		t.Fatalf("could not start node: %v", err)
@@ -432,20 +477,25 @@ func TestWithdrawals(t *testing.T) {
 }
 
 func createNode(t *testing.T) *node.Node {
-	stack, err := node.New(&node.Config{
-		HTTPHost:     "127.0.0.1",
-		HTTPPort:     0,
-		WSHost:       "127.0.0.1",
-		WSPort:       0,
-		HTTPTimeouts: node.DefaultConfig.HTTPTimeouts,
-	})
+	stack, err := node.New(
+		&node.Config{
+			HTTPHost:     "127.0.0.1",
+			HTTPPort:     0,
+			WSHost:       "127.0.0.1",
+			WSPort:       0,
+			HTTPTimeouts: node.DefaultConfig.HTTPTimeouts,
+		},
+	)
 	if err != nil {
 		t.Fatalf("could not create node: %v", err)
 	}
 	return stack
 }
 
-func newGQLService(t *testing.T, stack *node.Node, shanghai bool, gspec *core.Genesis, genBlocks int, genfunc func(i int, gen *core.BlockGen)) (*handler, []*types.Block) {
+func newGQLService(
+	t *testing.T, stack *node.Node, shanghai bool, gspec *core.Genesis, genBlocks int,
+	genfunc func(i int, gen *core.BlockGen),
+) (*handler, []*types.Block) {
 	ethConf := &ethconfig.Config{
 		Genesis:        gspec,
 		NetworkId:      1337,
@@ -471,8 +521,10 @@ func newGQLService(t *testing.T, stack *node.Node, shanghai bool, gspec *core.Ge
 		t.Fatalf("could not create eth backend: %v", err)
 	}
 	// Create some blocks and import them
-	chain, _ := core.GenerateChain(params.AllEthashProtocolChanges, ethBackend.BlockChain().Genesis(),
-		engine, ethBackend.ChainDb(), genBlocks, genfunc)
+	chain, _ := core.GenerateChain(
+		params.AllEthashProtocolChanges, ethBackend.BlockChain().Genesis(),
+		engine, ethBackend.ChainDb(), genBlocks, genfunc,
+	)
 	_, err = ethBackend.BlockChain().InsertChain(chain)
 	if err != nil {
 		t.Fatalf("could not create import blocks: %v", err)

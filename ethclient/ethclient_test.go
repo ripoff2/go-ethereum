@@ -25,17 +25,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/eth"
-	"github.com/ethereum/go-ethereum/eth/ethconfig"
-	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/consensus/ethash"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/eth"
+	"github.com/ripoff2/go-ethereum/eth/ethconfig"
+	"github.com/ripoff2/go-ethereum/node"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rpc"
 )
 
 // Verify that Client implements the ethereum interfaces.
@@ -163,19 +163,21 @@ func TestToFilterArg(t *testing.T) {
 			blockHashErr,
 		},
 	} {
-		t.Run(testCase.name, func(t *testing.T) {
-			output, err := toFilterArg(testCase.input)
-			if (testCase.err == nil) != (err == nil) {
-				t.Fatalf("expected error %v but got %v", testCase.err, err)
-			}
-			if testCase.err != nil {
-				if testCase.err.Error() != err.Error() {
+		t.Run(
+			testCase.name, func(t *testing.T) {
+				output, err := toFilterArg(testCase.input)
+				if (testCase.err == nil) != (err == nil) {
 					t.Fatalf("expected error %v but got %v", testCase.err, err)
 				}
-			} else if !reflect.DeepEqual(testCase.output, output) {
-				t.Fatalf("expected filter arg %v but got %v", testCase.output, output)
-			}
-		})
+				if testCase.err != nil {
+					if testCase.err.Error() != err.Error() {
+						t.Fatalf("expected error %v but got %v", testCase.err, err)
+					}
+				} else if !reflect.DeepEqual(testCase.output, output) {
+					t.Fatalf("expected filter arg %v but got %v", testCase.output, output)
+				}
+			},
+		)
 	}
 }
 
@@ -193,21 +195,25 @@ var genesis = &core.Genesis{
 	BaseFee:   big.NewInt(params.InitialBaseFee),
 }
 
-var testTx1 = types.MustSignNewTx(testKey, types.LatestSigner(genesis.Config), &types.LegacyTx{
-	Nonce:    0,
-	Value:    big.NewInt(12),
-	GasPrice: big.NewInt(params.InitialBaseFee),
-	Gas:      params.TxGas,
-	To:       &common.Address{2},
-})
+var testTx1 = types.MustSignNewTx(
+	testKey, types.LatestSigner(genesis.Config), &types.LegacyTx{
+		Nonce:    0,
+		Value:    big.NewInt(12),
+		GasPrice: big.NewInt(params.InitialBaseFee),
+		Gas:      params.TxGas,
+		To:       &common.Address{2},
+	},
+)
 
-var testTx2 = types.MustSignNewTx(testKey, types.LatestSigner(genesis.Config), &types.LegacyTx{
-	Nonce:    1,
-	Value:    big.NewInt(8),
-	GasPrice: big.NewInt(params.InitialBaseFee),
-	Gas:      params.TxGas,
-	To:       &common.Address{2},
-})
+var testTx2 = types.MustSignNewTx(
+	testKey, types.LatestSigner(genesis.Config), &types.LegacyTx{
+		Nonce:    1,
+		Value:    big.NewInt(8),
+		GasPrice: big.NewInt(params.InitialBaseFee),
+		Gas:      params.TxGas,
+		To:       &common.Address{2},
+	},
+)
 
 func newTestBackend(t *testing.T) (*node.Node, []*types.Block) {
 	// Generate test chain.
@@ -323,22 +329,24 @@ func testHeader(t *testing.T, chain []*types.Block, client *rpc.Client) {
 		},
 	}
 	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			ec := NewClient(client)
-			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-			defer cancel()
+		t.Run(
+			name, func(t *testing.T) {
+				ec := NewClient(client)
+				ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+				defer cancel()
 
-			got, err := ec.HeaderByNumber(ctx, tt.block)
-			if !errors.Is(err, tt.wantErr) {
-				t.Fatalf("HeaderByNumber(%v) error = %q, want %q", tt.block, err, tt.wantErr)
-			}
-			if got != nil && got.Number != nil && got.Number.Sign() == 0 {
-				got.Number = big.NewInt(0) // hack to make DeepEqual work
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Fatalf("HeaderByNumber(%v) got = %v, want %v", tt.block, got, tt.want)
-			}
-		})
+				got, err := ec.HeaderByNumber(ctx, tt.block)
+				if !errors.Is(err, tt.wantErr) {
+					t.Fatalf("HeaderByNumber(%v) error = %q, want %q", tt.block, err, tt.wantErr)
+				}
+				if got != nil && got.Number != nil && got.Number.Sign() == 0 {
+					got.Number = big.NewInt(0) // hack to make DeepEqual work
+				}
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Fatalf("HeaderByNumber(%v) got = %v, want %v", tt.block, got, tt.want)
+				}
+			},
+		)
 	}
 }
 
@@ -372,19 +380,21 @@ func testBalanceAt(t *testing.T, client *rpc.Client) {
 		},
 	}
 	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			ec := NewClient(client)
-			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-			defer cancel()
+		t.Run(
+			name, func(t *testing.T) {
+				ec := NewClient(client)
+				ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+				defer cancel()
 
-			got, err := ec.BalanceAt(ctx, tt.account, tt.block)
-			if tt.wantErr != nil && (err == nil || err.Error() != tt.wantErr.Error()) {
-				t.Fatalf("BalanceAt(%x, %v) error = %q, want %q", tt.account, tt.block, err, tt.wantErr)
-			}
-			if got.Cmp(tt.want) != 0 {
-				t.Fatalf("BalanceAt(%x, %v) = %v, want %v", tt.account, tt.block, got, tt.want)
-			}
-		})
+				got, err := ec.BalanceAt(ctx, tt.account, tt.block)
+				if tt.wantErr != nil && (err == nil || err.Error() != tt.wantErr.Error()) {
+					t.Fatalf("BalanceAt(%x, %v) error = %q, want %q", tt.account, tt.block, err, tt.wantErr)
+				}
+				if got.Cmp(tt.want) != 0 {
+					t.Fatalf("BalanceAt(%x, %v) = %v, want %v", tt.account, tt.block, got, tt.want)
+				}
+			},
+		)
 	}
 }
 
@@ -464,7 +474,9 @@ func testGetBlock(t *testing.T, client *rpc.Client) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if block.Header().Hash() != header.Hash() {
-		t.Fatalf("HeaderByNumber returned wrong header: want %v got %v", block.Header().Hash().Hex(), header.Hash().Hex())
+		t.Fatalf(
+			"HeaderByNumber returned wrong header: want %v got %v", block.Header().Hash().Hex(), header.Hash().Hex(),
+		)
 	}
 	// Get header by hash
 	headerH, err := ec.HeaderByHash(context.Background(), block.Hash())
@@ -472,7 +484,9 @@ func testGetBlock(t *testing.T, client *rpc.Client) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if block.Header().Hash() != headerH.Hash() {
-		t.Fatalf("HeaderByHash returned wrong header: want %v got %v", block.Header().Hash().Hex(), headerH.Hash().Hex())
+		t.Fatalf(
+			"HeaderByHash returned wrong header: want %v got %v", block.Header().Hash().Hex(), headerH.Hash().Hex(),
+		)
 	}
 }
 
@@ -748,13 +762,15 @@ func sendTransaction(ec *Client) error {
 	}
 
 	signer := types.LatestSignerForChainID(chainID)
-	tx, err := types.SignNewTx(testKey, signer, &types.LegacyTx{
-		Nonce:    nonce,
-		To:       &common.Address{2},
-		Value:    big.NewInt(1),
-		Gas:      22000,
-		GasPrice: big.NewInt(params.InitialBaseFee),
-	})
+	tx, err := types.SignNewTx(
+		testKey, signer, &types.LegacyTx{
+			Nonce:    nonce,
+			To:       &common.Address{2},
+			Value:    big.NewInt(1),
+			Gas:      22000,
+			GasPrice: big.NewInt(params.InitialBaseFee),
+		},
+	)
 	if err != nil {
 		return err
 	}

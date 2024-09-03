@@ -23,13 +23,13 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 // Options are the contextual parameters to execute the requested call.
@@ -98,8 +98,10 @@ func Estimate(ctx context.Context, call *core.Message, opts *Options, gasCap uin
 			if transfer == nil {
 				transfer = new(big.Int)
 			}
-			log.Debug("Gas estimation capped by limited funds", "original", hi, "balance", balance,
-				"sent", transfer, "maxFeePerGas", feeCap, "fundable", allowance)
+			log.Debug(
+				"Gas estimation capped by limited funds", "original", hi, "balance", balance,
+				"sent", transfer, "maxFeePerGas", feeCap, "fundable", allowance,
+			)
 			hi = allowance.Uint64()
 		}
 	}
@@ -195,7 +197,9 @@ func Estimate(ctx context.Context, call *core.Message, opts *Options, gasCap uin
 // returns true if the transaction fails for a reason that might be related to
 // not enough gas. A non-nil error means execution failed due to reasons unrelated
 // to the gas limit.
-func execute(ctx context.Context, call *core.Message, opts *Options, gasLimit uint64) (bool, *core.ExecutionResult, error) {
+func execute(ctx context.Context, call *core.Message, opts *Options, gasLimit uint64) (
+	bool, *core.ExecutionResult, error,
+) {
 	// Configure the call for this specific execution (and revert the change after)
 	defer func(gas uint64) { call.GasLimit = gas }(call.GasLimit)
 	call.GasLimit = gasLimit

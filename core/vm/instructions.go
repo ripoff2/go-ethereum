@@ -19,12 +19,12 @@ package vm
 import (
 	"math"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 func opAdd(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
@@ -723,8 +723,10 @@ func opCreate2(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]
 	scope.Contract.UseGas(gas, interpreter.evm.Config.Tracer, tracing.GasChangeCallContractCreation2)
 	// reuse size int for stackvalue
 	stackvalue := size
-	res, addr, returnGas, suberr := interpreter.evm.Create2(scope.Contract, input, gas,
-		&endowment, &salt)
+	res, addr, returnGas, suberr := interpreter.evm.Create2(
+		scope.Contract, input, gas,
+		&endowment, &salt,
+	)
 	// Push item on the stack based on the returned error.
 	if suberr != nil {
 		stackvalue.Clear()
@@ -902,7 +904,10 @@ func opSelfdestruct(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext
 	interpreter.evm.StateDB.SelfDestruct(scope.Contract.Address())
 	if tracer := interpreter.evm.Config.Tracer; tracer != nil {
 		if tracer.OnEnter != nil {
-			tracer.OnEnter(interpreter.evm.depth, byte(SELFDESTRUCT), scope.Contract.Address(), beneficiary.Bytes20(), []byte{}, 0, balance.ToBig())
+			tracer.OnEnter(
+				interpreter.evm.depth, byte(SELFDESTRUCT), scope.Contract.Address(), beneficiary.Bytes20(), []byte{}, 0,
+				balance.ToBig(),
+			)
 		}
 		if tracer.OnExit != nil {
 			tracer.OnExit(interpreter.evm.depth, []byte{}, 0, nil, false)
@@ -922,7 +927,10 @@ func opSelfdestruct6780(pc *uint64, interpreter *EVMInterpreter, scope *ScopeCon
 	interpreter.evm.StateDB.Selfdestruct6780(scope.Contract.Address())
 	if tracer := interpreter.evm.Config.Tracer; tracer != nil {
 		if tracer.OnEnter != nil {
-			tracer.OnEnter(interpreter.evm.depth, byte(SELFDESTRUCT), scope.Contract.Address(), beneficiary.Bytes20(), []byte{}, 0, balance.ToBig())
+			tracer.OnEnter(
+				interpreter.evm.depth, byte(SELFDESTRUCT), scope.Contract.Address(), beneficiary.Bytes20(), []byte{}, 0,
+				balance.ToBig(),
+			)
 		}
 		if tracer.OnExit != nil {
 			tracer.OnExit(interpreter.evm.depth, []byte{}, 0, nil, false)
@@ -948,14 +956,16 @@ func makeLog(size int) executionFunc {
 		}
 
 		d := scope.Memory.GetCopy(mStart.Uint64(), mSize.Uint64())
-		interpreter.evm.StateDB.AddLog(&types.Log{
-			Address: scope.Contract.Address(),
-			Topics:  topics,
-			Data:    d,
-			// This is a non-consensus field, but assigned here because
-			// core/state doesn't know the current block number.
-			BlockNumber: interpreter.evm.Context.BlockNumber.Uint64(),
-		})
+		interpreter.evm.StateDB.AddLog(
+			&types.Log{
+				Address: scope.Contract.Address(),
+				Topics:  topics,
+				Data:    d,
+				// This is a non-consensus field, but assigned here because
+				// core/state doesn't know the current block number.
+				BlockNumber: interpreter.evm.Context.BlockNumber.Uint64(),
+			},
+		)
 
 		return nil, nil
 	}
@@ -984,11 +994,13 @@ func makePush(size uint64, pushByteSize int) executionFunc {
 			start   = min(codeLen, int(*pc+1))
 			end     = min(codeLen, start+pushByteSize)
 		)
-		scope.Stack.push(new(uint256.Int).SetBytes(
-			common.RightPadBytes(
-				scope.Contract.Code[start:end],
-				pushByteSize,
-			)),
+		scope.Stack.push(
+			new(uint256.Int).SetBytes(
+				common.RightPadBytes(
+					scope.Contract.Code[start:end],
+					pushByteSize,
+				),
+			),
 		)
 
 		*pc += size

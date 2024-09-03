@@ -17,7 +17,7 @@
 package blobpool
 
 import (
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // Config are the configuration parameters of the blob transaction pool.
@@ -43,7 +43,9 @@ func (config *Config) sanitize() Config {
 		conf.Datacap = DefaultConfig.Datacap
 	}
 	if conf.PriceBump < 1 {
-		log.Warn("Sanitizing invalid blobpool price bump", "provided", conf.PriceBump, "updated", DefaultConfig.PriceBump)
+		log.Warn(
+			"Sanitizing invalid blobpool price bump", "provided", conf.PriceBump, "updated", DefaultConfig.PriceBump,
+		)
 		conf.PriceBump = DefaultConfig.PriceBump
 	}
 	return conf

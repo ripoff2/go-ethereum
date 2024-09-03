@@ -24,11 +24,11 @@ import (
 	"net"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/p2p/discover/v5wire"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/p2p/discover/v5wire"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
 )
 
 // readError represents an error during packet reading.
@@ -161,10 +161,12 @@ func (tc *conn) findnode(c net.PacketConn, dists []uint) ([]*enode.Node, error) 
 			}
 		case *v5wire.Ping:
 			// Handle ping from remote.
-			tc.write(c, &v5wire.Pong{
-				ReqID:  resp.ReqID,
-				ENRSeq: tc.localNode.Seq(),
-			}, nil)
+			tc.write(
+				c, &v5wire.Pong{
+					ReqID:  resp.ReqID,
+					ENRSeq: tc.localNode.Seq(),
+				}, nil,
+			)
 		case *v5wire.Nodes:
 			// Got NODES! Check request ID.
 			if !bytes.Equal(resp.ReqID, findnode.ReqID) {

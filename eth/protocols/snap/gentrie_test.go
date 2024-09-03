@@ -22,12 +22,12 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/internal/testrand"
-	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/internal/testrand"
+	"github.com/ripoff2/go-ethereum/trie"
 )
 
 type replayer struct {
@@ -109,7 +109,9 @@ func byteToHex(str []byte) []byte {
 
 // innerNodes returns the internal nodes narrowed by two boundaries along with
 // the leftmost and rightmost sub-trie roots.
-func innerNodes(first, last []byte, includeLeft, includeRight bool, nodes map[string]common.Hash, t *testing.T) (map[string]common.Hash, []byte, []byte) {
+func innerNodes(
+	first, last []byte, includeLeft, includeRight bool, nodes map[string]common.Hash, t *testing.T,
+) (map[string]common.Hash, []byte, []byte) {
 	var (
 		leftRoot  []byte
 		rightRoot []byte
@@ -145,7 +147,9 @@ func innerNodes(first, last []byte, includeLeft, includeRight bool, nodes map[st
 	return inner, leftRoot, rightRoot
 }
 
-func buildPartial(owner common.Hash, db ethdb.KeyValueReader, batch ethdb.Batch, entries []*kv, first, last int) *replayer {
+func buildPartial(
+	owner common.Hash, db ethdb.KeyValueReader, batch ethdb.Batch, entries []*kv, first, last int,
+) *replayer {
 	tr := newPathTrie(owner, first != 0, db, batch)
 	for i := first; i <= last; i++ {
 		tr.update(entries[i].k, entries[i].v)
@@ -173,17 +177,21 @@ func TestPartialGentree(t *testing.T) {
 			} else {
 				val = testrand.Bytes(32)
 			}
-			entries = append(entries, &kv{
-				k: testrand.Bytes(32),
-				v: val,
-			})
+			entries = append(
+				entries, &kv{
+					k: testrand.Bytes(32),
+					v: val,
+				},
+			)
 		}
 		slices.SortFunc(entries, (*kv).cmp)
 
 		nodes := make(map[string]common.Hash)
-		tr := trie.NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
-			nodes[string(path)] = hash
-		})
+		tr := trie.NewStackTrie(
+			func(path []byte, hash common.Hash, blob []byte) {
+				nodes[string(path)] = hash
+			},
+		)
 		for i := 0; i < len(entries); i++ {
 			tr.Update(entries[i].k, entries[i].v)
 		}
@@ -203,7 +211,9 @@ func TestPartialGentree(t *testing.T) {
 			// Ensure all the internal nodes are produced
 			var (
 				set         = r.modifies()
-				inner, _, _ = innerNodes(entries[first].k, entries[last].k, first == 0, last == len(entries)-1, nodes, t)
+				inner, _, _ = innerNodes(
+					entries[first].k, entries[last].k, first == 0, last == len(entries)-1, nodes, t,
+				)
 			)
 			for path, hash := range inner {
 				if _, ok := set[path]; !ok {
@@ -265,17 +275,21 @@ func TestGentreeDanglingClearing(t *testing.T) {
 			} else {
 				val = testrand.Bytes(32)
 			}
-			entries = append(entries, &kv{
-				k: testrand.Bytes(32),
-				v: val,
-			})
+			entries = append(
+				entries, &kv{
+					k: testrand.Bytes(32),
+					v: val,
+				},
+			)
 		}
 		slices.SortFunc(entries, (*kv).cmp)
 
 		nodes := make(map[string]common.Hash)
-		tr := trie.NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
-			nodes[string(path)] = hash
-		})
+		tr := trie.NewStackTrie(
+			func(path []byte, hash common.Hash, blob []byte) {
+				nodes[string(path)] = hash
+			},
+		)
 		for i := 0; i < len(entries); i++ {
 			tr.Update(entries[i].k, entries[i].v)
 		}
@@ -313,7 +327,9 @@ func TestGentreeDanglingClearing(t *testing.T) {
 
 			// Make sure the injected junks falling within the path space of
 			// committed trie nodes are correctly deleted.
-			_, leftRoot, rightRoot := innerNodes(entries[first].k, entries[last].k, first == 0, last == len(entries)-1, nodes, t)
+			_, leftRoot, rightRoot := innerNodes(
+				entries[first].k, entries[last].k, first == 0, last == len(entries)-1, nodes, t,
+			)
 			for _, path := range injects {
 				if bytes.Compare([]byte(path), leftRoot) < 0 && !bytes.HasPrefix(leftRoot, []byte(path)) {
 					continue
@@ -370,17 +386,21 @@ func TestFlushPartialTree(t *testing.T) {
 		} else {
 			val = testrand.Bytes(32)
 		}
-		entries = append(entries, &kv{
-			k: testrand.Bytes(32),
-			v: val,
-		})
+		entries = append(
+			entries, &kv{
+				k: testrand.Bytes(32),
+				v: val,
+			},
+		)
 	}
 	slices.SortFunc(entries, (*kv).cmp)
 
 	nodes := make(map[string]common.Hash)
-	tr := trie.NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
-		nodes[string(path)] = hash
-	})
+	tr := trie.NewStackTrie(
+		func(path []byte, hash common.Hash, blob []byte) {
+			nodes[string(path)] = hash
+		},
+	)
 	for i := 0; i < len(entries); i++ {
 		tr.Update(entries[i].k, entries[i].v)
 	}
@@ -405,7 +425,9 @@ func TestFlushPartialTree(t *testing.T) {
 			batch    = db.NewBatch()
 			combined = db.NewBatch()
 		)
-		inner, _, _ := innerNodes(entries[c.first].k, entries[c.last].k, c.first == 0, c.last == len(entries)-1, nodes, t)
+		inner, _, _ := innerNodes(
+			entries[c.first].k, entries[c.last].k, c.first == 0, c.last == len(entries)-1, nodes, t,
+		)
 
 		tr := newPathTrie(common.Hash{}, c.first != 0, db, batch)
 		for i := c.first; i <= c.last; i++ {
@@ -454,10 +476,12 @@ func TestBoundSplit(t *testing.T) {
 		} else {
 			val = testrand.Bytes(32)
 		}
-		entries = append(entries, &kv{
-			k: testrand.Bytes(32),
-			v: val,
-		})
+		entries = append(
+			entries, &kv{
+				k: testrand.Bytes(32),
+				v: val,
+			},
+		)
 	}
 	slices.SortFunc(entries, (*kv).cmp)
 
@@ -528,10 +552,12 @@ func TestTinyPartialTree(t *testing.T) {
 		} else {
 			val = testrand.Bytes(32)
 		}
-		entries = append(entries, &kv{
-			k: testrand.Bytes(32),
-			v: val,
-		})
+		entries = append(
+			entries, &kv{
+				k: testrand.Bytes(32),
+				v: val,
+			},
+		)
 	}
 	slices.SortFunc(entries, (*kv).cmp)
 
@@ -555,17 +581,21 @@ func TestTinyPartialTree(t *testing.T) {
 func TestTrieDelete(t *testing.T) {
 	var entries []*kv
 	for i := 0; i < 1024; i++ {
-		entries = append(entries, &kv{
-			k: testrand.Bytes(32),
-			v: testrand.Bytes(32),
-		})
+		entries = append(
+			entries, &kv{
+				k: testrand.Bytes(32),
+				v: testrand.Bytes(32),
+			},
+		)
 	}
 	slices.SortFunc(entries, (*kv).cmp)
 
 	nodes := make(map[string]common.Hash)
-	tr := trie.NewStackTrie(func(path []byte, hash common.Hash, blob []byte) {
-		nodes[string(path)] = hash
-	})
+	tr := trie.NewStackTrie(
+		func(path []byte, hash common.Hash, blob []byte) {
+			nodes[string(path)] = hash
+		},
+	)
 	for i := 0; i < len(entries); i++ {
 		tr.Update(entries[i].k, entries[i].v)
 	}
@@ -681,13 +711,15 @@ func TestTrieDelete(t *testing.T) {
 		// delete the last two
 		{[]int{len(entries) - 2, len(entries) - 1}},
 
-		{[]int{
-			0, 2, 4, 6,
-			len(entries) - 1,
-			len(entries) - 3,
-			len(entries) - 5,
-			len(entries) - 7,
-		}},
+		{
+			[]int{
+				0, 2, 4, 6,
+				len(entries) - 1,
+				len(entries) - 3,
+				len(entries) - 5,
+				len(entries) - 7,
+			},
+		},
 	}
 	for _, c := range cases {
 		check(c.index)

@@ -24,9 +24,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/internal/utesting"
-	"github.com/ethereum/go-ethereum/p2p/discover/v4wire"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/internal/utesting"
+	"github.com/ripoff2/go-ethereum/p2p/discover/v4wire"
 )
 
 const (
@@ -74,12 +74,14 @@ func BasicPing(t *utesting.T) {
 	te := newTestEnv(Remote, Listen1, Listen2)
 	defer te.close()
 
-	pingHash := te.send(te.l1, &v4wire.Ping{
-		Version:    4,
-		From:       te.localEndpoint(te.l1),
-		To:         te.remoteEndpoint(),
-		Expiration: futureExpiration(),
-	})
+	pingHash := te.send(
+		te.l1, &v4wire.Ping{
+			Version:    4,
+			From:       te.localEndpoint(te.l1),
+			To:         te.remoteEndpoint(),
+			Expiration: futureExpiration(),
+		},
+	)
 	if err := te.checkPingPong(pingHash); err != nil {
 		t.Fatal(err)
 	}
@@ -144,12 +146,14 @@ func PingWrongTo(t *utesting.T) {
 	defer te.close()
 
 	wrongEndpoint := v4wire.Endpoint{IP: net.ParseIP("192.0.2.0")}
-	pingHash := te.send(te.l1, &v4wire.Ping{
-		Version:    4,
-		From:       te.localEndpoint(te.l1),
-		To:         wrongEndpoint,
-		Expiration: futureExpiration(),
-	})
+	pingHash := te.send(
+		te.l1, &v4wire.Ping{
+			Version:    4,
+			From:       te.localEndpoint(te.l1),
+			To:         wrongEndpoint,
+			Expiration: futureExpiration(),
+		},
+	)
 	if err := te.checkPingPong(pingHash); err != nil {
 		t.Fatal(err)
 	}
@@ -161,12 +165,14 @@ func PingWrongFrom(t *utesting.T) {
 	defer te.close()
 
 	wrongEndpoint := v4wire.Endpoint{IP: net.ParseIP("192.0.2.0")}
-	pingHash := te.send(te.l1, &v4wire.Ping{
-		Version:    4,
-		From:       wrongEndpoint,
-		To:         te.remoteEndpoint(),
-		Expiration: futureExpiration(),
-	})
+	pingHash := te.send(
+		te.l1, &v4wire.Ping{
+			Version:    4,
+			From:       wrongEndpoint,
+			To:         te.remoteEndpoint(),
+			Expiration: futureExpiration(),
+		},
+	)
 
 	if err := te.checkPingPong(pingHash); err != nil {
 		t.Fatal(err)
@@ -180,14 +186,16 @@ func PingExtraData(t *utesting.T) {
 	te := newTestEnv(Remote, Listen1, Listen2)
 	defer te.close()
 
-	pingHash := te.send(te.l1, &pingWithJunk{
-		Version:    4,
-		From:       te.localEndpoint(te.l1),
-		To:         te.remoteEndpoint(),
-		Expiration: futureExpiration(),
-		JunkData1:  42,
-		JunkData2:  []byte{9, 8, 7, 6, 5, 4, 3, 2, 1},
-	})
+	pingHash := te.send(
+		te.l1, &pingWithJunk{
+			Version:    4,
+			From:       te.localEndpoint(te.l1),
+			To:         te.remoteEndpoint(),
+			Expiration: futureExpiration(),
+			JunkData1:  42,
+			JunkData2:  []byte{9, 8, 7, 6, 5, 4, 3, 2, 1},
+		},
+	)
 
 	if err := te.checkPingPong(pingHash); err != nil {
 		t.Fatal(err)
@@ -221,12 +229,14 @@ func PingPastExpiration(t *utesting.T) {
 	te := newTestEnv(Remote, Listen1, Listen2)
 	defer te.close()
 
-	te.send(te.l1, &v4wire.Ping{
-		Version:    4,
-		From:       te.localEndpoint(te.l1),
-		To:         te.remoteEndpoint(),
-		Expiration: -futureExpiration(),
-	})
+	te.send(
+		te.l1, &v4wire.Ping{
+			Version:    4,
+			From:       te.localEndpoint(te.l1),
+			To:         te.remoteEndpoint(),
+			Expiration: -futureExpiration(),
+		},
+	)
 
 	reply, _, _ := te.read(te.l1)
 	if reply != nil {
@@ -239,12 +249,14 @@ func WrongPacketType(t *utesting.T) {
 	te := newTestEnv(Remote, Listen1, Listen2)
 	defer te.close()
 
-	te.send(te.l1, &pingWrongType{
-		Version:    4,
-		From:       te.localEndpoint(te.l1),
-		To:         te.remoteEndpoint(),
-		Expiration: futureExpiration(),
-	})
+	te.send(
+		te.l1, &pingWrongType{
+			Version:    4,
+			From:       te.localEndpoint(te.l1),
+			To:         te.remoteEndpoint(),
+			Expiration: futureExpiration(),
+		},
+	)
 
 	reply, _, _ := te.read(te.l1)
 	if reply != nil {
@@ -261,12 +273,14 @@ func BondThenPingWithWrongFrom(t *utesting.T) {
 	bond(t, te)
 
 	wrongEndpoint := v4wire.Endpoint{IP: net.ParseIP("192.0.2.0")}
-	pingHash := te.send(te.l1, &v4wire.Ping{
-		Version:    4,
-		From:       wrongEndpoint,
-		To:         te.remoteEndpoint(),
-		Expiration: futureExpiration(),
-	})
+	pingHash := te.send(
+		te.l1, &v4wire.Ping{
+			Version:    4,
+			From:       wrongEndpoint,
+			To:         te.remoteEndpoint(),
+			Expiration: futureExpiration(),
+		},
+	)
 
 waitForPong:
 	for {
@@ -345,20 +359,24 @@ func UnsolicitedNeighbors(t *utesting.T) {
 	encFakeKey := v4wire.EncodePubkey(&fakeKey.PublicKey)
 	neighbors := v4wire.Neighbors{
 		Expiration: futureExpiration(),
-		Nodes: []v4wire.Node{{
-			ID:  encFakeKey,
-			IP:  net.IP{1, 2, 3, 4},
-			UDP: 30303,
-			TCP: 30303,
-		}},
+		Nodes: []v4wire.Node{
+			{
+				ID:  encFakeKey,
+				IP:  net.IP{1, 2, 3, 4},
+				UDP: 30303,
+				TCP: 30303,
+			},
+		},
 	}
 	te.send(te.l1, &neighbors)
 
 	// Check if the remote node included the fake node.
-	te.send(te.l1, &v4wire.Findnode{
-		Expiration: futureExpiration(),
-		Target:     encFakeKey,
-	})
+	te.send(
+		te.l1, &v4wire.Findnode{
+			Expiration: futureExpiration(),
+			Target:     encFakeKey,
+		},
+	)
 
 	reply, _, err := te.read(te.l1)
 	if err != nil {
@@ -396,12 +414,14 @@ func FindnodePastExpiration(t *utesting.T) {
 
 // bond performs the endpoint proof with the remote node.
 func bond(t *utesting.T, te *testenv) {
-	pingHash := te.send(te.l1, &v4wire.Ping{
-		Version:    4,
-		From:       te.localEndpoint(te.l1),
-		To:         te.remoteEndpoint(),
-		Expiration: futureExpiration(),
-	})
+	pingHash := te.send(
+		te.l1, &v4wire.Ping{
+			Version:    4,
+			From:       te.localEndpoint(te.l1),
+			To:         te.remoteEndpoint(),
+			Expiration: futureExpiration(),
+		},
+	)
 
 	var gotPing, gotPong bool
 	for !gotPing || !gotPong {
@@ -411,11 +431,13 @@ func bond(t *utesting.T, te *testenv) {
 		}
 		switch req.(type) {
 		case *v4wire.Ping:
-			te.send(te.l1, &v4wire.Pong{
-				To:         te.remoteEndpoint(),
-				ReplyTok:   hash,
-				Expiration: futureExpiration(),
-			})
+			te.send(
+				te.l1, &v4wire.Pong{
+					To:         te.remoteEndpoint(),
+					ReplyTok:   hash,
+					Expiration: futureExpiration(),
+				},
+			)
 			gotPing = true
 		case *v4wire.Pong:
 			if err := te.checkPong(req, pingHash); err != nil {
@@ -438,12 +460,14 @@ func FindnodeAmplificationInvalidPongHash(t *utesting.T) {
 	defer te.close()
 
 	// Send PING to start endpoint verification.
-	te.send(te.l1, &v4wire.Ping{
-		Version:    4,
-		From:       te.localEndpoint(te.l1),
-		To:         te.remoteEndpoint(),
-		Expiration: futureExpiration(),
-	})
+	te.send(
+		te.l1, &v4wire.Ping{
+			Version:    4,
+			From:       te.localEndpoint(te.l1),
+			To:         te.remoteEndpoint(),
+			Expiration: futureExpiration(),
+		},
+	)
 
 	var gotPing, gotPong bool
 	for !gotPing || !gotPong {
@@ -454,11 +478,13 @@ func FindnodeAmplificationInvalidPongHash(t *utesting.T) {
 		switch req.(type) {
 		case *v4wire.Ping:
 			// Send PONG from this node ID, but with invalid ReplyTok.
-			te.send(te.l1, &v4wire.Pong{
-				To:         te.remoteEndpoint(),
-				ReplyTok:   make([]byte, macSize),
-				Expiration: futureExpiration(),
-			})
+			te.send(
+				te.l1, &v4wire.Pong{
+					To:         te.remoteEndpoint(),
+					ReplyTok:   make([]byte, macSize),
+					Expiration: futureExpiration(),
+				},
+			)
 			gotPing = true
 		case *v4wire.Pong:
 			gotPong = true

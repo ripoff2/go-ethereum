@@ -23,11 +23,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/txpool"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/txpool"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
 )
 
 func TestTransactionPriceNonceSortLegacy(t *testing.T) {
@@ -63,24 +63,28 @@ func testTransactionPriceNonceSort(t *testing.T, baseFee *big.Int) {
 			var tx *types.Transaction
 			gasFeeCap := rand.Intn(50)
 			if baseFee == nil {
-				tx = types.NewTx(&types.LegacyTx{
-					Nonce:    uint64(start + i),
-					To:       &common.Address{},
-					Value:    big.NewInt(100),
-					Gas:      100,
-					GasPrice: big.NewInt(int64(gasFeeCap)),
-					Data:     nil,
-				})
+				tx = types.NewTx(
+					&types.LegacyTx{
+						Nonce:    uint64(start + i),
+						To:       &common.Address{},
+						Value:    big.NewInt(100),
+						Gas:      100,
+						GasPrice: big.NewInt(int64(gasFeeCap)),
+						Data:     nil,
+					},
+				)
 			} else {
-				tx = types.NewTx(&types.DynamicFeeTx{
-					Nonce:     uint64(start + i),
-					To:        &common.Address{},
-					Value:     big.NewInt(100),
-					Gas:       100,
-					GasFeeCap: big.NewInt(int64(gasFeeCap)),
-					GasTipCap: big.NewInt(int64(rand.Intn(gasFeeCap + 1))),
-					Data:      nil,
-				})
+				tx = types.NewTx(
+					&types.DynamicFeeTx{
+						Nonce:     uint64(start + i),
+						To:        &common.Address{},
+						Value:     big.NewInt(100),
+						Gas:       100,
+						GasFeeCap: big.NewInt(int64(gasFeeCap)),
+						GasTipCap: big.NewInt(int64(rand.Intn(gasFeeCap + 1))),
+						Data:      nil,
+					},
+				)
 				if count == 25 && int64(gasFeeCap) < baseFee.Int64() {
 					count = i
 				}
@@ -89,15 +93,17 @@ func testTransactionPriceNonceSort(t *testing.T, baseFee *big.Int) {
 			if err != nil {
 				t.Fatalf("failed to sign tx: %s", err)
 			}
-			groups[addr] = append(groups[addr], &txpool.LazyTransaction{
-				Hash:      tx.Hash(),
-				Tx:        tx,
-				Time:      tx.Time(),
-				GasFeeCap: uint256.MustFromBig(tx.GasFeeCap()),
-				GasTipCap: uint256.MustFromBig(tx.GasTipCap()),
-				Gas:       tx.Gas(),
-				BlobGas:   tx.BlobGas(),
-			})
+			groups[addr] = append(
+				groups[addr], &txpool.LazyTransaction{
+					Hash:      tx.Hash(),
+					Tx:        tx,
+					Time:      tx.Time(),
+					GasFeeCap: uint256.MustFromBig(tx.GasFeeCap()),
+					GasTipCap: uint256.MustFromBig(tx.GasTipCap()),
+					Gas:       tx.Gas(),
+					BlobGas:   tx.BlobGas(),
+				},
+			)
 		}
 		expectedCount += count
 	}
@@ -119,7 +125,10 @@ func testTransactionPriceNonceSort(t *testing.T, baseFee *big.Int) {
 		for j, txj := range txs[i+1:] {
 			fromj, _ := types.Sender(signer, txj)
 			if fromi == fromj && txi.Nonce() > txj.Nonce() {
-				t.Errorf("invalid nonce ordering: tx #%d (A=%x N=%v) < tx #%d (A=%x N=%v)", i, fromi[:4], txi.Nonce(), i+j, fromj[:4], txj.Nonce())
+				t.Errorf(
+					"invalid nonce ordering: tx #%d (A=%x N=%v) < tx #%d (A=%x N=%v)", i, fromi[:4], txi.Nonce(), i+j,
+					fromj[:4], txj.Nonce(),
+				)
 			}
 		}
 		// If the next tx has different from account, the price must be lower than the current one
@@ -132,7 +141,10 @@ func testTransactionPriceNonceSort(t *testing.T, baseFee *big.Int) {
 				t.Errorf("error calculating effective tip: %v, %v", err, nextErr)
 			}
 			if fromi != fromNext && tip.Cmp(nextTip) < 0 {
-				t.Errorf("invalid gasprice ordering: tx #%d (A=%x P=%v) < tx #%d (A=%x P=%v)", i, fromi[:4], txi.GasPrice(), i+1, fromNext[:4], next.GasPrice())
+				t.Errorf(
+					"invalid gasprice ordering: tx #%d (A=%x P=%v) < tx #%d (A=%x P=%v)", i, fromi[:4], txi.GasPrice(),
+					i+1, fromNext[:4], next.GasPrice(),
+				)
 			}
 		}
 	}
@@ -154,18 +166,22 @@ func TestTransactionTimeSort(t *testing.T) {
 	for start, key := range keys {
 		addr := crypto.PubkeyToAddress(key.PublicKey)
 
-		tx, _ := types.SignTx(types.NewTransaction(0, common.Address{}, big.NewInt(100), 100, big.NewInt(1), nil), signer, key)
+		tx, _ := types.SignTx(
+			types.NewTransaction(0, common.Address{}, big.NewInt(100), 100, big.NewInt(1), nil), signer, key,
+		)
 		tx.SetTime(time.Unix(0, int64(len(keys)-start)))
 
-		groups[addr] = append(groups[addr], &txpool.LazyTransaction{
-			Hash:      tx.Hash(),
-			Tx:        tx,
-			Time:      tx.Time(),
-			GasFeeCap: uint256.MustFromBig(tx.GasFeeCap()),
-			GasTipCap: uint256.MustFromBig(tx.GasTipCap()),
-			Gas:       tx.Gas(),
-			BlobGas:   tx.BlobGas(),
-		})
+		groups[addr] = append(
+			groups[addr], &txpool.LazyTransaction{
+				Hash:      tx.Hash(),
+				Tx:        tx,
+				Time:      tx.Time(),
+				GasFeeCap: uint256.MustFromBig(tx.GasFeeCap()),
+				GasTipCap: uint256.MustFromBig(tx.GasTipCap()),
+				Gas:       tx.Gas(),
+				BlobGas:   tx.BlobGas(),
+			},
+		)
 	}
 	// Sort the transactions and cross check the nonce ordering
 	txset := newTransactionsByPriceAndNonce(signer, groups, nil)
@@ -185,11 +201,17 @@ func TestTransactionTimeSort(t *testing.T) {
 			fromNext, _ := types.Sender(signer, next)
 
 			if txi.GasPrice().Cmp(next.GasPrice()) < 0 {
-				t.Errorf("invalid gasprice ordering: tx #%d (A=%x P=%v) < tx #%d (A=%x P=%v)", i, fromi[:4], txi.GasPrice(), i+1, fromNext[:4], next.GasPrice())
+				t.Errorf(
+					"invalid gasprice ordering: tx #%d (A=%x P=%v) < tx #%d (A=%x P=%v)", i, fromi[:4], txi.GasPrice(),
+					i+1, fromNext[:4], next.GasPrice(),
+				)
 			}
 			// Make sure time order is ascending if the txs have the same gas price
 			if txi.GasPrice().Cmp(next.GasPrice()) == 0 && txi.Time().After(next.Time()) {
-				t.Errorf("invalid received time ordering: tx #%d (A=%x T=%v) > tx #%d (A=%x T=%v)", i, fromi[:4], txi.Time(), i+1, fromNext[:4], next.Time())
+				t.Errorf(
+					"invalid received time ordering: tx #%d (A=%x T=%v) > tx #%d (A=%x T=%v)", i, fromi[:4], txi.Time(),
+					i+1, fromNext[:4], next.Time(),
+				)
 			}
 		}
 	}

@@ -17,10 +17,10 @@
 package blsync
 
 import (
-	"github.com/ethereum/go-ethereum/beacon/types"
-	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/beacon/types"
+	"github.com/ripoff2/go-ethereum/cmd/utils"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
 	"github.com/urfave/cli/v2"
 )
 
@@ -89,10 +89,16 @@ func makeChainConfig(ctx *cli.Context) lightClientConfig {
 		if c, err := hexutil.Decode(ctx.String(utils.BeaconGenesisRootFlag.Name)); err == nil && len(c) <= 32 {
 			copy(config.GenesisValidatorsRoot[:len(c)], c)
 		} else {
-			utils.Fatalf("Invalid hex string", "beacon.genesis.gvroot", ctx.String(utils.BeaconGenesisRootFlag.Name), "error", err)
+			utils.Fatalf(
+				"Invalid hex string", "beacon.genesis.gvroot", ctx.String(utils.BeaconGenesisRootFlag.Name), "error",
+				err,
+			)
 		}
 		if err := config.ChainConfig.LoadForks(ctx.String(utils.BeaconConfigFlag.Name)); err != nil {
-			utils.Fatalf("Could not load beacon chain config file", "file name", ctx.String(utils.BeaconConfigFlag.Name), "error", err)
+			utils.Fatalf(
+				"Could not load beacon chain config file", "file name", ctx.String(utils.BeaconConfigFlag.Name),
+				"error", err,
+			)
 		}
 	} else {
 		if ctx.IsSet(utils.BeaconGenesisRootFlag.Name) {
@@ -107,7 +113,9 @@ func makeChainConfig(ctx *cli.Context) lightClientConfig {
 		if c, err := hexutil.Decode(ctx.String(utils.BeaconCheckpointFlag.Name)); err == nil && len(c) <= 32 {
 			copy(config.Checkpoint[:len(c)], c)
 		} else {
-			utils.Fatalf("Invalid hex string", "beacon.checkpoint", ctx.String(utils.BeaconCheckpointFlag.Name), "error", err)
+			utils.Fatalf(
+				"Invalid hex string", "beacon.checkpoint", ctx.String(utils.BeaconCheckpointFlag.Name), "error", err,
+			)
 		}
 	}
 	return config

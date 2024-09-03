@@ -21,10 +21,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 // beaconBackfiller is the chain and state backfilling that can be commenced once
@@ -232,8 +232,12 @@ func (d *Downloader) findBeaconAncestor() (uint64, error) {
 		// races with the user (or beacon client) calling setHead. Whilst panic
 		// would be the ideal thing to do, it is safer long term to attempt a
 		// recovery and fix any noticed issue after the fact.
-		log.Error("Beacon sync linkup unavailable", "number", beaconTail.Number.Uint64()-1, "hash", beaconTail.ParentHash)
-		return 0, fmt.Errorf("beacon linkup unavailable locally: %d [%x]", beaconTail.Number.Uint64()-1, beaconTail.ParentHash)
+		log.Error(
+			"Beacon sync linkup unavailable", "number", beaconTail.Number.Uint64()-1, "hash", beaconTail.ParentHash,
+		)
+		return 0, fmt.Errorf(
+			"beacon linkup unavailable locally: %d [%x]", beaconTail.Number.Uint64()-1, beaconTail.ParentHash,
+		)
 	}
 	// Binary search to find the ancestor
 	start, end := beaconTail.Number.Uint64()-1, number
@@ -315,7 +319,10 @@ func (d *Downloader) fetchHeaders(from uint64) error {
 						dist := tail.Number.Uint64() - number
 						if len(localHeaders) >= int(dist) {
 							d.pivotHeader = localHeaders[dist-1]
-							log.Warn("Retrieved pivot header from local", "number", d.pivotHeader.Number, "hash", d.pivotHeader.Hash(), "latest", head.Number, "oldest", tail.Number)
+							log.Warn(
+								"Retrieved pivot header from local", "number", d.pivotHeader.Number, "hash",
+								d.pivotHeader.Hash(), "latest", head.Number, "oldest", tail.Number,
+							)
 						}
 					}
 				}

@@ -30,12 +30,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/discover/v5wire"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/enr"
-	"github.com/ethereum/go-ethereum/p2p/netutil"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p/discover/v5wire"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/p2p/netutil"
 )
 
 const (
@@ -191,13 +191,15 @@ func (t *UDPv5) Self() *enode.Node {
 
 // Close shuts down packet processing.
 func (t *UDPv5) Close() {
-	t.closeOnce.Do(func() {
-		t.cancelCloseCtx()
-		t.conn.Close()
-		t.talk.wait()
-		t.wg.Wait()
-		t.tab.close()
-	})
+	t.closeOnce.Do(
+		func() {
+			t.cancelCloseCtx()
+			t.conn.Close()
+			t.talk.wait()
+			t.wg.Wait()
+			t.tab.close()
+		},
+	)
 }
 
 // Ping sends a ping message to the given node.
@@ -315,9 +317,11 @@ func (t *UDPv5) newRandomLookup(ctx context.Context) *lookup {
 }
 
 func (t *UDPv5) newLookup(ctx context.Context, target enode.ID) *lookup {
-	return newLookup(ctx, t.tab, target, func(n *enode.Node) ([]*enode.Node, error) {
-		return t.lookupWorker(n, target)
-	})
+	return newLookup(
+		ctx, t.tab, target, func(n *enode.Node) ([]*enode.Node, error) {
+			return t.lookupWorker(n, target)
+		},
+	)
 }
 
 // lookupWorker performs FINDNODE calls against a single node during lookup.
@@ -423,7 +427,9 @@ func (t *UDPv5) waitForNodes(c *callV5, distances []uint) ([]*enode.Node, error)
 }
 
 // verifyResponseNode checks validity of a record in a NODES response.
-func (t *UDPv5) verifyResponseNode(c *callV5, r *enr.Record, distances []uint, seen map[enode.ID]struct{}) (*enode.Node, error) {
+func (t *UDPv5) verifyResponseNode(c *callV5, r *enr.Record, distances []uint, seen map[enode.ID]struct{}) (
+	*enode.Node, error,
+) {
 	node, err := enode.New(t.validSchemes, r)
 	if err != nil {
 		return nil, err
@@ -576,13 +582,15 @@ func (t *UDPv5) startResponseTimeout(c *callV5) {
 		timer mclock.Timer
 		done  = make(chan struct{})
 	)
-	timer = t.clock.AfterFunc(respTimeoutV5, func() {
-		<-done
-		select {
-		case t.respTimeoutCh <- &callTimeout{c, timer}:
-		case <-t.closeCtx.Done():
-		}
-	})
+	timer = t.clock.AfterFunc(
+		respTimeoutV5, func() {
+			<-done
+			select {
+			case t.respTimeoutCh <- &callTimeout{c, timer}:
+			case <-t.closeCtx.Done():
+			}
+		},
+	)
 	c.timeout = timer
 	close(done)
 }
@@ -633,7 +641,9 @@ func (t *UDPv5) sendFromAnotherThread(toID enode.ID, toAddr netip.AddrPort, pack
 }
 
 // send sends a packet to the given node.
-func (t *UDPv5) send(toID enode.ID, toAddr netip.AddrPort, packet v5wire.Packet, c *v5wire.Whoareyou) (v5wire.Nonce, error) {
+func (t *UDPv5) send(toID enode.ID, toAddr netip.AddrPort, packet v5wire.Packet, c *v5wire.Whoareyou) (
+	v5wire.Nonce, error,
+) {
 	addr := toAddr.String()
 	t.logcontext = append(t.logcontext[:0], "id", toID, "addr", addr)
 	t.logcontext = packet.AppendLogInfo(t.logcontext)
@@ -833,12 +843,14 @@ func (t *UDPv5) handlePing(p *v5wire.Ping, fromID enode.ID, fromAddr netip.AddrP
 	} else {
 		remoteIP = fromAddr.Addr().AsSlice()
 	}
-	t.sendResponse(fromID, fromAddr, &v5wire.Pong{
-		ReqID:  p.ReqID,
-		ToIP:   remoteIP,
-		ToPort: fromAddr.Port(),
-		ENRSeq: t.localNode.Node().Seq(),
-	})
+	t.sendResponse(
+		fromID, fromAddr, &v5wire.Pong{
+			ReqID:  p.ReqID,
+			ToIP:   remoteIP,
+			ToPort: fromAddr.Port(),
+			ENRSeq: t.localNode.Node().Seq(),
+		},
+	)
 }
 
 // handleFindnode returns nodes to the requester.

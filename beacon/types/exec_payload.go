@@ -20,13 +20,13 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/trie"
 	"github.com/holiman/uint256"
 	"github.com/protolambda/zrnt/eth2/beacon/capella"
 	zrntcommon "github.com/protolambda/zrnt/eth2/beacon/common"
 	"github.com/protolambda/zrnt/eth2/beacon/deneb"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/trie"
 )
 
 type payloadType interface {
@@ -63,9 +63,15 @@ func convertPayload[T payloadType](payload T, parentRoot *zrntcommon.Root) (*typ
 		panic("unsupported block type")
 	}
 
-	block := types.NewBlockWithHeader(&header).WithBody(types.Body{Transactions: transactions, Withdrawals: withdrawals})
+	block := types.NewBlockWithHeader(&header).WithBody(
+		types.Body{
+			Transactions: transactions, Withdrawals: withdrawals,
+		},
+	)
 	if hash := block.Hash(); hash != expectedHash {
-		return nil, fmt.Errorf("sanity check failed, payload hash does not match (expected %x, got %x)", expectedHash, hash)
+		return nil, fmt.Errorf(
+			"sanity check failed, payload hash does not match (expected %x, got %x)", expectedHash, hash,
+		)
 	}
 	return block, nil
 }

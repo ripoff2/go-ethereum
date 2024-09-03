@@ -25,8 +25,8 @@ import (
 	"testing"
 
 	"github.com/VictoriaMetrics/fastcache"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
 )
 
 // TestAccountIteratorBasics tests some simple single-layer(diff and disk) iteration
@@ -54,7 +54,9 @@ func TestAccountIteratorBasics(t *testing.T) {
 		}
 	}
 	// Add some (identical) layers on top
-	diffLayer := newDiffLayer(emptyLayer(), common.Hash{}, copyDestructs(destructs), copyAccounts(accounts), copyStorage(storage))
+	diffLayer := newDiffLayer(
+		emptyLayer(), common.Hash{}, copyDestructs(destructs), copyAccounts(accounts), copyStorage(storage),
+	)
 	it := diffLayer.AccountIterator(common.Hash{})
 	verifyIterator(t, 100, it, verifyNothing) // Nil is allowed for single layer iterator
 
@@ -146,12 +148,20 @@ func TestFastIteratorBasics(t *testing.T) {
 		expKeys []byte
 	}
 	for i, tc := range []testCase{
-		{lists: [][]byte{{0, 1, 8}, {1, 2, 8}, {2, 9}, {4},
-			{7, 14, 15}, {9, 13, 15, 16}},
-			expKeys: []byte{0, 1, 2, 4, 7, 8, 9, 13, 14, 15, 16}},
-		{lists: [][]byte{{0, 8}, {1, 2, 8}, {7, 14, 15}, {8, 9},
-			{9, 10}, {10, 13, 15, 16}},
-			expKeys: []byte{0, 1, 2, 7, 8, 9, 10, 13, 14, 15, 16}},
+		{
+			lists: [][]byte{
+				{0, 1, 8}, {1, 2, 8}, {2, 9}, {4},
+				{7, 14, 15}, {9, 13, 15, 16},
+			},
+			expKeys: []byte{0, 1, 2, 4, 7, 8, 9, 13, 14, 15, 16},
+		},
+		{
+			lists: [][]byte{
+				{0, 8}, {1, 2, 8}, {7, 14, 15}, {8, 9},
+				{9, 10}, {10, 13, 15, 16},
+			},
+			expKeys: []byte{0, 1, 2, 7, 8, 9, 10, 13, 14, 15, 16},
+		},
 	} {
 		var iterators []*weightedIterator
 		for i, data := range tc.lists {
@@ -222,14 +232,20 @@ func TestAccountIteratorTraversal(t *testing.T) {
 		},
 	}
 	// Stack three diff layers on top with various overlaps
-	snaps.Update(common.HexToHash("0x02"), common.HexToHash("0x01"), nil,
-		randomAccountSet("0xaa", "0xee", "0xff", "0xf0"), nil)
+	snaps.Update(
+		common.HexToHash("0x02"), common.HexToHash("0x01"), nil,
+		randomAccountSet("0xaa", "0xee", "0xff", "0xf0"), nil,
+	)
 
-	snaps.Update(common.HexToHash("0x03"), common.HexToHash("0x02"), nil,
-		randomAccountSet("0xbb", "0xdd", "0xf0"), nil)
+	snaps.Update(
+		common.HexToHash("0x03"), common.HexToHash("0x02"), nil,
+		randomAccountSet("0xbb", "0xdd", "0xf0"), nil,
+	)
 
-	snaps.Update(common.HexToHash("0x04"), common.HexToHash("0x03"), nil,
-		randomAccountSet("0xcc", "0xf0", "0xff"), nil)
+	snaps.Update(
+		common.HexToHash("0x04"), common.HexToHash("0x03"), nil,
+		randomAccountSet("0xcc", "0xf0", "0xff"), nil,
+	)
 
 	// Verify the single and multi-layer iterators
 	head := snaps.Snapshot(common.HexToHash("0x04"))
@@ -269,14 +285,20 @@ func TestStorageIteratorTraversal(t *testing.T) {
 		},
 	}
 	// Stack three diff layers on top with various overlaps
-	snaps.Update(common.HexToHash("0x02"), common.HexToHash("0x01"), nil,
-		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x01", "0x02", "0x03"}}, nil))
+	snaps.Update(
+		common.HexToHash("0x02"), common.HexToHash("0x01"), nil,
+		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x01", "0x02", "0x03"}}, nil),
+	)
 
-	snaps.Update(common.HexToHash("0x03"), common.HexToHash("0x02"), nil,
-		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x04", "0x05", "0x06"}}, nil))
+	snaps.Update(
+		common.HexToHash("0x03"), common.HexToHash("0x02"), nil,
+		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x04", "0x05", "0x06"}}, nil),
+	)
 
-	snaps.Update(common.HexToHash("0x04"), common.HexToHash("0x03"), nil,
-		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x01", "0x02", "0x03"}}, nil))
+	snaps.Update(
+		common.HexToHash("0x04"), common.HexToHash("0x03"), nil,
+		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x01", "0x02", "0x03"}}, nil),
+	)
 
 	// Verify the single and multi-layer iterators
 	head := snaps.Snapshot(common.HexToHash("0x04"))
@@ -523,7 +545,10 @@ func TestAccountIteratorLargeTraversal(t *testing.T) {
 		},
 	}
 	for i := 1; i < 128; i++ {
-		snaps.Update(common.HexToHash(fmt.Sprintf("0x%02x", i+1)), common.HexToHash(fmt.Sprintf("0x%02x", i)), nil, makeAccounts(200), nil)
+		snaps.Update(
+			common.HexToHash(fmt.Sprintf("0x%02x", i+1)), common.HexToHash(fmt.Sprintf("0x%02x", i)), nil,
+			makeAccounts(200), nil,
+		)
 	}
 	// Iterate the entire stack and ensure everything is hit only once
 	head := snaps.Snapshot(common.HexToHash("0x80"))
@@ -567,14 +592,20 @@ func TestAccountIteratorFlattening(t *testing.T) {
 		},
 	}
 	// Create a stack of diffs on top
-	snaps.Update(common.HexToHash("0x02"), common.HexToHash("0x01"), nil,
-		randomAccountSet("0xaa", "0xee", "0xff", "0xf0"), nil)
+	snaps.Update(
+		common.HexToHash("0x02"), common.HexToHash("0x01"), nil,
+		randomAccountSet("0xaa", "0xee", "0xff", "0xf0"), nil,
+	)
 
-	snaps.Update(common.HexToHash("0x03"), common.HexToHash("0x02"), nil,
-		randomAccountSet("0xbb", "0xdd", "0xf0"), nil)
+	snaps.Update(
+		common.HexToHash("0x03"), common.HexToHash("0x02"), nil,
+		randomAccountSet("0xbb", "0xdd", "0xf0"), nil,
+	)
 
-	snaps.Update(common.HexToHash("0x04"), common.HexToHash("0x03"), nil,
-		randomAccountSet("0xcc", "0xf0", "0xff"), nil)
+	snaps.Update(
+		common.HexToHash("0x04"), common.HexToHash("0x03"), nil,
+		randomAccountSet("0xcc", "0xf0", "0xff"), nil,
+	)
 
 	// Create an iterator and flatten the data from underneath it
 	it, _ := snaps.AccountIterator(common.HexToHash("0x04"), common.Hash{})
@@ -598,14 +629,20 @@ func TestAccountIteratorSeek(t *testing.T) {
 			base.root: base,
 		},
 	}
-	snaps.Update(common.HexToHash("0x02"), common.HexToHash("0x01"), nil,
-		randomAccountSet("0xaa", "0xee", "0xff", "0xf0"), nil)
+	snaps.Update(
+		common.HexToHash("0x02"), common.HexToHash("0x01"), nil,
+		randomAccountSet("0xaa", "0xee", "0xff", "0xf0"), nil,
+	)
 
-	snaps.Update(common.HexToHash("0x03"), common.HexToHash("0x02"), nil,
-		randomAccountSet("0xbb", "0xdd", "0xf0"), nil)
+	snaps.Update(
+		common.HexToHash("0x03"), common.HexToHash("0x02"), nil,
+		randomAccountSet("0xbb", "0xdd", "0xf0"), nil,
+	)
 
-	snaps.Update(common.HexToHash("0x04"), common.HexToHash("0x03"), nil,
-		randomAccountSet("0xcc", "0xf0", "0xff"), nil)
+	snaps.Update(
+		common.HexToHash("0x04"), common.HexToHash("0x03"), nil,
+		randomAccountSet("0xcc", "0xf0", "0xff"), nil,
+	)
 
 	// Account set is now
 	// 02: aa, ee, f0, ff
@@ -662,14 +699,20 @@ func TestStorageIteratorSeek(t *testing.T) {
 		},
 	}
 	// Stack three diff layers on top with various overlaps
-	snaps.Update(common.HexToHash("0x02"), common.HexToHash("0x01"), nil,
-		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x01", "0x03", "0x05"}}, nil))
+	snaps.Update(
+		common.HexToHash("0x02"), common.HexToHash("0x01"), nil,
+		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x01", "0x03", "0x05"}}, nil),
+	)
 
-	snaps.Update(common.HexToHash("0x03"), common.HexToHash("0x02"), nil,
-		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x02", "0x05", "0x06"}}, nil))
+	snaps.Update(
+		common.HexToHash("0x03"), common.HexToHash("0x02"), nil,
+		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x02", "0x05", "0x06"}}, nil),
+	)
 
-	snaps.Update(common.HexToHash("0x04"), common.HexToHash("0x03"), nil,
-		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x01", "0x05", "0x08"}}, nil))
+	snaps.Update(
+		common.HexToHash("0x04"), common.HexToHash("0x03"), nil,
+		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x01", "0x05", "0x08"}}, nil),
+	)
 
 	// Account set is now
 	// 02: 01, 03, 05
@@ -725,18 +768,24 @@ func TestAccountIteratorDeletions(t *testing.T) {
 		},
 	}
 	// Stack three diff layers on top with various overlaps
-	snaps.Update(common.HexToHash("0x02"), common.HexToHash("0x01"),
-		nil, randomAccountSet("0x11", "0x22", "0x33"), nil)
+	snaps.Update(
+		common.HexToHash("0x02"), common.HexToHash("0x01"),
+		nil, randomAccountSet("0x11", "0x22", "0x33"), nil,
+	)
 
 	deleted := common.HexToHash("0x22")
 	destructed := map[common.Hash]struct{}{
 		deleted: {},
 	}
-	snaps.Update(common.HexToHash("0x03"), common.HexToHash("0x02"),
-		destructed, randomAccountSet("0x11", "0x33"), nil)
+	snaps.Update(
+		common.HexToHash("0x03"), common.HexToHash("0x02"),
+		destructed, randomAccountSet("0x11", "0x33"), nil,
+	)
 
-	snaps.Update(common.HexToHash("0x04"), common.HexToHash("0x03"),
-		nil, randomAccountSet("0x33", "0x44", "0x55"), nil)
+	snaps.Update(
+		common.HexToHash("0x04"), common.HexToHash("0x03"),
+		nil, randomAccountSet("0x33", "0x44", "0x55"), nil,
+	)
 
 	// The output should be 11,33,44,55
 	it, _ := snaps.AccountIterator(common.HexToHash("0x04"), common.Hash{})
@@ -771,11 +820,16 @@ func TestStorageIteratorDeletions(t *testing.T) {
 		},
 	}
 	// Stack three diff layers on top with various overlaps
-	snaps.Update(common.HexToHash("0x02"), common.HexToHash("0x01"), nil,
-		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x01", "0x03", "0x05"}}, nil))
+	snaps.Update(
+		common.HexToHash("0x02"), common.HexToHash("0x01"), nil,
+		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x01", "0x03", "0x05"}}, nil),
+	)
 
-	snaps.Update(common.HexToHash("0x03"), common.HexToHash("0x02"), nil,
-		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x02", "0x04", "0x06"}}, [][]string{{"0x01", "0x03"}}))
+	snaps.Update(
+		common.HexToHash("0x03"), common.HexToHash("0x02"), nil,
+		randomAccountSet("0xaa"),
+		randomStorageSet([]string{"0xaa"}, [][]string{{"0x02", "0x04", "0x06"}}, [][]string{{"0x01", "0x03"}}),
+	)
 
 	// The output should be 02,04,05,06
 	it, _ := snaps.StorageIterator(common.HexToHash("0x03"), common.HexToHash("0xaa"), common.Hash{})
@@ -798,8 +852,10 @@ func TestStorageIteratorDeletions(t *testing.T) {
 	it.Release()
 
 	// Re-insert the slots of the same account
-	snaps.Update(common.HexToHash("0x05"), common.HexToHash("0x04"), nil,
-		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x07", "0x08", "0x09"}}, nil))
+	snaps.Update(
+		common.HexToHash("0x05"), common.HexToHash("0x04"), nil,
+		randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x07", "0x08", "0x09"}}, nil),
+	)
 
 	// The output should be 07,08,09
 	it, _ = snaps.StorageIterator(common.HexToHash("0x05"), common.HexToHash("0xaa"), common.Hash{})
@@ -807,12 +863,18 @@ func TestStorageIteratorDeletions(t *testing.T) {
 	it.Release()
 
 	// Destruct the whole storage but re-create the account in the same layer
-	snaps.Update(common.HexToHash("0x06"), common.HexToHash("0x05"), destructed, randomAccountSet("0xaa"), randomStorageSet([]string{"0xaa"}, [][]string{{"0x11", "0x12"}}, nil))
+	snaps.Update(
+		common.HexToHash("0x06"), common.HexToHash("0x05"), destructed, randomAccountSet("0xaa"),
+		randomStorageSet([]string{"0xaa"}, [][]string{{"0x11", "0x12"}}, nil),
+	)
 	it, _ = snaps.StorageIterator(common.HexToHash("0x06"), common.HexToHash("0xaa"), common.Hash{})
 	verifyIterator(t, 2, it, verifyStorage) // The output should be 11,12
 	it.Release()
 
-	verifyIterator(t, 2, snaps.Snapshot(common.HexToHash("0x06")).(*diffLayer).newBinaryStorageIterator(common.HexToHash("0xaa")), verifyStorage)
+	verifyIterator(
+		t, 2, snaps.Snapshot(common.HexToHash("0x06")).(*diffLayer).newBinaryStorageIterator(common.HexToHash("0xaa")),
+		verifyStorage,
+	)
 }
 
 // BenchmarkAccountIteratorTraversal is a bit notorious -- all layers contain the
@@ -849,67 +911,78 @@ func BenchmarkAccountIteratorTraversal(b *testing.B) {
 		},
 	}
 	for i := 1; i <= 100; i++ {
-		snaps.Update(common.HexToHash(fmt.Sprintf("0x%02x", i+1)), common.HexToHash(fmt.Sprintf("0x%02x", i)), nil, makeAccounts(200), nil)
+		snaps.Update(
+			common.HexToHash(fmt.Sprintf("0x%02x", i+1)), common.HexToHash(fmt.Sprintf("0x%02x", i)), nil,
+			makeAccounts(200), nil,
+		)
 	}
 	// We call this once before the benchmark, so the creation of
 	// sorted accountlists are not included in the results.
 	head := snaps.Snapshot(common.HexToHash("0x65"))
 	head.(*diffLayer).newBinaryAccountIterator()
 
-	b.Run("binary iterator keys", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			got := 0
-			it := head.(*diffLayer).newBinaryAccountIterator()
-			for it.Next() {
-				got++
+	b.Run(
+		"binary iterator keys", func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				got := 0
+				it := head.(*diffLayer).newBinaryAccountIterator()
+				for it.Next() {
+					got++
+				}
+				if exp := 200; got != exp {
+					b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
+				}
 			}
-			if exp := 200; got != exp {
-				b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
+		},
+	)
+	b.Run(
+		"binary iterator values", func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				got := 0
+				it := head.(*diffLayer).newBinaryAccountIterator()
+				for it.Next() {
+					got++
+					head.(*diffLayer).accountRLP(it.Hash(), 0)
+				}
+				if exp := 200; got != exp {
+					b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
+				}
 			}
-		}
-	})
-	b.Run("binary iterator values", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			got := 0
-			it := head.(*diffLayer).newBinaryAccountIterator()
-			for it.Next() {
-				got++
-				head.(*diffLayer).accountRLP(it.Hash(), 0)
-			}
-			if exp := 200; got != exp {
-				b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
-			}
-		}
-	})
-	b.Run("fast iterator keys", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			it, _ := snaps.AccountIterator(common.HexToHash("0x65"), common.Hash{})
-			defer it.Release()
+		},
+	)
+	b.Run(
+		"fast iterator keys", func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				it, _ := snaps.AccountIterator(common.HexToHash("0x65"), common.Hash{})
+				defer it.Release()
 
-			got := 0
-			for it.Next() {
-				got++
+				got := 0
+				for it.Next() {
+					got++
+				}
+				if exp := 200; got != exp {
+					b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
+				}
 			}
-			if exp := 200; got != exp {
-				b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
-			}
-		}
-	})
-	b.Run("fast iterator values", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			it, _ := snaps.AccountIterator(common.HexToHash("0x65"), common.Hash{})
-			defer it.Release()
+		},
+	)
+	b.Run(
+		"fast iterator values", func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				it, _ := snaps.AccountIterator(common.HexToHash("0x65"), common.Hash{})
+				defer it.Release()
 
-			got := 0
-			for it.Next() {
-				got++
-				it.Account()
+				got := 0
+				for it.Next() {
+					got++
+					it.Account()
+				}
+				if exp := 200; got != exp {
+					b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
+				}
 			}
-			if exp := 200; got != exp {
-				b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
-			}
-		}
-	})
+		},
+	)
 }
 
 // BenchmarkAccountIteratorLargeBaselayer is a pretty realistic benchmark, where
@@ -946,68 +1019,79 @@ func BenchmarkAccountIteratorLargeBaselayer(b *testing.B) {
 	}
 	snaps.Update(common.HexToHash("0x02"), common.HexToHash("0x01"), nil, makeAccounts(2000), nil)
 	for i := 2; i <= 100; i++ {
-		snaps.Update(common.HexToHash(fmt.Sprintf("0x%02x", i+1)), common.HexToHash(fmt.Sprintf("0x%02x", i)), nil, makeAccounts(20), nil)
+		snaps.Update(
+			common.HexToHash(fmt.Sprintf("0x%02x", i+1)), common.HexToHash(fmt.Sprintf("0x%02x", i)), nil,
+			makeAccounts(20), nil,
+		)
 	}
 	// We call this once before the benchmark, so the creation of
 	// sorted accountlists are not included in the results.
 	head := snaps.Snapshot(common.HexToHash("0x65"))
 	head.(*diffLayer).newBinaryAccountIterator()
 
-	b.Run("binary iterator (keys)", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			got := 0
-			it := head.(*diffLayer).newBinaryAccountIterator()
-			for it.Next() {
-				got++
+	b.Run(
+		"binary iterator (keys)", func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				got := 0
+				it := head.(*diffLayer).newBinaryAccountIterator()
+				for it.Next() {
+					got++
+				}
+				if exp := 2000; got != exp {
+					b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
+				}
 			}
-			if exp := 2000; got != exp {
-				b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
+		},
+	)
+	b.Run(
+		"binary iterator (values)", func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				got := 0
+				it := head.(*diffLayer).newBinaryAccountIterator()
+				for it.Next() {
+					got++
+					v := it.Hash()
+					head.(*diffLayer).accountRLP(v, 0)
+				}
+				if exp := 2000; got != exp {
+					b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
+				}
 			}
-		}
-	})
-	b.Run("binary iterator (values)", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			got := 0
-			it := head.(*diffLayer).newBinaryAccountIterator()
-			for it.Next() {
-				got++
-				v := it.Hash()
-				head.(*diffLayer).accountRLP(v, 0)
-			}
-			if exp := 2000; got != exp {
-				b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
-			}
-		}
-	})
-	b.Run("fast iterator (keys)", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			it, _ := snaps.AccountIterator(common.HexToHash("0x65"), common.Hash{})
-			defer it.Release()
+		},
+	)
+	b.Run(
+		"fast iterator (keys)", func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				it, _ := snaps.AccountIterator(common.HexToHash("0x65"), common.Hash{})
+				defer it.Release()
 
-			got := 0
-			for it.Next() {
-				got++
+				got := 0
+				for it.Next() {
+					got++
+				}
+				if exp := 2000; got != exp {
+					b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
+				}
 			}
-			if exp := 2000; got != exp {
-				b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
-			}
-		}
-	})
-	b.Run("fast iterator (values)", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			it, _ := snaps.AccountIterator(common.HexToHash("0x65"), common.Hash{})
-			defer it.Release()
+		},
+	)
+	b.Run(
+		"fast iterator (values)", func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				it, _ := snaps.AccountIterator(common.HexToHash("0x65"), common.Hash{})
+				defer it.Release()
 
-			got := 0
-			for it.Next() {
-				it.Account()
-				got++
+				got := 0
+				for it.Next() {
+					it.Account()
+					got++
+				}
+				if exp := 2000; got != exp {
+					b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
+				}
 			}
-			if exp := 2000; got != exp {
-				b.Errorf("iterator len wrong, expected %d, got %d", exp, got)
-			}
-		}
-	})
+		},
+	)
 }
 
 /*

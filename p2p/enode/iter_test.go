@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
 )
 
 func TestReadNodes(t *testing.T) {
@@ -35,11 +35,13 @@ func TestReadNodes(t *testing.T) {
 // which returns less than N nodes in an endless cycle.
 func TestReadNodesCycle(t *testing.T) {
 	iter := &callCountIter{
-		Iterator: CycleNodes([]*Node{
-			testNode(0, 0),
-			testNode(1, 0),
-			testNode(2, 0),
-		}),
+		Iterator: CycleNodes(
+			[]*Node{
+				testNode(0, 0),
+				testNode(1, 0),
+				testNode(2, 0),
+			},
+		),
 	}
 	nodes := ReadNodes(iter, 10)
 	checkNodes(t, nodes, 3)
@@ -54,9 +56,11 @@ func TestFilterNodes(t *testing.T) {
 		nodes[i] = testNode(uint64(i), uint64(i))
 	}
 
-	it := Filter(IterNodes(nodes), func(n *Node) bool {
-		return n.Seq() >= 50
-	})
+	it := Filter(
+		IterNodes(nodes), func(n *Node) bool {
+			return n.Seq() >= 50
+		},
+	)
 	for i := 50; i < len(nodes); i++ {
 		if !it.Next() {
 			t.Fatal("Next returned false")

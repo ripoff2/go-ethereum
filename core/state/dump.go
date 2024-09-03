@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie"
 )
 
 // DumpConfig is a set of options to control what portions of the state will be
@@ -105,9 +105,11 @@ func (d iterativeDump) OnAccount(addr *common.Address, account DumpAccount) {
 
 // OnRoot implements DumpCollector interface
 func (d iterativeDump) OnRoot(root common.Hash) {
-	d.Encode(struct {
-		Root common.Hash `json:"root"`
-	}{root})
+	d.Encode(
+		struct {
+			Root common.Hash `json:"root"`
+		}{root},
+	)
 }
 
 // DumpToCollector iterates the state according to the given options and inserts
@@ -188,8 +190,10 @@ func (s *StateDB) DumpToCollector(c DumpCollector, conf *DumpConfig) (nextKey []
 		c.OnAccount(address, account)
 		accounts++
 		if time.Since(logged) > 8*time.Second {
-			log.Info("Trie dumping in progress", "at", it.Key, "accounts", accounts,
-				"elapsed", common.PrettyDuration(time.Since(start)))
+			log.Info(
+				"Trie dumping in progress", "at", it.Key, "accounts", accounts,
+				"elapsed", common.PrettyDuration(time.Since(start)),
+			)
 			logged = time.Now()
 		}
 		if conf.Max > 0 && accounts >= conf.Max {
@@ -202,8 +206,10 @@ func (s *StateDB) DumpToCollector(c DumpCollector, conf *DumpConfig) (nextKey []
 	if missingPreimages > 0 {
 		log.Warn("Dump incomplete due to missing preimages", "missing", missingPreimages)
 	}
-	log.Info("Trie dumping complete", "accounts", accounts,
-		"elapsed", common.PrettyDuration(time.Since(start)))
+	log.Info(
+		"Trie dumping complete", "accounts", accounts,
+		"elapsed", common.PrettyDuration(time.Since(start)),
+	)
 
 	return nextKey
 }

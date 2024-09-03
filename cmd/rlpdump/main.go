@@ -30,8 +30,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 var (
@@ -46,9 +46,11 @@ func init() {
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage:", os.Args[0], "[-noascii] [-hex <data>][-reverse] [filename]")
 		flag.PrintDefaults()
-		fmt.Fprintln(os.Stderr, `
+		fmt.Fprintln(
+			os.Stderr, `
 Dumps RLP data from the given file in readable form.
-If the filename is omitted, data is read from stdin.`)
+If the filename is omitted, data is read from stdin.`,
+		)
 	}
 }
 

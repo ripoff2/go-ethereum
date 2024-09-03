@@ -22,8 +22,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
 )
 
 const (
@@ -99,7 +99,10 @@ func (t *Tracker) Track(peer string, version uint, reqCode uint64, resCode uint6
 	}
 	// If we have too many pending requests, bail out instead of leaking memory
 	if pending := len(t.pending); pending >= maxTrackedPackets {
-		log.Error("Request tracker exceeded allowance", "pending", pending, "peer", peer, "protocol", t.protocol, "version", version, "code", reqCode)
+		log.Error(
+			"Request tracker exceeded allowance", "pending", pending, "peer", peer, "protocol", t.protocol, "version",
+			version, "code", reqCode,
+		)
 		return
 	}
 	// Id doesn't exist yet, start tracking it
@@ -178,7 +181,8 @@ func (t *Tracker) Fulfil(peer string, version uint, code uint64, id uint64) {
 	}
 	// If the response is funky, it might be some active attack
 	if req.peer != peer || req.version != version || req.resCode != code {
-		log.Warn("Network response id collision",
+		log.Warn(
+			"Network response id collision",
 			"have", fmt.Sprintf("%s:%s/%d:%d", peer, t.protocol, version, code),
 			"want", fmt.Sprintf("%s:%s/%d:%d", peer, t.protocol, req.version, req.resCode),
 		)

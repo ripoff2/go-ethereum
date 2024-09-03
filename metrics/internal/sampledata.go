@@ -22,7 +22,7 @@ import (
 	metrics2 "runtime/metrics"
 	"time"
 
-	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/metrics"
 )
 
 // ExampleMetrics returns an ordered registry populated with a sample of metrics.
@@ -40,7 +40,8 @@ func ExampleMetrics() metrics.Registry {
 			"os":                "linux",
 			"commit":            "7caa2d8163ae3132c1c2d6978c76610caee2d949",
 			"protocol_versions": "64 65 66",
-		})
+		},
+	)
 
 	{
 		s := metrics.NewUniformSample(3)

@@ -25,24 +25,24 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/console/prompt"
-	"github.com/ethereum/go-ethereum/eth/downloader"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/internal/debug"
-	"github.com/ethereum/go-ethereum/internal/flags"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/node"
+	"github.com/ripoff2/go-ethereum/accounts"
+	"github.com/ripoff2/go-ethereum/accounts/keystore"
+	"github.com/ripoff2/go-ethereum/cmd/utils"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/console/prompt"
+	"github.com/ripoff2/go-ethereum/eth/downloader"
+	"github.com/ripoff2/go-ethereum/ethclient"
+	"github.com/ripoff2/go-ethereum/internal/debug"
+	"github.com/ripoff2/go-ethereum/internal/flags"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/node"
 	"go.uber.org/automaxprocs/maxprocs"
 
 	// Force-load the tracer engines to trigger registration
-	_ "github.com/ethereum/go-ethereum/eth/tracers/js"
-	_ "github.com/ethereum/go-ethereum/eth/tracers/live"
-	_ "github.com/ethereum/go-ethereum/eth/tracers/native"
+	_ "github.com/ripoff2/go-ethereum/eth/tracers/js"
+	_ "github.com/ripoff2/go-ethereum/eth/tracers/live"
+	_ "github.com/ripoff2/go-ethereum/eth/tracers/native"
 
 	"github.com/urfave/cli/v2"
 )
@@ -53,111 +53,113 @@ const (
 
 var (
 	// flags that configure the node
-	nodeFlags = flags.Merge([]cli.Flag{
-		utils.IdentityFlag,
-		utils.UnlockedAccountFlag,
-		utils.PasswordFileFlag,
-		utils.BootnodesFlag,
-		utils.MinFreeDiskSpaceFlag,
-		utils.KeyStoreDirFlag,
-		utils.ExternalSignerFlag,
-		utils.NoUSBFlag, // deprecated
-		utils.USBFlag,
-		utils.SmartCardDaemonPathFlag,
-		utils.OverrideCancun,
-		utils.OverrideVerkle,
-		utils.EnablePersonal,
-		utils.TxPoolLocalsFlag,
-		utils.TxPoolNoLocalsFlag,
-		utils.TxPoolJournalFlag,
-		utils.TxPoolRejournalFlag,
-		utils.TxPoolPriceLimitFlag,
-		utils.TxPoolPriceBumpFlag,
-		utils.TxPoolAccountSlotsFlag,
-		utils.TxPoolGlobalSlotsFlag,
-		utils.TxPoolAccountQueueFlag,
-		utils.TxPoolGlobalQueueFlag,
-		utils.TxPoolLifetimeFlag,
-		utils.BlobPoolDataDirFlag,
-		utils.BlobPoolDataCapFlag,
-		utils.BlobPoolPriceBumpFlag,
-		utils.SyncModeFlag,
-		utils.SyncTargetFlag,
-		utils.ExitWhenSyncedFlag,
-		utils.GCModeFlag,
-		utils.SnapshotFlag,
-		utils.TxLookupLimitFlag, // deprecated
-		utils.TransactionHistoryFlag,
-		utils.StateHistoryFlag,
-		utils.LightServeFlag,    // deprecated
-		utils.LightIngressFlag,  // deprecated
-		utils.LightEgressFlag,   // deprecated
-		utils.LightMaxPeersFlag, // deprecated
-		utils.LightNoPruneFlag,  // deprecated
-		utils.LightKDFFlag,
-		utils.LightNoSyncServeFlag, // deprecated
-		utils.EthRequiredBlocksFlag,
-		utils.LegacyWhitelistFlag, // deprecated
-		utils.BloomFilterSizeFlag,
-		utils.CacheFlag,
-		utils.CacheDatabaseFlag,
-		utils.CacheTrieFlag,
-		utils.CacheTrieJournalFlag,   // deprecated
-		utils.CacheTrieRejournalFlag, // deprecated
-		utils.CacheGCFlag,
-		utils.CacheSnapshotFlag,
-		utils.CacheNoPrefetchFlag,
-		utils.CachePreimagesFlag,
-		utils.CacheLogSizeFlag,
-		utils.FDLimitFlag,
-		utils.CryptoKZGFlag,
-		utils.ListenPortFlag,
-		utils.DiscoveryPortFlag,
-		utils.MaxPeersFlag,
-		utils.MaxPendingPeersFlag,
-		utils.MiningEnabledFlag, // deprecated
-		utils.MinerGasLimitFlag,
-		utils.MinerGasPriceFlag,
-		utils.MinerEtherbaseFlag, // deprecated
-		utils.MinerExtraDataFlag,
-		utils.MinerRecommitIntervalFlag,
-		utils.MinerPendingFeeRecipientFlag,
-		utils.MinerNewPayloadTimeoutFlag, // deprecated
-		utils.NATFlag,
-		utils.NoDiscoverFlag,
-		utils.DiscoveryV4Flag,
-		utils.DiscoveryV5Flag,
-		utils.LegacyDiscoveryV5Flag, // deprecated
-		utils.NetrestrictFlag,
-		utils.NodeKeyFileFlag,
-		utils.NodeKeyHexFlag,
-		utils.DNSDiscoveryFlag,
-		utils.DeveloperFlag,
-		utils.DeveloperGasLimitFlag,
-		utils.DeveloperPeriodFlag,
-		utils.VMEnableDebugFlag,
-		utils.VMTraceFlag,
-		utils.VMTraceJsonConfigFlag,
-		utils.NetworkIdFlag,
-		utils.EthStatsURLFlag,
-		utils.NoCompactionFlag,
-		utils.GpoBlocksFlag,
-		utils.GpoPercentileFlag,
-		utils.GpoMaxGasPriceFlag,
-		utils.GpoIgnoreGasPriceFlag,
-		configFileFlag,
-		utils.LogDebugFlag,
-		utils.LogBacktraceAtFlag,
-		utils.BeaconApiFlag,
-		utils.BeaconApiHeaderFlag,
-		utils.BeaconThresholdFlag,
-		utils.BeaconNoFilterFlag,
-		utils.BeaconConfigFlag,
-		utils.BeaconGenesisRootFlag,
-		utils.BeaconGenesisTimeFlag,
-		utils.BeaconCheckpointFlag,
-		utils.CollectWitnessFlag,
-	}, utils.NetworkFlags, utils.DatabaseFlags)
+	nodeFlags = flags.Merge(
+		[]cli.Flag{
+			utils.IdentityFlag,
+			utils.UnlockedAccountFlag,
+			utils.PasswordFileFlag,
+			utils.BootnodesFlag,
+			utils.MinFreeDiskSpaceFlag,
+			utils.KeyStoreDirFlag,
+			utils.ExternalSignerFlag,
+			utils.NoUSBFlag, // deprecated
+			utils.USBFlag,
+			utils.SmartCardDaemonPathFlag,
+			utils.OverrideCancun,
+			utils.OverrideVerkle,
+			utils.EnablePersonal,
+			utils.TxPoolLocalsFlag,
+			utils.TxPoolNoLocalsFlag,
+			utils.TxPoolJournalFlag,
+			utils.TxPoolRejournalFlag,
+			utils.TxPoolPriceLimitFlag,
+			utils.TxPoolPriceBumpFlag,
+			utils.TxPoolAccountSlotsFlag,
+			utils.TxPoolGlobalSlotsFlag,
+			utils.TxPoolAccountQueueFlag,
+			utils.TxPoolGlobalQueueFlag,
+			utils.TxPoolLifetimeFlag,
+			utils.BlobPoolDataDirFlag,
+			utils.BlobPoolDataCapFlag,
+			utils.BlobPoolPriceBumpFlag,
+			utils.SyncModeFlag,
+			utils.SyncTargetFlag,
+			utils.ExitWhenSyncedFlag,
+			utils.GCModeFlag,
+			utils.SnapshotFlag,
+			utils.TxLookupLimitFlag, // deprecated
+			utils.TransactionHistoryFlag,
+			utils.StateHistoryFlag,
+			utils.LightServeFlag,    // deprecated
+			utils.LightIngressFlag,  // deprecated
+			utils.LightEgressFlag,   // deprecated
+			utils.LightMaxPeersFlag, // deprecated
+			utils.LightNoPruneFlag,  // deprecated
+			utils.LightKDFFlag,
+			utils.LightNoSyncServeFlag, // deprecated
+			utils.EthRequiredBlocksFlag,
+			utils.LegacyWhitelistFlag, // deprecated
+			utils.BloomFilterSizeFlag,
+			utils.CacheFlag,
+			utils.CacheDatabaseFlag,
+			utils.CacheTrieFlag,
+			utils.CacheTrieJournalFlag,   // deprecated
+			utils.CacheTrieRejournalFlag, // deprecated
+			utils.CacheGCFlag,
+			utils.CacheSnapshotFlag,
+			utils.CacheNoPrefetchFlag,
+			utils.CachePreimagesFlag,
+			utils.CacheLogSizeFlag,
+			utils.FDLimitFlag,
+			utils.CryptoKZGFlag,
+			utils.ListenPortFlag,
+			utils.DiscoveryPortFlag,
+			utils.MaxPeersFlag,
+			utils.MaxPendingPeersFlag,
+			utils.MiningEnabledFlag, // deprecated
+			utils.MinerGasLimitFlag,
+			utils.MinerGasPriceFlag,
+			utils.MinerEtherbaseFlag, // deprecated
+			utils.MinerExtraDataFlag,
+			utils.MinerRecommitIntervalFlag,
+			utils.MinerPendingFeeRecipientFlag,
+			utils.MinerNewPayloadTimeoutFlag, // deprecated
+			utils.NATFlag,
+			utils.NoDiscoverFlag,
+			utils.DiscoveryV4Flag,
+			utils.DiscoveryV5Flag,
+			utils.LegacyDiscoveryV5Flag, // deprecated
+			utils.NetrestrictFlag,
+			utils.NodeKeyFileFlag,
+			utils.NodeKeyHexFlag,
+			utils.DNSDiscoveryFlag,
+			utils.DeveloperFlag,
+			utils.DeveloperGasLimitFlag,
+			utils.DeveloperPeriodFlag,
+			utils.VMEnableDebugFlag,
+			utils.VMTraceFlag,
+			utils.VMTraceJsonConfigFlag,
+			utils.NetworkIdFlag,
+			utils.EthStatsURLFlag,
+			utils.NoCompactionFlag,
+			utils.GpoBlocksFlag,
+			utils.GpoPercentileFlag,
+			utils.GpoMaxGasPriceFlag,
+			utils.GpoIgnoreGasPriceFlag,
+			configFileFlag,
+			utils.LogDebugFlag,
+			utils.LogBacktraceAtFlag,
+			utils.BeaconApiFlag,
+			utils.BeaconApiHeaderFlag,
+			utils.BeaconThresholdFlag,
+			utils.BeaconNoFilterFlag,
+			utils.BeaconConfigFlag,
+			utils.BeaconGenesisRootFlag,
+			utils.BeaconGenesisTimeFlag,
+			utils.BeaconCheckpointFlag,
+			utils.CollectWitnessFlag,
+		}, utils.NetworkFlags, utils.DatabaseFlags,
+	)
 
 	rpcFlags = []cli.Flag{
 		utils.HTTPEnabledFlag,
@@ -297,7 +299,8 @@ func prepare(ctx *cli.Context) {
 
 	case ctx.IsSet(utils.DeveloperFlag.Name):
 		log.Info("Starting Geth in ephemeral dev mode...")
-		log.Warn(`You are running Geth in --dev mode. Please note the following:
+		log.Warn(
+			`You are running Geth in --dev mode. Please note the following:
 
   1. This mode is only intended for fast, iterative development without assumptions on
      security or persistence.
@@ -311,7 +314,8 @@ func prepare(ctx *cli.Context) {
      are pending in the mempool. The miner's minimum accepted gas price is 1.
   5. Networking is disabled; there is no listen-address, the maximum number of peers is set
      to 0, and discovery is disabled.
-`)
+`,
+		)
 
 	case !ctx.IsSet(utils.NetworkIdFlag.Name):
 		log.Info("Starting Geth on Ethereum mainnet...")
@@ -419,8 +423,10 @@ func startNode(ctx *cli.Context, stack *node.Node, isConsole bool) {
 					continue
 				}
 				if timestamp := time.Unix(int64(done.Latest.Time), 0); time.Since(timestamp) < 10*time.Minute {
-					log.Info("Synchronisation completed", "latestnum", done.Latest.Number, "latesthash", done.Latest.Hash(),
-						"age", common.PrettyAge(timestamp))
+					log.Info(
+						"Synchronisation completed", "latestnum", done.Latest.Number, "latesthash", done.Latest.Hash(),
+						"age", common.PrettyAge(timestamp),
+					)
 					stack.Close()
 				}
 			}

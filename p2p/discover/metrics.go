@@ -21,7 +21,7 @@ import (
 	"net"
 	"net/netip"
 
-	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/metrics"
 )
 
 const (
@@ -41,7 +41,9 @@ var (
 
 func init() {
 	for i := 0; i < nBuckets; i++ {
-		bucketsCounter = append(bucketsCounter, metrics.NewRegisteredCounter(fmt.Sprintf("%s/bucket/%d/count", moduleName, i), nil))
+		bucketsCounter = append(
+			bucketsCounter, metrics.NewRegisteredCounter(fmt.Sprintf("%s/bucket/%d/count", moduleName, i), nil),
+		)
 	}
 }
 

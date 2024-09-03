@@ -24,11 +24,11 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/eth/tracers/logger"
-	"github.com/ethereum/go-ethereum/tests"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/eth/tracers/logger"
+	"github.com/ripoff2/go-ethereum/tests"
 	"github.com/urfave/cli/v2"
 )
 
@@ -54,12 +54,14 @@ func blockTestCmd(ctx *cli.Context) error {
 	var tracer *tracing.Hooks
 	// Configure the EVM logger
 	if ctx.Bool(MachineFlag.Name) {
-		tracer = logger.NewJSONLogger(&logger.Config{
-			EnableMemory:     !ctx.Bool(DisableMemoryFlag.Name),
-			DisableStack:     ctx.Bool(DisableStackFlag.Name),
-			DisableStorage:   ctx.Bool(DisableStorageFlag.Name),
-			EnableReturnData: !ctx.Bool(DisableReturnDataFlag.Name),
-		}, os.Stderr)
+		tracer = logger.NewJSONLogger(
+			&logger.Config{
+				EnableMemory:     !ctx.Bool(DisableMemoryFlag.Name),
+				DisableStack:     ctx.Bool(DisableStackFlag.Name),
+				DisableStorage:   ctx.Bool(DisableStorageFlag.Name),
+				EnableReturnData: !ctx.Bool(DisableReturnDataFlag.Name),
+			}, os.Stderr,
+		)
 	}
 	// Load the test content from the input file
 	src, err := os.ReadFile(ctx.Args().First())
@@ -86,13 +88,15 @@ func blockTestCmd(ctx *cli.Context) error {
 			continue
 		}
 		test := tests[name]
-		if err := test.Run(false, rawdb.HashScheme, false, tracer, func(res error, chain *core.BlockChain) {
-			if ctx.Bool(DumpFlag.Name) {
-				if state, _ := chain.State(); state != nil {
-					fmt.Println(string(state.Dump(nil)))
+		if err := test.Run(
+			false, rawdb.HashScheme, false, tracer, func(res error, chain *core.BlockChain) {
+				if ctx.Bool(DumpFlag.Name) {
+					if state, _ := chain.State(); state != nil {
+						fmt.Println(string(state.Dump(nil)))
+					}
 				}
-			}
-		}); err != nil {
+			},
+		); err != nil {
 			return fmt.Errorf("test %v: %w", name, err)
 		}
 	}

@@ -21,14 +21,14 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/enr"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/p2p"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 const (
@@ -95,26 +95,30 @@ func MakeProtocols(backend Backend, network uint64, dnsdisc enode.Iterator) []p2
 	for _, version := range ProtocolVersions {
 		version := version // Closure
 
-		protocols = append(protocols, p2p.Protocol{
-			Name:    ProtocolName,
-			Version: version,
-			Length:  protocolLengths[version],
-			Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
-				peer := NewPeer(version, p, rw, backend.TxPool())
-				defer peer.Close()
+		protocols = append(
+			protocols, p2p.Protocol{
+				Name:    ProtocolName,
+				Version: version,
+				Length:  protocolLengths[version],
+				Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
+					peer := NewPeer(version, p, rw, backend.TxPool())
+					defer peer.Close()
 
-				return backend.RunPeer(peer, func(peer *Peer) error {
-					return Handle(backend, peer)
-				})
+					return backend.RunPeer(
+						peer, func(peer *Peer) error {
+							return Handle(backend, peer)
+						},
+					)
+				},
+				NodeInfo: func() interface{} {
+					return nodeInfo(backend.Chain(), network)
+				},
+				PeerInfo: func(id enode.ID) interface{} {
+					return backend.PeerInfo(id)
+				},
+				Attributes: []enr.Entry{currentENREntry(backend.Chain())},
 			},
-			NodeInfo: func() interface{} {
-				return nodeInfo(backend.Chain(), network)
-			},
-			PeerInfo: func(id enode.ID) interface{} {
-				return backend.PeerInfo(id)
-			},
-			Attributes: []enr.Entry{currentENREntry(backend.Chain())},
-		})
+		)
 	}
 	return protocols
 }

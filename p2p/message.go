@@ -24,9 +24,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/rlp"
 )
 
 // Msg defines the structure of a p2p message.
@@ -284,15 +284,17 @@ func (ev *msgEventer) ReadMsg() (Msg, error) {
 	if err != nil {
 		return msg, err
 	}
-	ev.feed.Send(&PeerEvent{
-		Type:          PeerEventTypeMsgRecv,
-		Peer:          ev.peerID,
-		Protocol:      ev.Protocol,
-		MsgCode:       &msg.Code,
-		MsgSize:       &msg.Size,
-		LocalAddress:  ev.localAddress,
-		RemoteAddress: ev.remoteAddress,
-	})
+	ev.feed.Send(
+		&PeerEvent{
+			Type:          PeerEventTypeMsgRecv,
+			Peer:          ev.peerID,
+			Protocol:      ev.Protocol,
+			MsgCode:       &msg.Code,
+			MsgSize:       &msg.Size,
+			LocalAddress:  ev.localAddress,
+			RemoteAddress: ev.remoteAddress,
+		},
+	)
 	return msg, nil
 }
 
@@ -303,15 +305,17 @@ func (ev *msgEventer) WriteMsg(msg Msg) error {
 	if err != nil {
 		return err
 	}
-	ev.feed.Send(&PeerEvent{
-		Type:          PeerEventTypeMsgSend,
-		Peer:          ev.peerID,
-		Protocol:      ev.Protocol,
-		MsgCode:       &msg.Code,
-		MsgSize:       &msg.Size,
-		LocalAddress:  ev.localAddress,
-		RemoteAddress: ev.remoteAddress,
-	})
+	ev.feed.Send(
+		&PeerEvent{
+			Type:          PeerEventTypeMsgSend,
+			Peer:          ev.peerID,
+			Protocol:      ev.Protocol,
+			MsgCode:       &msg.Code,
+			MsgSize:       &msg.Size,
+			LocalAddress:  ev.localAddress,
+			RemoteAddress: ev.remoteAddress,
+		},
+	)
 	return nil
 }
 

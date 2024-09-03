@@ -29,13 +29,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/tracers/logger"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/eth/tracers/logger"
 )
 
 func initMatcher(st *testMatcher) {
@@ -74,9 +74,11 @@ func TestState(t *testing.T) {
 		stateTestDir,
 		benchmarksDir,
 	} {
-		st.walk(t, dir, func(t *testing.T, name string, test *StateTest) {
-			execStateTest(t, st, test)
-		})
+		st.walk(
+			t, dir, func(t *testing.T, name string, test *StateTest) {
+				execStateTest(t, st, test)
+			},
+		)
 	}
 }
 
@@ -85,9 +87,11 @@ func TestState(t *testing.T) {
 func TestLegacyState(t *testing.T) {
 	st := new(testMatcher)
 	initMatcher(st)
-	st.walk(t, legacyStateTestDir, func(t *testing.T, name string, test *StateTest) {
-		execStateTest(t, st, test)
-	})
+	st.walk(
+		t, legacyStateTestDir, func(t *testing.T, name string, test *StateTest) {
+			execStateTest(t, st, test)
+		},
+	)
 }
 
 // TestExecutionSpecState runs the test fixtures from execution-spec-tests.
@@ -97,9 +101,11 @@ func TestExecutionSpecState(t *testing.T) {
 	}
 	st := new(testMatcher)
 
-	st.walk(t, executionSpecStateTestDir, func(t *testing.T, name string, test *StateTest) {
-		execStateTest(t, st, test)
-	})
+	st.walk(
+		t, executionSpecStateTestDir, func(t *testing.T, name string, test *StateTest) {
+			execStateTest(t, st, test)
+		},
+	)
 }
 
 func execStateTest(t *testing.T, st *testMatcher, test *StateTest) {
@@ -113,66 +119,90 @@ func execStateTest(t *testing.T, st *testMatcher, test *StateTest) {
 		if testing.Short() {
 			executionMask = (1 << (rand.Int63() & 4))
 		}
-		t.Run(key+"/hash/trie", func(t *testing.T) {
-			if executionMask&0x1 == 0 {
-				t.Skip("test (randomly) skipped due to short-tag")
-			}
-			withTrace(t, test.gasLimit(subtest), func(vmconfig vm.Config) error {
-				var result error
-				test.Run(subtest, vmconfig, false, rawdb.HashScheme, func(err error, state *StateTestState) {
-					result = st.checkFailure(t, err)
-				})
-				return result
-			})
-		})
-		t.Run(key+"/hash/snap", func(t *testing.T) {
-			if executionMask&0x2 == 0 {
-				t.Skip("test (randomly) skipped due to short-tag")
-			}
-			withTrace(t, test.gasLimit(subtest), func(vmconfig vm.Config) error {
-				var result error
-				test.Run(subtest, vmconfig, true, rawdb.HashScheme, func(err error, state *StateTestState) {
-					if state.Snapshots != nil && state.StateDB != nil {
-						if _, err := state.Snapshots.Journal(state.StateDB.IntermediateRoot(false)); err != nil {
-							result = err
-							return
-						}
-					}
-					result = st.checkFailure(t, err)
-				})
-				return result
-			})
-		})
-		t.Run(key+"/path/trie", func(t *testing.T) {
-			if executionMask&0x4 == 0 {
-				t.Skip("test (randomly) skipped due to short-tag")
-			}
-			withTrace(t, test.gasLimit(subtest), func(vmconfig vm.Config) error {
-				var result error
-				test.Run(subtest, vmconfig, false, rawdb.PathScheme, func(err error, state *StateTestState) {
-					result = st.checkFailure(t, err)
-				})
-				return result
-			})
-		})
-		t.Run(key+"/path/snap", func(t *testing.T) {
-			if executionMask&0x8 == 0 {
-				t.Skip("test (randomly) skipped due to short-tag")
-			}
-			withTrace(t, test.gasLimit(subtest), func(vmconfig vm.Config) error {
-				var result error
-				test.Run(subtest, vmconfig, true, rawdb.PathScheme, func(err error, state *StateTestState) {
-					if state.Snapshots != nil && state.StateDB != nil {
-						if _, err := state.Snapshots.Journal(state.StateDB.IntermediateRoot(false)); err != nil {
-							result = err
-							return
-						}
-					}
-					result = st.checkFailure(t, err)
-				})
-				return result
-			})
-		})
+		t.Run(
+			key+"/hash/trie", func(t *testing.T) {
+				if executionMask&0x1 == 0 {
+					t.Skip("test (randomly) skipped due to short-tag")
+				}
+				withTrace(
+					t, test.gasLimit(subtest), func(vmconfig vm.Config) error {
+						var result error
+						test.Run(
+							subtest, vmconfig, false, rawdb.HashScheme, func(err error, state *StateTestState) {
+								result = st.checkFailure(t, err)
+							},
+						)
+						return result
+					},
+				)
+			},
+		)
+		t.Run(
+			key+"/hash/snap", func(t *testing.T) {
+				if executionMask&0x2 == 0 {
+					t.Skip("test (randomly) skipped due to short-tag")
+				}
+				withTrace(
+					t, test.gasLimit(subtest), func(vmconfig vm.Config) error {
+						var result error
+						test.Run(
+							subtest, vmconfig, true, rawdb.HashScheme, func(err error, state *StateTestState) {
+								if state.Snapshots != nil && state.StateDB != nil {
+									if _, err := state.Snapshots.Journal(state.StateDB.IntermediateRoot(false)); err != nil {
+										result = err
+										return
+									}
+								}
+								result = st.checkFailure(t, err)
+							},
+						)
+						return result
+					},
+				)
+			},
+		)
+		t.Run(
+			key+"/path/trie", func(t *testing.T) {
+				if executionMask&0x4 == 0 {
+					t.Skip("test (randomly) skipped due to short-tag")
+				}
+				withTrace(
+					t, test.gasLimit(subtest), func(vmconfig vm.Config) error {
+						var result error
+						test.Run(
+							subtest, vmconfig, false, rawdb.PathScheme, func(err error, state *StateTestState) {
+								result = st.checkFailure(t, err)
+							},
+						)
+						return result
+					},
+				)
+			},
+		)
+		t.Run(
+			key+"/path/snap", func(t *testing.T) {
+				if executionMask&0x8 == 0 {
+					t.Skip("test (randomly) skipped due to short-tag")
+				}
+				withTrace(
+					t, test.gasLimit(subtest), func(vmconfig vm.Config) error {
+						var result error
+						test.Run(
+							subtest, vmconfig, true, rawdb.PathScheme, func(err error, state *StateTestState) {
+								if state.Snapshots != nil && state.StateDB != nil {
+									if _, err := state.Snapshots.Journal(state.StateDB.IntermediateRoot(false)); err != nil {
+										result = err
+										return
+									}
+								}
+								result = st.checkFailure(t, err)
+							},
+						)
+						return result
+					},
+				)
+			},
+		)
 	}
 }
 
@@ -218,16 +248,22 @@ func BenchmarkEVM(b *testing.B) {
 		fmt.Fprintf(os.Stderr, "can't find test files in %s, did you clone the evm-benchmarks submodule?\n", dir)
 		b.Skip("missing test files")
 	}
-	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
+	err = filepath.Walk(
+		dir, func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				return nil
+			}
+			if ext := filepath.Ext(path); ext == ".json" {
+				name := filepath.ToSlash(
+					strings.TrimPrefix(
+						strings.TrimSuffix(path, ext), dir+string(filepath.Separator),
+					),
+				)
+				b.Run(name, func(b *testing.B) { runBenchmarkFile(b, path) })
+			}
 			return nil
-		}
-		if ext := filepath.Ext(path); ext == ".json" {
-			name := filepath.ToSlash(strings.TrimPrefix(strings.TrimSuffix(path, ext), dir+string(filepath.Separator)))
-			b.Run(name, func(b *testing.B) { runBenchmarkFile(b, path) })
-		}
-		return nil
-	})
+		},
+	)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -254,95 +290,103 @@ func runBenchmark(b *testing.B, t *StateTest) {
 		subtest := subtest
 		key := fmt.Sprintf("%s/%d", subtest.Fork, subtest.Index)
 
-		b.Run(key, func(b *testing.B) {
-			vmconfig := vm.Config{}
+		b.Run(
+			key, func(b *testing.B) {
+				vmconfig := vm.Config{}
 
-			config, eips, err := GetChainConfig(subtest.Fork)
-			if err != nil {
-				b.Error(err)
-				return
-			}
-			var rules = config.Rules(new(big.Int), false, 0)
-
-			vmconfig.ExtraEips = eips
-			block := t.genesis(config).ToBlock()
-			state := MakePreState(rawdb.NewMemoryDatabase(), t.json.Pre, false, rawdb.HashScheme)
-			defer state.Close()
-
-			var baseFee *big.Int
-			if rules.IsLondon {
-				baseFee = t.json.Env.BaseFee
-				if baseFee == nil {
-					// Retesteth uses `0x10` for genesis baseFee. Therefore, it defaults to
-					// parent - 2 : 0xa as the basefee for 'this' context.
-					baseFee = big.NewInt(0x0a)
+				config, eips, err := GetChainConfig(subtest.Fork)
+				if err != nil {
+					b.Error(err)
+					return
 				}
-			}
-			post := t.json.Post[subtest.Fork][subtest.Index]
-			msg, err := t.json.Tx.toMessage(post, baseFee)
-			if err != nil {
-				b.Error(err)
-				return
-			}
+				var rules = config.Rules(new(big.Int), false, 0)
 
-			// Try to recover tx with current signer
-			if len(post.TxBytes) != 0 {
-				var ttx types.Transaction
-				err := ttx.UnmarshalBinary(post.TxBytes)
+				vmconfig.ExtraEips = eips
+				block := t.genesis(config).ToBlock()
+				state := MakePreState(rawdb.NewMemoryDatabase(), t.json.Pre, false, rawdb.HashScheme)
+				defer state.Close()
+
+				var baseFee *big.Int
+				if rules.IsLondon {
+					baseFee = t.json.Env.BaseFee
+					if baseFee == nil {
+						// Retesteth uses `0x10` for genesis baseFee. Therefore, it defaults to
+						// parent - 2 : 0xa as the basefee for 'this' context.
+						baseFee = big.NewInt(0x0a)
+					}
+				}
+				post := t.json.Post[subtest.Fork][subtest.Index]
+				msg, err := t.json.Tx.toMessage(post, baseFee)
 				if err != nil {
 					b.Error(err)
 					return
 				}
 
-				if _, err := types.Sender(types.LatestSigner(config), &ttx); err != nil {
-					b.Error(err)
-					return
-				}
-			}
+				// Try to recover tx with current signer
+				if len(post.TxBytes) != 0 {
+					var ttx types.Transaction
+					err := ttx.UnmarshalBinary(post.TxBytes)
+					if err != nil {
+						b.Error(err)
+						return
+					}
 
-			// Prepare the EVM.
-			txContext := core.NewEVMTxContext(msg)
-			context := core.NewEVMBlockContext(block.Header(), nil, &t.json.Env.Coinbase)
-			context.GetHash = vmTestBlockHash
-			context.BaseFee = baseFee
-			evm := vm.NewEVM(context, txContext, state.StateDB, config, vmconfig)
-
-			// Create "contract" for sender to cache code analysis.
-			sender := vm.NewContract(vm.AccountRef(msg.From), vm.AccountRef(msg.From),
-				nil, 0)
-
-			var (
-				gasUsed uint64
-				elapsed uint64
-				refund  uint64
-			)
-			b.ResetTimer()
-			for n := 0; n < b.N; n++ {
-				snapshot := state.StateDB.Snapshot()
-				state.StateDB.Prepare(rules, msg.From, context.Coinbase, msg.To, vm.ActivePrecompiles(rules), msg.AccessList)
-				b.StartTimer()
-				start := time.Now()
-
-				// Execute the message.
-				_, leftOverGas, err := evm.Call(sender, *msg.To, msg.Data, msg.GasLimit, uint256.MustFromBig(msg.Value))
-				if err != nil {
-					b.Error(err)
-					return
+					if _, err := types.Sender(types.LatestSigner(config), &ttx); err != nil {
+						b.Error(err)
+						return
+					}
 				}
 
-				b.StopTimer()
-				elapsed += uint64(time.Since(start))
-				refund += state.StateDB.GetRefund()
-				gasUsed += msg.GasLimit - leftOverGas
+				// Prepare the EVM.
+				txContext := core.NewEVMTxContext(msg)
+				context := core.NewEVMBlockContext(block.Header(), nil, &t.json.Env.Coinbase)
+				context.GetHash = vmTestBlockHash
+				context.BaseFee = baseFee
+				evm := vm.NewEVM(context, txContext, state.StateDB, config, vmconfig)
 
-				state.StateDB.RevertToSnapshot(snapshot)
-			}
-			if elapsed < 1 {
-				elapsed = 1
-			}
-			// Keep it as uint64, multiply 100 to get two digit float later
-			mgasps := (100 * 1000 * (gasUsed - refund)) / elapsed
-			b.ReportMetric(float64(mgasps)/100, "mgas/s")
-		})
+				// Create "contract" for sender to cache code analysis.
+				sender := vm.NewContract(
+					vm.AccountRef(msg.From), vm.AccountRef(msg.From),
+					nil, 0,
+				)
+
+				var (
+					gasUsed uint64
+					elapsed uint64
+					refund  uint64
+				)
+				b.ResetTimer()
+				for n := 0; n < b.N; n++ {
+					snapshot := state.StateDB.Snapshot()
+					state.StateDB.Prepare(
+						rules, msg.From, context.Coinbase, msg.To, vm.ActivePrecompiles(rules), msg.AccessList,
+					)
+					b.StartTimer()
+					start := time.Now()
+
+					// Execute the message.
+					_, leftOverGas, err := evm.Call(
+						sender, *msg.To, msg.Data, msg.GasLimit, uint256.MustFromBig(msg.Value),
+					)
+					if err != nil {
+						b.Error(err)
+						return
+					}
+
+					b.StopTimer()
+					elapsed += uint64(time.Since(start))
+					refund += state.StateDB.GetRefund()
+					gasUsed += msg.GasLimit - leftOverGas
+
+					state.StateDB.RevertToSnapshot(snapshot)
+				}
+				if elapsed < 1 {
+					elapsed = 1
+				}
+				// Keep it as uint64, multiply 100 to get two digit float later
+				mgasps := (100 * 1000 * (gasUsed - refund)) / elapsed
+				b.ReportMetric(float64(mgasps)/100, "mgas/s")
+			},
+		)
 	}
 }

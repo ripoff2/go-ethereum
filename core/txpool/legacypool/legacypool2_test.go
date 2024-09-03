@@ -20,18 +20,23 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/event"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/event"
 )
 
-func pricedValuedTransaction(nonce uint64, value int64, gaslimit uint64, gasprice *big.Int, key *ecdsa.PrivateKey) *types.Transaction {
-	tx, _ := types.SignTx(types.NewTransaction(nonce, common.Address{}, big.NewInt(value), gaslimit, gasprice, nil), types.HomesteadSigner{}, key)
+func pricedValuedTransaction(
+	nonce uint64, value int64, gaslimit uint64, gasprice *big.Int, key *ecdsa.PrivateKey,
+) *types.Transaction {
+	tx, _ := types.SignTx(
+		types.NewTransaction(nonce, common.Address{}, big.NewInt(value), gaslimit, gasprice, nil),
+		types.HomesteadSigner{}, key,
+	)
 	return tx
 }
 
@@ -51,7 +56,9 @@ func fillPool(t testing.TB, pool *LegacyPool) {
 	nonExecutableTxs := types.Transactions{}
 	for i := 0; i < 384; i++ {
 		key, _ := crypto.GenerateKey()
-		pool.currentState.AddBalance(crypto.PubkeyToAddress(key.PublicKey), uint256.NewInt(10000000000), tracing.BalanceChangeUnspecified)
+		pool.currentState.AddBalance(
+			crypto.PubkeyToAddress(key.PublicKey), uint256.NewInt(10000000000), tracing.BalanceChangeUnspecified,
+		)
 		// Add executable ones
 		for j := 0; j < int(pool.config.AccountSlots); j++ {
 			executableTxs = append(executableTxs, pricedTransaction(uint64(j), 100000, big.NewInt(300), key))
@@ -93,7 +100,9 @@ func TestTransactionFutureAttack(t *testing.T) {
 	// Now, future transaction attack starts, let's add a bunch of expensive non-executables, and see if the pending-count drops
 	{
 		key, _ := crypto.GenerateKey()
-		pool.currentState.AddBalance(crypto.PubkeyToAddress(key.PublicKey), uint256.NewInt(100000000000), tracing.BalanceChangeUnspecified)
+		pool.currentState.AddBalance(
+			crypto.PubkeyToAddress(key.PublicKey), uint256.NewInt(100000000000), tracing.BalanceChangeUnspecified,
+		)
 		futureTxs := types.Transactions{}
 		for j := 0; j < int(pool.config.GlobalSlots+pool.config.GlobalQueue); j++ {
 			futureTxs = append(futureTxs, pricedTransaction(1000+uint64(j), 100000, big.NewInt(500), key))
@@ -107,8 +116,10 @@ func TestTransactionFutureAttack(t *testing.T) {
 	newPending, _ := pool.Stats()
 	// Pending should not have been touched
 	if have, want := newPending, pending; have < want {
-		t.Errorf("wrong pending-count, have %d, want %d (GlobalSlots: %d)",
-			have, want, pool.config.GlobalSlots)
+		t.Errorf(
+			"wrong pending-count, have %d, want %d (GlobalSlots: %d)",
+			have, want, pool.config.GlobalSlots,
+		)
 	}
 }
 
@@ -130,7 +141,9 @@ func TestTransactionFuture1559(t *testing.T) {
 	// Now, future transaction attack starts, let's add a bunch of expensive non-executables, and see if the pending-count drops
 	{
 		key, _ := crypto.GenerateKey()
-		pool.currentState.AddBalance(crypto.PubkeyToAddress(key.PublicKey), uint256.NewInt(100000000000), tracing.BalanceChangeUnspecified)
+		pool.currentState.AddBalance(
+			crypto.PubkeyToAddress(key.PublicKey), uint256.NewInt(100000000000), tracing.BalanceChangeUnspecified,
+		)
 		futureTxs := types.Transactions{}
 		for j := 0; j < int(pool.config.GlobalSlots+pool.config.GlobalQueue); j++ {
 			futureTxs = append(futureTxs, dynamicFeeTx(1000+uint64(j), 100000, big.NewInt(200), big.NewInt(101), key))
@@ -140,8 +153,10 @@ func TestTransactionFuture1559(t *testing.T) {
 	newPending, _ := pool.Stats()
 	// Pending should not have been touched
 	if have, want := newPending, pending; have != want {
-		t.Errorf("Wrong pending-count, have %d, want %d (GlobalSlots: %d)",
-			have, want, pool.config.GlobalSlots)
+		t.Errorf(
+			"Wrong pending-count, have %d, want %d (GlobalSlots: %d)",
+			have, want, pool.config.GlobalSlots,
+		)
 	}
 }
 
@@ -184,7 +199,9 @@ func TestTransactionZAttack(t *testing.T) {
 	for j := 0; j < int(pool.config.GlobalQueue); j++ {
 		futureTxs := types.Transactions{}
 		key, _ := crypto.GenerateKey()
-		pool.currentState.AddBalance(crypto.PubkeyToAddress(key.PublicKey), uint256.NewInt(100000000000), tracing.BalanceChangeUnspecified)
+		pool.currentState.AddBalance(
+			crypto.PubkeyToAddress(key.PublicKey), uint256.NewInt(100000000000), tracing.BalanceChangeUnspecified,
+		)
 		futureTxs = append(futureTxs, pricedTransaction(1000+uint64(j), 21000, big.NewInt(500), key))
 		pool.addRemotesSync(futureTxs)
 	}
@@ -192,9 +209,13 @@ func TestTransactionZAttack(t *testing.T) {
 	overDraftTxs := types.Transactions{}
 	{
 		key, _ := crypto.GenerateKey()
-		pool.currentState.AddBalance(crypto.PubkeyToAddress(key.PublicKey), uint256.NewInt(100000000000), tracing.BalanceChangeUnspecified)
+		pool.currentState.AddBalance(
+			crypto.PubkeyToAddress(key.PublicKey), uint256.NewInt(100000000000), tracing.BalanceChangeUnspecified,
+		)
 		for j := 0; j < int(pool.config.GlobalSlots); j++ {
-			overDraftTxs = append(overDraftTxs, pricedValuedTransaction(uint64(j), 600000000000, 21000, big.NewInt(500), key))
+			overDraftTxs = append(
+				overDraftTxs, pricedValuedTransaction(uint64(j), 600000000000, 21000, big.NewInt(500), key),
+			)
 		}
 	}
 	pool.addRemotesSync(overDraftTxs)
@@ -211,8 +232,10 @@ func TestTransactionZAttack(t *testing.T) {
 
 	// Pending should not have been touched
 	if newIvPending != ivPending {
-		t.Errorf("Wrong invalid pending-count, have %d, want %d (GlobalSlots: %d, queued: %d)",
-			newIvPending, ivPending, pool.config.GlobalSlots, newQueued)
+		t.Errorf(
+			"Wrong invalid pending-count, have %d, want %d (GlobalSlots: %d, queued: %d)",
+			newIvPending, ivPending, pool.config.GlobalSlots, newQueued,
+		)
 	}
 }
 
@@ -229,7 +252,9 @@ func BenchmarkFutureAttack(b *testing.B) {
 	fillPool(b, pool)
 
 	key, _ := crypto.GenerateKey()
-	pool.currentState.AddBalance(crypto.PubkeyToAddress(key.PublicKey), uint256.NewInt(100000000000), tracing.BalanceChangeUnspecified)
+	pool.currentState.AddBalance(
+		crypto.PubkeyToAddress(key.PublicKey), uint256.NewInt(100000000000), tracing.BalanceChangeUnspecified,
+	)
 	futureTxs := types.Transactions{}
 
 	for n := 0; n < b.N; n++ {

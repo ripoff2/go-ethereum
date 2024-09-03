@@ -20,8 +20,8 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
 )
 
 func TestBlockchain(t *testing.T) {
@@ -49,9 +49,11 @@ func TestBlockchain(t *testing.T) {
 	// using 4.6 TGas
 	bt.skipLoad(`.*randomStatetest94.json.*`)
 
-	bt.walk(t, blockTestDir, func(t *testing.T, name string, test *BlockTest) {
-		execBlockTest(t, bt, test)
-	})
+	bt.walk(
+		t, blockTestDir, func(t *testing.T, name string, test *BlockTest) {
+			execBlockTest(t, bt, test)
+		},
+	)
 	// There is also a LegacyTests folder, containing blockchain tests generated
 	// prior to Istanbul. However, they are all derived from GeneralStateTests,
 	// which run natively, so there's no reason to run them here.
@@ -64,9 +66,11 @@ func TestExecutionSpecBlocktests(t *testing.T) {
 	}
 	bt := new(testMatcher)
 
-	bt.walk(t, executionSpecBlockchainTestDir, func(t *testing.T, name string, test *BlockTest) {
-		execBlockTest(t, bt, test)
-	})
+	bt.walk(
+		t, executionSpecBlockchainTestDir, func(t *testing.T, name string, test *BlockTest) {
+			execBlockTest(t, bt, test)
+		},
+	)
 }
 
 func execBlockTest(t *testing.T, bt *testMatcher, test *BlockTest) {

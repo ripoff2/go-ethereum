@@ -24,14 +24,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/accounts/abi"
+	"github.com/ripoff2/go-ethereum/accounts/abi/bind"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/rlp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -124,12 +124,16 @@ type mockBlockHashCaller struct {
 	callContractAtHashErr    error
 }
 
-func (mc *mockBlockHashCaller) CodeAtHash(ctx context.Context, contract common.Address, hash common.Hash) ([]byte, error) {
+func (mc *mockBlockHashCaller) CodeAtHash(ctx context.Context, contract common.Address, hash common.Hash) (
+	[]byte, error,
+) {
 	mc.codeAtHashCalled = true
 	return mc.codeAtHashBytes, mc.codeAtHashErr
 }
 
-func (mc *mockBlockHashCaller) CallContractAtHash(ctx context.Context, call ethereum.CallMsg, hash common.Hash) ([]byte, error) {
+func (mc *mockBlockHashCaller) CallContractAtHash(ctx context.Context, call ethereum.CallMsg, hash common.Hash) (
+	[]byte, error,
+) {
 	mc.callContractAtHashCalled = true
 	return mc.callContractAtHashBytes, mc.callContractAtHashErr
 }
@@ -142,14 +146,16 @@ func TestPassingBlockNumber(t *testing.T) {
 		},
 	}
 
-	bc := bind.NewBoundContract(common.HexToAddress("0x0"), abi.ABI{
-		Methods: map[string]abi.Method{
-			"something": {
-				Name:    "something",
-				Outputs: abi.Arguments{},
+	bc := bind.NewBoundContract(
+		common.HexToAddress("0x0"), abi.ABI{
+			Methods: map[string]abi.Method{
+				"something": {
+					Name:    "something",
+					Outputs: abi.Arguments{},
+				},
 			},
-		},
-	}, mc, nil, nil)
+		}, mc, nil, nil,
+	)
 
 	blockNumber := big.NewInt(42)
 
@@ -254,7 +260,11 @@ func TestUnpackIndexedSliceTyLogIntoMap(t *testing.T) {
 
 func TestUnpackIndexedArrayTyLogIntoMap(t *testing.T) {
 	t.Parallel()
-	arrBytes, err := rlp.EncodeToBytes([2]common.Address{common.HexToAddress("0x0"), common.HexToAddress("0x376c47978271565f56DEB45495afa69E59c16Ab2")})
+	arrBytes, err := rlp.EncodeToBytes(
+		[2]common.Address{
+			common.HexToAddress("0x0"), common.HexToAddress("0x376c47978271565f56DEB45495afa69E59c16Ab2"),
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +301,9 @@ func TestUnpackIndexedFuncTyLogIntoMap(t *testing.T) {
 		crypto.Keccak256Hash([]byte("received(function,address,uint256,bytes)")),
 		common.BytesToHash(functionTyBytes),
 	}
-	mockLog := newMockLog(topics, common.HexToHash("0x5c698f13940a2153440c6d19660878bc90219d9298fdcf37365aa8d88d40fc42"))
+	mockLog := newMockLog(
+		topics, common.HexToHash("0x5c698f13940a2153440c6d19660878bc90219d9298fdcf37365aa8d88d40fc42"),
+	)
 	abiString := `[{"anonymous":false,"inputs":[{"indexed":true,"name":"function","type":"function"},{"indexed":false,"name":"sender","type":"address"},{"indexed":false,"name":"amount","type":"uint256"},{"indexed":false,"name":"memo","type":"bytes"}],"name":"received","type":"event"}]`
 	parsedAbi, _ := abi.JSON(strings.NewReader(abiString))
 	bc := bind.NewBoundContract(common.HexToAddress("0x0"), parsedAbi, nil, nil, nil)
@@ -313,7 +325,9 @@ func TestUnpackIndexedBytesTyLogIntoMap(t *testing.T) {
 		crypto.Keccak256Hash([]byte("received(bytes,address,uint256,bytes)")),
 		hash,
 	}
-	mockLog := newMockLog(topics, common.HexToHash("0x5c698f13940a2153440c6d19660878bc90219d9298fdcf37365aa8d88d40fc42"))
+	mockLog := newMockLog(
+		topics, common.HexToHash("0x5c698f13940a2153440c6d19660878bc90219d9298fdcf37365aa8d88d40fc42"),
+	)
 
 	abiString := `[{"anonymous":false,"inputs":[{"indexed":true,"name":"content","type":"bytes"},{"indexed":false,"name":"sender","type":"address"},{"indexed":false,"name":"amount","type":"uint256"},{"indexed":false,"name":"memo","type":"bytes"}],"name":"received","type":"event"}]`
 	parsedAbi, _ := abi.JSON(strings.NewReader(abiString))
@@ -414,155 +428,159 @@ func TestCall(t *testing.T) {
 		results      *[]interface{}
 		wantErr      bool
 		wantErrExact error
-	}{{
-		name: "ok not pending",
-		mc: &mockCaller{
-			codeAtBytes: []byte{0},
-		},
-		method: method,
-	}, {
-		name: "ok pending",
-		mc: &mockPendingCaller{
-			pendingCodeAtBytes: []byte{0},
-		},
-		opts: &bind.CallOpts{
-			Pending: true,
-		},
-		method: method,
-	}, {
-		name: "ok hash",
-		mc: &mockBlockHashCaller{
-			codeAtHashBytes: []byte{0},
-		},
-		opts: &bind.CallOpts{
-			BlockHash: common.Hash{0xaa},
-		},
-		method: method,
-	}, {
-		name:    "pack error, no method",
-		mc:      new(mockCaller),
-		method:  "else",
-		wantErr: true,
-	}, {
-		name: "interface error, pending but not a PendingContractCaller",
-		mc:   new(mockCaller),
-		opts: &bind.CallOpts{
-			Pending: true,
-		},
-		method:       method,
-		wantErrExact: bind.ErrNoPendingState,
-	}, {
-		name: "interface error, blockHash but not a BlockHashContractCaller",
-		mc:   new(mockCaller),
-		opts: &bind.CallOpts{
-			BlockHash: common.Hash{0xaa},
-		},
-		method:       method,
-		wantErrExact: bind.ErrNoBlockHashState,
-	}, {
-		name: "pending call canceled",
-		mc: &mockPendingCaller{
-			pendingCallContractErr: context.DeadlineExceeded,
-		},
-		opts: &bind.CallOpts{
-			Pending: true,
-		},
-		method:       method,
-		wantErrExact: context.DeadlineExceeded,
-	}, {
-		name: "pending code at error",
-		mc: &mockPendingCaller{
-			pendingCodeAtErr: errors.New(""),
-		},
-		opts: &bind.CallOpts{
-			Pending: true,
-		},
-		method:  method,
-		wantErr: true,
-	}, {
-		name: "no pending code at",
-		mc:   new(mockPendingCaller),
-		opts: &bind.CallOpts{
-			Pending: true,
-		},
-		method:       method,
-		wantErrExact: bind.ErrNoCode,
-	}, {
-		name: "call contract error",
-		mc: &mockCaller{
-			callContractErr: context.DeadlineExceeded,
-		},
-		method:       method,
-		wantErrExact: context.DeadlineExceeded,
-	}, {
-		name: "code at error",
-		mc: &mockCaller{
-			codeAtErr: errors.New(""),
-		},
-		method:  method,
-		wantErr: true,
-	}, {
-		name:         "no code at",
-		mc:           new(mockCaller),
-		method:       method,
-		wantErrExact: bind.ErrNoCode,
-	}, {
-		name: "call contract at hash error",
-		mc: &mockBlockHashCaller{
-			callContractAtHashErr: context.DeadlineExceeded,
-		},
-		opts: &bind.CallOpts{
-			BlockHash: common.Hash{0xaa},
-		},
-		method:       method,
-		wantErrExact: context.DeadlineExceeded,
-	}, {
-		name: "code at error",
-		mc: &mockBlockHashCaller{
-			codeAtHashErr: errors.New(""),
-		},
-		opts: &bind.CallOpts{
-			BlockHash: common.Hash{0xaa},
-		},
-		method:  method,
-		wantErr: true,
-	}, {
-		name: "no code at hash",
-		mc:   new(mockBlockHashCaller),
-		opts: &bind.CallOpts{
-			BlockHash: common.Hash{0xaa},
-		},
-		method:       method,
-		wantErrExact: bind.ErrNoCode,
-	}, {
-		name: "unpack error missing arg",
-		mc: &mockCaller{
-			codeAtBytes: []byte{0},
-		},
-		method:  methodWithArg,
-		wantErr: true,
-	}, {
-		name: "interface unpack error",
-		mc: &mockCaller{
-			codeAtBytes: []byte{0},
-		},
-		method:  method,
-		results: &[]interface{}{0},
-		wantErr: true,
-	}}
-	for _, test := range tests {
-		bc := bind.NewBoundContract(common.HexToAddress("0x0"), abi.ABI{
-			Methods: map[string]abi.Method{
-				method: {
-					Name:    method,
-					Outputs: abi.Arguments{},
-				},
-				methodWithArg: {
-					Name:    methodWithArg,
-					Outputs: abi.Arguments{abi.Argument{}},
-				},
+	}{
+		{
+			name: "ok not pending",
+			mc: &mockCaller{
+				codeAtBytes: []byte{0},
 			},
-		}, test.mc, nil, nil)
+			method: method,
+		}, {
+			name: "ok pending",
+			mc: &mockPendingCaller{
+				pendingCodeAtBytes: []byte{0},
+			},
+			opts: &bind.CallOpts{
+				Pending: true,
+			},
+			method: method,
+		}, {
+			name: "ok hash",
+			mc: &mockBlockHashCaller{
+				codeAtHashBytes: []byte{0},
+			},
+			opts: &bind.CallOpts{
+				BlockHash: common.Hash{0xaa},
+			},
+			method: method,
+		}, {
+			name:    "pack error, no method",
+			mc:      new(mockCaller),
+			method:  "else",
+			wantErr: true,
+		}, {
+			name: "interface error, pending but not a PendingContractCaller",
+			mc:   new(mockCaller),
+			opts: &bind.CallOpts{
+				Pending: true,
+			},
+			method:       method,
+			wantErrExact: bind.ErrNoPendingState,
+		}, {
+			name: "interface error, blockHash but not a BlockHashContractCaller",
+			mc:   new(mockCaller),
+			opts: &bind.CallOpts{
+				BlockHash: common.Hash{0xaa},
+			},
+			method:       method,
+			wantErrExact: bind.ErrNoBlockHashState,
+		}, {
+			name: "pending call canceled",
+			mc: &mockPendingCaller{
+				pendingCallContractErr: context.DeadlineExceeded,
+			},
+			opts: &bind.CallOpts{
+				Pending: true,
+			},
+			method:       method,
+			wantErrExact: context.DeadlineExceeded,
+		}, {
+			name: "pending code at error",
+			mc: &mockPendingCaller{
+				pendingCodeAtErr: errors.New(""),
+			},
+			opts: &bind.CallOpts{
+				Pending: true,
+			},
+			method:  method,
+			wantErr: true,
+		}, {
+			name: "no pending code at",
+			mc:   new(mockPendingCaller),
+			opts: &bind.CallOpts{
+				Pending: true,
+			},
+			method:       method,
+			wantErrExact: bind.ErrNoCode,
+		}, {
+			name: "call contract error",
+			mc: &mockCaller{
+				callContractErr: context.DeadlineExceeded,
+			},
+			method:       method,
+			wantErrExact: context.DeadlineExceeded,
+		}, {
+			name: "code at error",
+			mc: &mockCaller{
+				codeAtErr: errors.New(""),
+			},
+			method:  method,
+			wantErr: true,
+		}, {
+			name:         "no code at",
+			mc:           new(mockCaller),
+			method:       method,
+			wantErrExact: bind.ErrNoCode,
+		}, {
+			name: "call contract at hash error",
+			mc: &mockBlockHashCaller{
+				callContractAtHashErr: context.DeadlineExceeded,
+			},
+			opts: &bind.CallOpts{
+				BlockHash: common.Hash{0xaa},
+			},
+			method:       method,
+			wantErrExact: context.DeadlineExceeded,
+		}, {
+			name: "code at error",
+			mc: &mockBlockHashCaller{
+				codeAtHashErr: errors.New(""),
+			},
+			opts: &bind.CallOpts{
+				BlockHash: common.Hash{0xaa},
+			},
+			method:  method,
+			wantErr: true,
+		}, {
+			name: "no code at hash",
+			mc:   new(mockBlockHashCaller),
+			opts: &bind.CallOpts{
+				BlockHash: common.Hash{0xaa},
+			},
+			method:       method,
+			wantErrExact: bind.ErrNoCode,
+		}, {
+			name: "unpack error missing arg",
+			mc: &mockCaller{
+				codeAtBytes: []byte{0},
+			},
+			method:  methodWithArg,
+			wantErr: true,
+		}, {
+			name: "interface unpack error",
+			mc: &mockCaller{
+				codeAtBytes: []byte{0},
+			},
+			method:  method,
+			results: &[]interface{}{0},
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		bc := bind.NewBoundContract(
+			common.HexToAddress("0x0"), abi.ABI{
+				Methods: map[string]abi.Method{
+					method: {
+						Name:    method,
+						Outputs: abi.Arguments{},
+					},
+					methodWithArg: {
+						Name:    methodWithArg,
+						Outputs: abi.Arguments{abi.Argument{}},
+					},
+				},
+			}, test.mc, nil, nil,
+		)
 		err := bc.Call(test.opts, test.results, test.method)
 		if test.wantErr || test.wantErrExact != nil {
 			if err == nil {

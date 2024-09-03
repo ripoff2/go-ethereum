@@ -22,8 +22,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/ripoff2/go-ethereum/common/mclock"
+	"github.com/ripoff2/go-ethereum/p2p/enode"
 )
 
 const never = mclock.AbsTime(math.MaxInt64)
@@ -162,7 +162,10 @@ func (tr *tableRevalidation) handleResponse(tab *Table, resp revalidationRespons
 		if n.livenessChecks <= 0 {
 			tab.deleteInBucket(b, n.ID())
 		} else {
-			tab.log.Debug("Node revalidation failed", "b", b.index, "id", n.ID(), "checks", n.livenessChecks, "q", n.revalList.name)
+			tab.log.Debug(
+				"Node revalidation failed", "b", b.index, "id", n.ID(), "checks", n.livenessChecks, "q",
+				n.revalList.name,
+			)
 			tr.moveToList(&tr.fast, n, now, &tab.rand)
 		}
 		return
@@ -242,7 +245,9 @@ func (list *revalidationList) remove(n *tableNode) {
 }
 
 func (list *revalidationList) contains(id enode.ID) bool {
-	return slices.ContainsFunc(list.nodes, func(n *tableNode) bool {
-		return n.ID() == id
-	})
+	return slices.ContainsFunc(
+		list.nodes, func(n *tableNode) bool {
+			return n.ID() == id
+		},
+	)
 }

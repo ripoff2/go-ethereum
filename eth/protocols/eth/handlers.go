@@ -21,12 +21,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/trie"
 )
 
 func handleGetBlockHeaders(backend Backend, msg Decoder, peer *Peer) error {
@@ -53,7 +53,9 @@ func ServiceGetBlockHeadersQuery(chain *core.BlockChain, query *GetBlockHeadersR
 	}
 }
 
-func serviceNonContiguousBlockHeaderQuery(chain *core.BlockChain, query *GetBlockHeadersRequest, peer *Peer) []rlp.RawValue {
+func serviceNonContiguousBlockHeaderQuery(
+	chain *core.BlockChain, query *GetBlockHeadersRequest, peer *Peer,
+) []rlp.RawValue {
 	hashMode := query.Origin.Hash != (common.Hash{})
 	first := true
 	maxNonCanonical := uint64(100)
@@ -100,7 +102,9 @@ func serviceNonContiguousBlockHeaderQuery(chain *core.BlockChain, query *GetBloc
 			if ancestor == 0 {
 				unknown = true
 			} else {
-				query.Origin.Hash, query.Origin.Number = chain.GetAncestor(query.Origin.Hash, query.Origin.Number, ancestor, &maxNonCanonical)
+				query.Origin.Hash, query.Origin.Number = chain.GetAncestor(
+					query.Origin.Hash, query.Origin.Number, ancestor, &maxNonCanonical,
+				)
 				unknown = (query.Origin.Hash == common.Hash{})
 			}
 		case hashMode && !query.Reverse:
@@ -111,7 +115,10 @@ func serviceNonContiguousBlockHeaderQuery(chain *core.BlockChain, query *GetBloc
 			)
 			if next <= current {
 				infos, _ := json.MarshalIndent(peer.Peer.Info(), "", "  ")
-				peer.Log().Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
+				peer.Log().Warn(
+					"GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next,
+					"attacker", infos,
+				)
 				unknown = true
 			} else {
 				if header := chain.GetHeaderByNumber(next); header != nil {
@@ -298,11 +305,13 @@ func handleBlockHeaders(backend Backend, msg Decoder, peer *Peer) error {
 		}
 		return hashes
 	}
-	return peer.dispatchResponse(&Response{
-		id:   res.RequestId,
-		code: BlockHeadersMsg,
-		Res:  &res.BlockHeadersRequest,
-	}, metadata)
+	return peer.dispatchResponse(
+		&Response{
+			id:   res.RequestId,
+			code: BlockHeadersMsg,
+			Res:  &res.BlockHeadersRequest,
+		}, metadata,
+	)
 }
 
 func handleBlockBodies(backend Backend, msg Decoder, peer *Peer) error {
@@ -327,11 +336,13 @@ func handleBlockBodies(backend Backend, msg Decoder, peer *Peer) error {
 		}
 		return [][]common.Hash{txsHashes, uncleHashes, withdrawalHashes}
 	}
-	return peer.dispatchResponse(&Response{
-		id:   res.RequestId,
-		code: BlockBodiesMsg,
-		Res:  &res.BlockBodiesResponse,
-	}, metadata)
+	return peer.dispatchResponse(
+		&Response{
+			id:   res.RequestId,
+			code: BlockBodiesMsg,
+			Res:  &res.BlockBodiesResponse,
+		}, metadata,
+	)
 }
 
 func handleReceipts(backend Backend, msg Decoder, peer *Peer) error {
@@ -348,11 +359,13 @@ func handleReceipts(backend Backend, msg Decoder, peer *Peer) error {
 		}
 		return hashes
 	}
-	return peer.dispatchResponse(&Response{
-		id:   res.RequestId,
-		code: ReceiptsMsg,
-		Res:  &res.ReceiptsResponse,
-	}, metadata)
+	return peer.dispatchResponse(
+		&Response{
+			id:   res.RequestId,
+			code: ReceiptsMsg,
+			Res:  &res.ReceiptsResponse,
+		}, metadata,
+	)
 }
 
 func handleNewPooledTransactionHashes(backend Backend, msg Decoder, peer *Peer) error {
@@ -366,7 +379,10 @@ func handleNewPooledTransactionHashes(backend Backend, msg Decoder, peer *Peer) 
 		return fmt.Errorf("%w: message %v: %v", errDecode, msg, err)
 	}
 	if len(ann.Hashes) != len(ann.Types) || len(ann.Hashes) != len(ann.Sizes) {
-		return fmt.Errorf("%w: message %v: invalid len of fields: %v %v %v", errDecode, msg, len(ann.Hashes), len(ann.Types), len(ann.Sizes))
+		return fmt.Errorf(
+			"%w: message %v: invalid len of fields: %v %v %v", errDecode, msg, len(ann.Hashes), len(ann.Types),
+			len(ann.Sizes),
+		)
 	}
 	// Schedule all the unknown hashes for retrieval
 	for _, hash := range ann.Hashes {

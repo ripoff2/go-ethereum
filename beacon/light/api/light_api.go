@@ -28,12 +28,12 @@ import (
 	"time"
 
 	"github.com/donovanhide/eventsource"
-	"github.com/ethereum/go-ethereum/beacon/merkle"
-	"github.com/ethereum/go-ethereum/beacon/params"
-	"github.com/ethereum/go-ethereum/beacon/types"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/beacon/merkle"
+	"github.com/ripoff2/go-ethereum/beacon/params"
+	"github.com/ripoff2/go-ethereum/beacon/types"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 var (
@@ -159,7 +159,9 @@ func (api *BeaconLightApi) httpGetf(format string, params ...any) ([]byte, error
 // equals update.NextSyncCommitteeRoot).
 // Note that the results are validated but the update signature should be verified
 // by the caller as its validity depends on the update chain.
-func (api *BeaconLightApi) GetBestUpdatesAndCommittees(firstPeriod, count uint64) ([]*types.LightClientUpdate, []*types.SerializedSyncCommittee, error) {
+func (api *BeaconLightApi) GetBestUpdatesAndCommittees(firstPeriod, count uint64) (
+	[]*types.LightClientUpdate, []*types.SerializedSyncCommittee, error,
+) {
 	resp, err := api.httpGetf("/eth/v1/beacon/light_client/updates?start_period=%d&count=%d", firstPeriod, count)
 	if err != nil {
 		return nil, nil, err
@@ -474,14 +476,20 @@ func (api *BeaconLightApi) StartHeadListener(listener HeadEventListener) func() 
 		}
 		log.Trace("Requesting initial optimistic update")
 		if optimisticUpdate, err := api.GetOptimisticUpdate(); err == nil {
-			log.Trace("Retrieved initial optimistic update", "slot", optimisticUpdate.Attested.Slot, "hash", optimisticUpdate.Attested.Hash())
+			log.Trace(
+				"Retrieved initial optimistic update", "slot", optimisticUpdate.Attested.Slot, "hash",
+				optimisticUpdate.Attested.Hash(),
+			)
 			listener.OnOptimistic(optimisticUpdate)
 		} else {
 			log.Debug("Failed to retrieve initial optimistic update", "error", err)
 		}
 		log.Trace("Requesting initial finality update")
 		if finalityUpdate, err := api.GetFinalityUpdate(); err == nil {
-			log.Trace("Retrieved initial finality update", "slot", finalityUpdate.Finalized.Slot, "hash", finalityUpdate.Finalized.Hash())
+			log.Trace(
+				"Retrieved initial finality update", "slot", finalityUpdate.Finalized.Slot, "hash",
+				finalityUpdate.Finalized.Hash(),
+			)
 			listener.OnFinality(finalityUpdate)
 		} else {
 			log.Debug("Failed to retrieve initial finality update", "error", err)
@@ -551,7 +559,10 @@ func (api *BeaconLightApi) StartHeadListener(listener HeadEventListener) func() 
 func (api *BeaconLightApi) startEventStream(ctx context.Context, listener *HeadEventListener) *eventsource.Stream {
 	for retry := true; retry; retry = ctxSleep(ctx, 5*time.Second) {
 		log.Trace("Sending event subscription request")
-		uri, err := api.buildURL("/eth/v1/events", map[string][]string{"topics": {"head", "light_client_finality_update", "light_client_optimistic_update"}})
+		uri, err := api.buildURL(
+			"/eth/v1/events",
+			map[string][]string{"topics": {"head", "light_client_finality_update", "light_client_optimistic_update"}},
+		)
 		if err != nil {
 			listener.OnError(fmt.Errorf("error creating event subscription URL: %v", err))
 			continue

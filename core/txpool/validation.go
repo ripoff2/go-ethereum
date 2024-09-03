@@ -22,13 +22,13 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto/kzg4844"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto/kzg4844"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 var (
@@ -53,7 +53,9 @@ type ValidationOptions struct {
 //
 // This check is public to allow different transaction pools to check the basic
 // rules without duplicating code and running the risk of missed updates.
-func ValidateTransaction(tx *types.Transaction, head *types.Header, signer types.Signer, opts *ValidationOptions) error {
+func ValidateTransaction(
+	tx *types.Transaction, head *types.Header, signer types.Signer, opts *ValidationOptions,
+) error {
 	// Ensure transactions not implemented by the calling pool are rejected
 	if opts.Accept&(1<<tx.Type()) == 0 {
 		return fmt.Errorf("%w: tx type %v not supported by this pool", core.ErrTxTypeNotSupported, tx.Type())
@@ -75,7 +77,9 @@ func ValidateTransaction(tx *types.Transaction, head *types.Header, signer types
 	}
 	// Check whether the init code size has been exceeded
 	if opts.Config.IsShanghai(head.Number, head.Time) && tx.To() == nil && len(tx.Data()) > params.MaxInitCodeSize {
-		return fmt.Errorf("%w: code size %v, limit %v", core.ErrMaxInitCodeSizeExceeded, len(tx.Data()), params.MaxInitCodeSize)
+		return fmt.Errorf(
+			"%w: code size %v, limit %v", core.ErrMaxInitCodeSizeExceeded, len(tx.Data()), params.MaxInitCodeSize,
+		)
 	}
 	// Transactions can't be negative. This may never happen using RLP decoded
 	// transactions but may occur for transactions created using the RPC.
@@ -103,7 +107,10 @@ func ValidateTransaction(tx *types.Transaction, head *types.Header, signer types
 	}
 	// Ensure the transaction has more gas than the bare minimum needed to cover
 	// the transaction metadata
-	intrGas, err := core.IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, opts.Config.IsIstanbul(head.Number), opts.Config.IsShanghai(head.Number, head.Time))
+	intrGas, err := core.IntrinsicGas(
+		tx.Data(), tx.AccessList(), tx.To() == nil, true, opts.Config.IsIstanbul(head.Number),
+		opts.Config.IsShanghai(head.Number, head.Time),
+	)
 	if err != nil {
 		return err
 	}
@@ -117,7 +124,9 @@ func ValidateTransaction(tx *types.Transaction, head *types.Header, signer types
 	if tx.Type() == types.BlobTxType {
 		// Ensure the blob fee cap satisfies the minimum blob gas price
 		if tx.BlobGasFeeCapIntCmp(blobTxMinBlobGasPrice) < 0 {
-			return fmt.Errorf("%w: blob fee cap %v, minimum needed %v", ErrUnderpriced, tx.BlobGasFeeCap(), blobTxMinBlobGasPrice)
+			return fmt.Errorf(
+				"%w: blob fee cap %v, minimum needed %v", ErrUnderpriced, tx.BlobGasFeeCap(), blobTxMinBlobGasPrice,
+			)
 		}
 		sidecar := tx.BlobTxSidecar()
 		if sidecar == nil {
@@ -130,7 +139,10 @@ func ValidateTransaction(tx *types.Transaction, head *types.Header, signer types
 			return errors.New("blobless blob transaction")
 		}
 		if len(hashes) > params.MaxBlobGasPerBlock/params.BlobTxBlobGasPerBlob {
-			return fmt.Errorf("too many blobs in transaction: have %d, permitted %d", len(hashes), params.MaxBlobGasPerBlock/params.BlobTxBlobGasPerBlob)
+			return fmt.Errorf(
+				"too many blobs in transaction: have %d, permitted %d", len(hashes),
+				params.MaxBlobGasPerBlock/params.BlobTxBlobGasPerBlob,
+			)
 		}
 		// Ensure commitments, proofs and hashes are valid
 		if err := validateBlobSidecar(hashes, sidecar); err != nil {
@@ -145,10 +157,14 @@ func validateBlobSidecar(hashes []common.Hash, sidecar *types.BlobTxSidecar) err
 		return fmt.Errorf("invalid number of %d blobs compared to %d blob hashes", len(sidecar.Blobs), len(hashes))
 	}
 	if len(sidecar.Commitments) != len(hashes) {
-		return fmt.Errorf("invalid number of %d blob commitments compared to %d blob hashes", len(sidecar.Commitments), len(hashes))
+		return fmt.Errorf(
+			"invalid number of %d blob commitments compared to %d blob hashes", len(sidecar.Commitments), len(hashes),
+		)
 	}
 	if len(sidecar.Proofs) != len(hashes) {
-		return fmt.Errorf("invalid number of %d blob proofs compared to %d blob hashes", len(sidecar.Proofs), len(hashes))
+		return fmt.Errorf(
+			"invalid number of %d blob proofs compared to %d blob hashes", len(sidecar.Proofs), len(hashes),
+		)
 	}
 	// Blob quantities match up, validate that the provers match with the
 	// transaction hash before getting to the cryptography
@@ -223,7 +239,10 @@ func ValidateTransactionWithState(tx *types.Transaction, signer types.Signer, op
 		cost    = tx.Cost()
 	)
 	if balance.Cmp(cost) < 0 {
-		return fmt.Errorf("%w: balance %v, tx cost %v, overshot %v", core.ErrInsufficientFunds, balance, cost, new(big.Int).Sub(cost, balance))
+		return fmt.Errorf(
+			"%w: balance %v, tx cost %v, overshot %v", core.ErrInsufficientFunds, balance, cost,
+			new(big.Int).Sub(cost, balance),
+		)
 	}
 	// Ensure the transactor has enough funds to cover for replacements or nonce
 	// expansions without overdrafts
@@ -232,12 +251,18 @@ func ValidateTransactionWithState(tx *types.Transaction, signer types.Signer, op
 		bump := new(big.Int).Sub(cost, prev)
 		need := new(big.Int).Add(spent, bump)
 		if balance.Cmp(need) < 0 {
-			return fmt.Errorf("%w: balance %v, queued cost %v, tx bumped %v, overshot %v", core.ErrInsufficientFunds, balance, spent, bump, new(big.Int).Sub(need, balance))
+			return fmt.Errorf(
+				"%w: balance %v, queued cost %v, tx bumped %v, overshot %v", core.ErrInsufficientFunds, balance, spent,
+				bump, new(big.Int).Sub(need, balance),
+			)
 		}
 	} else {
 		need := new(big.Int).Add(spent, cost)
 		if balance.Cmp(need) < 0 {
-			return fmt.Errorf("%w: balance %v, queued cost %v, tx cost %v, overshot %v", core.ErrInsufficientFunds, balance, spent, cost, new(big.Int).Sub(need, balance))
+			return fmt.Errorf(
+				"%w: balance %v, queued cost %v, tx cost %v, overshot %v", core.ErrInsufficientFunds, balance, spent,
+				cost, new(big.Int).Sub(need, balance),
+			)
 		}
 		// Transaction takes a new nonce value out of the pool. Ensure it doesn't
 		// overflow the number of permitted transactions from a single account

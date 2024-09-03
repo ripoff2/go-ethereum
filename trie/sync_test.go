@@ -23,13 +23,13 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/ethdb/memorydb"
-	"github.com/ethereum/go-ethereum/trie/trienode"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/ethdb/memorydb"
+	"github.com/ripoff2/go-ethereum/trie/trienode"
 )
 
 // makeTestTrie create a sample test trie to test node-wise reconstruction.
@@ -72,7 +72,9 @@ func makeTestTrie(scheme string) (ethdb.Database, *testDb, *StateTrie, map[strin
 
 // checkTrieContents cross references a reconstructed trie with an expected data
 // content map.
-func checkTrieContents(t *testing.T, db ethdb.Database, scheme string, root []byte, content map[string][]byte, rawTrie bool) {
+func checkTrieContents(
+	t *testing.T, db ethdb.Database, scheme string, root []byte, content map[string][]byte, rawTrie bool,
+) {
 	// Check root availability and trie contents
 	ndb := newTestDatabase(db, scheme)
 	if err := checkTrieConsistency(db, scheme, common.BytesToHash(root), rawTrie); err != nil {
@@ -177,11 +179,13 @@ func testIterativeSync(t *testing.T, count int, bypath bool, scheme string) {
 	paths, nodes, _ := sched.Missing(count)
 	var elements []trieElement
 	for i := 0; i < len(paths); i++ {
-		elements = append(elements, trieElement{
-			path:     paths[i],
-			hash:     nodes[i],
-			syncPath: NewSyncPath([]byte(paths[i])),
-		})
+		elements = append(
+			elements, trieElement{
+				path:     paths[i],
+				hash:     nodes[i],
+				syncPath: NewSyncPath([]byte(paths[i])),
+			},
+		)
 	}
 	reader, err := srcDb.Reader(srcTrie.Hash())
 	if err != nil {
@@ -221,11 +225,13 @@ func testIterativeSync(t *testing.T, count int, bypath bool, scheme string) {
 		paths, nodes, _ = sched.Missing(count)
 		elements = elements[:0]
 		for i := 0; i < len(paths); i++ {
-			elements = append(elements, trieElement{
-				path:     paths[i],
-				hash:     nodes[i],
-				syncPath: NewSyncPath([]byte(paths[i])),
-			})
+			elements = append(
+				elements, trieElement{
+					path:     paths[i],
+					hash:     nodes[i],
+					syncPath: NewSyncPath([]byte(paths[i])),
+				},
+			)
 		}
 	}
 	// Cross check that the two tries are in sync
@@ -252,11 +258,13 @@ func testIterativeDelayedSync(t *testing.T, scheme string) {
 	paths, nodes, _ := sched.Missing(10000)
 	var elements []trieElement
 	for i := 0; i < len(paths); i++ {
-		elements = append(elements, trieElement{
-			path:     paths[i],
-			hash:     nodes[i],
-			syncPath: NewSyncPath([]byte(paths[i])),
-		})
+		elements = append(
+			elements, trieElement{
+				path:     paths[i],
+				hash:     nodes[i],
+				syncPath: NewSyncPath([]byte(paths[i])),
+			},
+		)
 	}
 	reader, err := srcDb.Reader(srcTrie.Hash())
 	if err != nil {
@@ -287,11 +295,13 @@ func testIterativeDelayedSync(t *testing.T, scheme string) {
 		paths, nodes, _ = sched.Missing(10000)
 		elements = elements[len(results):]
 		for i := 0; i < len(paths); i++ {
-			elements = append(elements, trieElement{
-				path:     paths[i],
-				hash:     nodes[i],
-				syncPath: NewSyncPath([]byte(paths[i])),
-			})
+			elements = append(
+				elements, trieElement{
+					path:     paths[i],
+					hash:     nodes[i],
+					syncPath: NewSyncPath([]byte(paths[i])),
+				},
+			)
 		}
 	}
 	// Cross check that the two tries are in sync
@@ -460,11 +470,13 @@ func testDuplicateAvoidanceSync(t *testing.T, scheme string) {
 	paths, nodes, _ := sched.Missing(0)
 	var elements []trieElement
 	for i := 0; i < len(paths); i++ {
-		elements = append(elements, trieElement{
-			path:     paths[i],
-			hash:     nodes[i],
-			syncPath: NewSyncPath([]byte(paths[i])),
-		})
+		elements = append(
+			elements, trieElement{
+				path:     paths[i],
+				hash:     nodes[i],
+				syncPath: NewSyncPath([]byte(paths[i])),
+			},
+		)
 	}
 	reader, err := srcDb.Reader(srcTrie.Hash())
 	if err != nil {
@@ -500,11 +512,13 @@ func testDuplicateAvoidanceSync(t *testing.T, scheme string) {
 		paths, nodes, _ = sched.Missing(0)
 		elements = elements[:0]
 		for i := 0; i < len(paths); i++ {
-			elements = append(elements, trieElement{
-				path:     paths[i],
-				hash:     nodes[i],
-				syncPath: NewSyncPath([]byte(paths[i])),
-			})
+			elements = append(
+				elements, trieElement{
+					path:     paths[i],
+					hash:     nodes[i],
+					syncPath: NewSyncPath([]byte(paths[i])),
+				},
+			)
 		}
 	}
 	// Cross check that the two tries are in sync
@@ -536,11 +550,13 @@ func testIncompleteSync(t *testing.T, scheme string) {
 	)
 	paths, nodes, _ := sched.Missing(1)
 	for i := 0; i < len(paths); i++ {
-		elements = append(elements, trieElement{
-			path:     paths[i],
-			hash:     nodes[i],
-			syncPath: NewSyncPath([]byte(paths[i])),
-		})
+		elements = append(
+			elements, trieElement{
+				path:     paths[i],
+				hash:     nodes[i],
+				syncPath: NewSyncPath([]byte(paths[i])),
+			},
+		)
 	}
 	reader, err := srcDb.Reader(srcTrie.Hash())
 	if err != nil {
@@ -580,11 +596,13 @@ func testIncompleteSync(t *testing.T, scheme string) {
 		paths, nodes, _ = sched.Missing(1)
 		elements = elements[:0]
 		for i := 0; i < len(paths); i++ {
-			elements = append(elements, trieElement{
-				path:     paths[i],
-				hash:     nodes[i],
-				syncPath: NewSyncPath([]byte(paths[i])),
-			})
+			elements = append(
+				elements, trieElement{
+					path:     paths[i],
+					hash:     nodes[i],
+					syncPath: NewSyncPath([]byte(paths[i])),
+				},
+			)
 		}
 	}
 	// Sanity check that removing any node from the database is detected
@@ -627,11 +645,13 @@ func testSyncOrdering(t *testing.T, scheme string) {
 	)
 	paths, nodes, _ := sched.Missing(1)
 	for i := 0; i < len(paths); i++ {
-		elements = append(elements, trieElement{
-			path:     paths[i],
-			hash:     nodes[i],
-			syncPath: NewSyncPath([]byte(paths[i])),
-		})
+		elements = append(
+			elements, trieElement{
+				path:     paths[i],
+				hash:     nodes[i],
+				syncPath: NewSyncPath([]byte(paths[i])),
+			},
+		)
 		reqs = append(reqs, NewSyncPath([]byte(paths[i])))
 	}
 	reader, err := srcDb.Reader(srcTrie.Hash())
@@ -662,11 +682,13 @@ func testSyncOrdering(t *testing.T, scheme string) {
 		paths, nodes, _ = sched.Missing(1)
 		elements = elements[:0]
 		for i := 0; i < len(paths); i++ {
-			elements = append(elements, trieElement{
-				path:     paths[i],
-				hash:     nodes[i],
-				syncPath: NewSyncPath([]byte(paths[i])),
-			})
+			elements = append(
+				elements, trieElement{
+					path:     paths[i],
+					hash:     nodes[i],
+					syncPath: NewSyncPath([]byte(paths[i])),
+				},
+			)
 			reqs = append(reqs, NewSyncPath([]byte(paths[i])))
 		}
 	}
@@ -689,7 +711,9 @@ func syncWith(t *testing.T, root common.Hash, db ethdb.Database, srcDb *testDb) 
 	syncWithHookWriter(t, root, db, srcDb, nil)
 }
 
-func syncWithHookWriter(t *testing.T, root common.Hash, db ethdb.Database, srcDb *testDb, hookWriter ethdb.KeyValueWriter) {
+func syncWithHookWriter(
+	t *testing.T, root common.Hash, db ethdb.Database, srcDb *testDb, hookWriter ethdb.KeyValueWriter,
+) {
 	// Create a destination trie and sync with the scheduler
 	sched := NewSync(root, db, nil, srcDb.Scheme())
 
@@ -698,11 +722,13 @@ func syncWithHookWriter(t *testing.T, root common.Hash, db ethdb.Database, srcDb
 	paths, nodes, _ := sched.Missing(0)
 	var elements []trieElement
 	for i := 0; i < len(paths); i++ {
-		elements = append(elements, trieElement{
-			path:     paths[i],
-			hash:     nodes[i],
-			syncPath: NewSyncPath([]byte(paths[i])),
-		})
+		elements = append(
+			elements, trieElement{
+				path:     paths[i],
+				hash:     nodes[i],
+				syncPath: NewSyncPath([]byte(paths[i])),
+			},
+		)
 	}
 	reader, err := srcDb.Reader(root)
 	if err != nil {
@@ -735,11 +761,13 @@ func syncWithHookWriter(t *testing.T, root common.Hash, db ethdb.Database, srcDb
 		paths, nodes, _ = sched.Missing(0)
 		elements = elements[:0]
 		for i := 0; i < len(paths); i++ {
-			elements = append(elements, trieElement{
-				path:     paths[i],
-				hash:     nodes[i],
-				syncPath: NewSyncPath([]byte(paths[i])),
-			})
+			elements = append(
+				elements, trieElement{
+					path:     paths[i],
+					hash:     nodes[i],
+					syncPath: NewSyncPath([]byte(paths[i])),
+				},
+			)
 		}
 	}
 }
@@ -974,16 +1002,20 @@ func testSyncAbort(t *testing.T, scheme string) {
 	// Sync the new state, but never persist the new root node. Before the
 	// fix #28595, the original old root node will still be left in database
 	// which breaks the next healing cycle.
-	syncWithHookWriter(t, rootB, destDisk, srcTrieDB, &hookWriter{db: destDisk, filter: func(key []byte, value []byte) bool {
-		if scheme == rawdb.HashScheme {
-			return false
-		}
-		if len(value) == 0 {
-			return false
-		}
-		ok, path := rawdb.ResolveAccountTrieNodeKey(key)
-		return ok && len(path) == 0
-	}})
+	syncWithHookWriter(
+		t, rootB, destDisk, srcTrieDB, &hookWriter{
+			db: destDisk, filter: func(key []byte, value []byte) bool {
+				if scheme == rawdb.HashScheme {
+					return false
+				}
+				if len(value) == 0 {
+					return false
+				}
+				ok, path := rawdb.ResolveAccountTrieNodeKey(key)
+				return ok && len(path) == 0
+			},
+		},
+	)
 
 	// Add elements to expand trie
 	stateC := maps.Clone(stateB)

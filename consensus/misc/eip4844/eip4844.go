@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 var (
@@ -43,10 +43,14 @@ func VerifyEIP4844Header(parent, header *types.Header) error {
 	}
 	// Verify that the blob gas used remains within reasonable limits.
 	if *header.BlobGasUsed > params.MaxBlobGasPerBlock {
-		return fmt.Errorf("blob gas used %d exceeds maximum allowance %d", *header.BlobGasUsed, params.MaxBlobGasPerBlock)
+		return fmt.Errorf(
+			"blob gas used %d exceeds maximum allowance %d", *header.BlobGasUsed, params.MaxBlobGasPerBlock,
+		)
 	}
 	if *header.BlobGasUsed%params.BlobTxBlobGasPerBlob != 0 {
-		return fmt.Errorf("blob gas used %d not a multiple of blob gas per blob %d", header.BlobGasUsed, params.BlobTxBlobGasPerBlob)
+		return fmt.Errorf(
+			"blob gas used %d not a multiple of blob gas per blob %d", header.BlobGasUsed, params.BlobTxBlobGasPerBlob,
+		)
 	}
 	// Verify the excessBlobGas is correct based on the parent header
 	var (
@@ -59,8 +63,10 @@ func VerifyEIP4844Header(parent, header *types.Header) error {
 	}
 	expectedExcessBlobGas := CalcExcessBlobGas(parentExcessBlobGas, parentBlobGasUsed)
 	if *header.ExcessBlobGas != expectedExcessBlobGas {
-		return fmt.Errorf("invalid excessBlobGas: have %d, want %d, parent excessBlobGas %d, parent blobDataUsed %d",
-			*header.ExcessBlobGas, expectedExcessBlobGas, parentExcessBlobGas, parentBlobGasUsed)
+		return fmt.Errorf(
+			"invalid excessBlobGas: have %d, want %d, parent excessBlobGas %d, parent blobDataUsed %d",
+			*header.ExcessBlobGas, expectedExcessBlobGas, parentExcessBlobGas, parentBlobGasUsed,
+		)
 	}
 	return nil
 }

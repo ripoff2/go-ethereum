@@ -25,10 +25,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/ethdb"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/metrics"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"
@@ -86,22 +86,24 @@ type Database struct {
 // New returns a wrapped LevelDB object. The namespace is the prefix that the
 // metrics reporting should use for surfacing internal stats.
 func New(file string, cache int, handles int, namespace string, readonly bool) (*Database, error) {
-	return NewCustom(file, namespace, func(options *opt.Options) {
-		// Ensure we have some minimal caching and file guarantees
-		if cache < minCache {
-			cache = minCache
-		}
-		if handles < minHandles {
-			handles = minHandles
-		}
-		// Set default options
-		options.OpenFilesCacheCapacity = handles
-		options.BlockCacheCapacity = cache / 2 * opt.MiB
-		options.WriteBuffer = cache / 4 * opt.MiB // Two of these are used internally
-		if readonly {
-			options.ReadOnly = true
-		}
-	})
+	return NewCustom(
+		file, namespace, func(options *opt.Options) {
+			// Ensure we have some minimal caching and file guarantees
+			if cache < minCache {
+				cache = minCache
+			}
+			if handles < minHandles {
+				handles = minHandles
+			}
+			// Set default options
+			options.OpenFilesCacheCapacity = handles
+			options.BlockCacheCapacity = cache / 2 * opt.MiB
+			options.WriteBuffer = cache / 4 * opt.MiB // Two of these are used internally
+			if readonly {
+				options.ReadOnly = true
+			}
+		},
+	)
 }
 
 // NewCustom returns a wrapped LevelDB object. The namespace is the prefix that the
@@ -261,20 +263,34 @@ func (db *Database) Stat() (string, error) {
 			totalRead += read
 			totalWrite += write
 			totalDuration += duration
-			message += fmt.Sprintf(" %3d   | %10d | %13.5f | %13.5f | %13.5f | %13.5f\n",
+			message += fmt.Sprintf(
+				" %3d   | %10d | %13.5f | %13.5f | %13.5f | %13.5f\n",
 				level, tables, float64(size)/1048576.0, duration.Seconds(),
-				float64(read)/1048576.0, float64(write)/1048576.0)
+				float64(read)/1048576.0, float64(write)/1048576.0,
+			)
 		}
 		message += "-------+------------+---------------+---------------+---------------+---------------\n"
-		message += fmt.Sprintf(" Total | %10d | %13.5f | %13.5f | %13.5f | %13.5f\n",
+		message += fmt.Sprintf(
+			" Total | %10d | %13.5f | %13.5f | %13.5f | %13.5f\n",
 			totalTables, float64(totalSize)/1048576.0, totalDuration.Seconds(),
-			float64(totalRead)/1048576.0, float64(totalWrite)/1048576.0)
+			float64(totalRead)/1048576.0, float64(totalWrite)/1048576.0,
+		)
 		message += "-------+------------+---------------+---------------+---------------+---------------\n\n"
 	}
-	message += fmt.Sprintf("Read(MB):%.5f Write(MB):%.5f\n", float64(stats.IORead)/1048576.0, float64(stats.IOWrite)/1048576.0)
-	message += fmt.Sprintf("BlockCache(MB):%.5f FileCache:%d\n", float64(stats.BlockCacheSize)/1048576.0, stats.OpenedTablesCount)
-	message += fmt.Sprintf("MemoryCompaction:%d Level0Compaction:%d NonLevel0Compaction:%d SeekCompaction:%d\n", stats.MemComp, stats.Level0Comp, stats.NonLevel0Comp, stats.SeekComp)
-	message += fmt.Sprintf("WriteDelayCount:%d WriteDelayDuration:%s Paused:%t\n", stats.WriteDelayCount, common.PrettyDuration(stats.WriteDelayDuration), stats.WritePaused)
+	message += fmt.Sprintf(
+		"Read(MB):%.5f Write(MB):%.5f\n", float64(stats.IORead)/1048576.0, float64(stats.IOWrite)/1048576.0,
+	)
+	message += fmt.Sprintf(
+		"BlockCache(MB):%.5f FileCache:%d\n", float64(stats.BlockCacheSize)/1048576.0, stats.OpenedTablesCount,
+	)
+	message += fmt.Sprintf(
+		"MemoryCompaction:%d Level0Compaction:%d NonLevel0Compaction:%d SeekCompaction:%d\n", stats.MemComp,
+		stats.Level0Comp, stats.NonLevel0Comp, stats.SeekComp,
+	)
+	message += fmt.Sprintf(
+		"WriteDelayCount:%d WriteDelayDuration:%s Paused:%t\n", stats.WriteDelayCount,
+		common.PrettyDuration(stats.WriteDelayDuration), stats.WritePaused,
+	)
 	message += fmt.Sprintf("Snapshots:%d Iterators:%d\n", stats.AliveSnapshots, stats.AliveIterators)
 	return message, nil
 }
@@ -389,7 +405,9 @@ func (db *Database) meter(refresh time.Duration, namespace string) {
 		for i, tables := range stats.LevelTablesCounts {
 			// Append metrics for additional layers
 			if i >= len(db.levelsGauge) {
-				db.levelsGauge = append(db.levelsGauge, metrics.NewRegisteredGauge(namespace+fmt.Sprintf("tables/level%v", i), nil))
+				db.levelsGauge = append(
+					db.levelsGauge, metrics.NewRegisteredGauge(namespace+fmt.Sprintf("tables/level%v", i), nil),
+				)
 			}
 			db.levelsGauge[i].Update(int64(tables))
 		}

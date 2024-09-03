@@ -26,8 +26,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/p2p/enr"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/p2p/enr"
+	"github.com/ripoff2/go-ethereum/rlp"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
@@ -177,13 +177,15 @@ func splitNodeItemKey(key []byte) (id ID, ip netip.Addr, field string) {
 
 func v5Key(id ID, ip netip.Addr, field string) []byte {
 	ip16 := ip.As16()
-	return bytes.Join([][]byte{
-		[]byte(dbNodePrefix),
-		id[:],
-		[]byte(dbDiscv5Root),
-		ip16[:],
-		[]byte(field),
-	}, []byte{':'})
+	return bytes.Join(
+		[][]byte{
+			[]byte(dbNodePrefix),
+			id[:],
+			[]byte(dbDiscv5Root),
+			ip16[:],
+			[]byte(field),
+		}, []byte{':'},
+	)
 }
 
 // localItemKey returns the key of a local node item.

@@ -25,26 +25,30 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/triedb"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/state"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/triedb"
 )
 
 var dumper = spew.ConfigState{Indent: "    "}
 
-func accountRangeTest(t *testing.T, trie *state.Trie, statedb *state.StateDB, start common.Hash, requestedNum int, expectedNum int) state.Dump {
-	result := statedb.RawDump(&state.DumpConfig{
-		SkipCode:          true,
-		SkipStorage:       true,
-		OnlyWithAddresses: false,
-		Start:             start.Bytes(),
-		Max:               uint64(requestedNum),
-	})
+func accountRangeTest(
+	t *testing.T, trie *state.Trie, statedb *state.StateDB, start common.Hash, requestedNum int, expectedNum int,
+) state.Dump {
+	result := statedb.RawDump(
+		&state.DumpConfig{
+			SkipCode:          true,
+			SkipStorage:       true,
+			OnlyWithAddresses: false,
+			Start:             start.Bytes(),
+			Max:               uint64(requestedNum),
+		},
+	)
 
 	if len(result.Accounts) != expectedNum {
 		t.Fatalf("expected %d results, got %d", expectedNum, len(result.Accounts))
@@ -91,7 +95,9 @@ func TestAccountRange(t *testing.T) {
 	accountRangeTest(t, &trie, sdb, common.Hash{}, AccountRangeMaxResults/2, AccountRangeMaxResults/2)
 	// test pagination
 	firstResult := accountRangeTest(t, &trie, sdb, common.Hash{}, AccountRangeMaxResults, AccountRangeMaxResults)
-	secondResult := accountRangeTest(t, &trie, sdb, common.BytesToHash(firstResult.Next), AccountRangeMaxResults, AccountRangeMaxResults)
+	secondResult := accountRangeTest(
+		t, &trie, sdb, common.BytesToHash(firstResult.Next), AccountRangeMaxResults, AccountRangeMaxResults,
+	)
 
 	hList := make([]common.Hash, 0)
 	for addr1, acc := range firstResult.Accounts {
@@ -142,12 +148,14 @@ func TestEmptyAccountRange(t *testing.T) {
 	st.Commit(0, true)
 	st, _ = state.New(types.EmptyRootHash, statedb, nil)
 
-	results := st.RawDump(&state.DumpConfig{
-		SkipCode:          true,
-		SkipStorage:       true,
-		OnlyWithAddresses: true,
-		Max:               uint64(AccountRangeMaxResults),
-	})
+	results := st.RawDump(
+		&state.DumpConfig{
+			SkipCode:          true,
+			SkipStorage:       true,
+			OnlyWithAddresses: true,
+			Max:               uint64(AccountRangeMaxResults),
+		},
+	)
 	if bytes.Equal(results.Next, (common.Hash{}).Bytes()) {
 		t.Fatalf("Empty results should not return a second page")
 	}
@@ -164,7 +172,8 @@ func TestStorageRangeAt(t *testing.T) {
 		db     = state.NewDatabaseWithConfig(rawdb.NewMemoryDatabase(), &triedb.Config{Preimages: true})
 		sdb, _ = state.New(types.EmptyRootHash, db, nil)
 		addr   = common.Address{0x01}
-		keys   = []common.Hash{ // hashes of Keys of storage
+		keys   = []common.Hash{
+			// hashes of Keys of storage
 			common.HexToHash("340dd630ad21bf010b4e676dbfa9ba9a02175262d1fa356232cfde6cb5b47ef2"),
 			common.HexToHash("426fcb404ab2d5d8e61a3d918108006bbb0a9be65e92235bb10eefbdb6dcd053"),
 			common.HexToHash("48078cfed56339ea54962e72c37c7f588fc4f8e5bc173827ba75cb10a63a96a5"),
@@ -216,8 +225,10 @@ func TestStorageRangeAt(t *testing.T) {
 			t.Error(err)
 		}
 		if !reflect.DeepEqual(result, test.want) {
-			t.Fatalf("wrong result for range %#x.., limit %d:\ngot %s\nwant %s",
-				test.start, test.limit, dumper.Sdump(result), dumper.Sdump(&test.want))
+			t.Fatalf(
+				"wrong result for range %#x.., limit %d:\ngot %s\nwant %s",
+				test.start, test.limit, dumper.Sdump(result), dumper.Sdump(&test.want),
+			)
 		}
 	}
 }

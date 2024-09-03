@@ -23,10 +23,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/internal/version"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/mattn/go-isatty"
+	"github.com/ripoff2/go-ethereum/internal/version"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/params"
 	"github.com/urfave/cli/v2"
 )
 
@@ -89,17 +89,19 @@ func MigrateGlobalFlags(ctx *cli.Context) {
 	}
 
 	// This iterates over all commands and wraps their action function.
-	iterate(ctx.App.Commands, func(cmd *cli.Command) {
-		if cmd.Action == nil {
-			return
-		}
+	iterate(
+		ctx.App.Commands, func(cmd *cli.Command) {
+			if cmd.Action == nil {
+				return
+			}
 
-		action := cmd.Action
-		cmd.Action = func(ctx *cli.Context) error {
-			doMigrateFlags(ctx)
-			return action(ctx)
-		}
-	})
+			action := cmd.Action
+			cmd.Action = func(ctx *cli.Context) error {
+				doMigrateFlags(ctx)
+				return action(ctx)
+			}
+		},
+	)
 }
 
 func doMigrateFlags(ctx *cli.Context) {
@@ -140,11 +142,16 @@ func doMigrateFlags(ctx *cli.Context) {
 func init() {
 	if usecolor {
 		// Annotate all help categories with colors
-		cli.AppHelpTemplate = regexp.MustCompile("[A-Z ]+:").ReplaceAllString(cli.AppHelpTemplate, "\u001B[33m$0\u001B[0m")
+		cli.AppHelpTemplate = regexp.MustCompile("[A-Z ]+:").ReplaceAllString(
+			cli.AppHelpTemplate, "\u001B[33m$0\u001B[0m",
+		)
 
 		// Annotate flag categories with colors (private template, so need to
 		// copy-paste the entire thing here...)
-		cli.AppHelpTemplate = strings.ReplaceAll(cli.AppHelpTemplate, "{{template \"visibleFlagCategoryTemplate\" .}}", "{{range .VisibleFlagCategories}}\n   {{if .Name}}\u001B[33m{{.Name}}\u001B[0m\n\n   {{end}}{{$flglen := len .Flags}}{{range $i, $e := .Flags}}{{if eq (subtract $flglen $i) 1}}{{$e}}\n{{else}}{{$e}}\n   {{end}}{{end}}{{end}}")
+		cli.AppHelpTemplate = strings.ReplaceAll(
+			cli.AppHelpTemplate, "{{template \"visibleFlagCategoryTemplate\" .}}",
+			"{{range .VisibleFlagCategories}}\n   {{if .Name}}\u001B[33m{{.Name}}\u001B[0m\n\n   {{end}}{{$flglen := len .Flags}}{{range $i, $e := .Flags}}{{if eq (subtract $flglen $i) 1}}{{$e}}\n{{else}}{{$e}}\n   {{end}}{{end}}{{end}}",
+		)
 	}
 	cli.FlagStringer = FlagString
 }
@@ -233,7 +240,11 @@ func wordWrap(s string, width int) string {
 // added automatically.
 func AutoEnvVars(flags []cli.Flag, prefix string) {
 	for _, flag := range flags {
-		envvar := strings.ToUpper(prefix + "_" + strings.ReplaceAll(strings.ReplaceAll(flag.Names()[0], ".", "_"), "-", "_"))
+		envvar := strings.ToUpper(
+			prefix + "_" + strings.ReplaceAll(
+				strings.ReplaceAll(flag.Names()[0], ".", "_"), "-", "_",
+			),
+		)
 
 		switch flag := flag.(type) {
 		case *cli.StringFlag:

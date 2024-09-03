@@ -24,12 +24,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/event"
+	"github.com/ripoff2/go-ethereum"
+	"github.com/ripoff2/go-ethereum/accounts/abi"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/event"
 )
 
 const basefeeWiggleMultiplier = 2
@@ -123,7 +123,9 @@ type BoundContract struct {
 
 // NewBoundContract creates a low level contract interface through which calls
 // and transactions may be made through.
-func NewBoundContract(address common.Address, abi abi.ABI, caller ContractCaller, transactor ContractTransactor, filterer ContractFilterer) *BoundContract {
+func NewBoundContract(
+	address common.Address, abi abi.ABI, caller ContractCaller, transactor ContractTransactor, filterer ContractFilterer,
+) *BoundContract {
 	return &BoundContract{
 		address:    address,
 		abi:        abi,
@@ -135,7 +137,9 @@ func NewBoundContract(address common.Address, abi abi.ABI, caller ContractCaller
 
 // DeployContract deploys a contract onto the Ethereum blockchain and binds the
 // deployment address with a Go wrapper.
-func DeployContract(opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{}) (common.Address, *types.Transaction, *BoundContract, error) {
+func DeployContract(
+	opts *TransactOpts, abi abi.ABI, bytecode []byte, backend ContractBackend, params ...interface{},
+) (common.Address, *types.Transaction, *BoundContract, error) {
 	// Otherwise try to deploy the contract
 	c := NewBoundContract(common.Address{}, abi, backend, backend, backend)
 
@@ -260,7 +264,9 @@ func (c *BoundContract) Transfer(opts *TransactOpts) (*types.Transaction, error)
 	return c.transact(opts, &c.address, nil)
 }
 
-func (c *BoundContract) createDynamicTx(opts *TransactOpts, contract *common.Address, input []byte, head *types.Header) (*types.Transaction, error) {
+func (c *BoundContract) createDynamicTx(
+	opts *TransactOpts, contract *common.Address, input []byte, head *types.Header,
+) (*types.Transaction, error) {
 	// Normalize value
 	value := opts.Value
 	if value == nil {
@@ -313,7 +319,9 @@ func (c *BoundContract) createDynamicTx(opts *TransactOpts, contract *common.Add
 	return types.NewTx(baseTx), nil
 }
 
-func (c *BoundContract) createLegacyTx(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
+func (c *BoundContract) createLegacyTx(opts *TransactOpts, contract *common.Address, input []byte) (
+	*types.Transaction, error,
+) {
 	if opts.GasFeeCap != nil || opts.GasTipCap != nil || opts.AccessList != nil {
 		return nil, errors.New("maxFeePerGas or maxPriorityFeePerGas or accessList specified but london is not active yet")
 	}
@@ -356,7 +364,9 @@ func (c *BoundContract) createLegacyTx(opts *TransactOpts, contract *common.Addr
 	return types.NewTx(baseTx), nil
 }
 
-func (c *BoundContract) estimateGasLimit(opts *TransactOpts, contract *common.Address, input []byte, gasPrice, gasTipCap, gasFeeCap, value *big.Int) (uint64, error) {
+func (c *BoundContract) estimateGasLimit(
+	opts *TransactOpts, contract *common.Address, input []byte, gasPrice, gasTipCap, gasFeeCap, value *big.Int,
+) (uint64, error) {
 	if contract != nil {
 		// Gas estimation cannot succeed without code for method invocations.
 		if code, err := c.transactor.PendingCodeAt(ensureContext(opts.Context), c.address); err != nil {
@@ -387,7 +397,9 @@ func (c *BoundContract) getNonce(opts *TransactOpts) (uint64, error) {
 
 // transact executes an actual transaction invocation, first deriving any missing
 // authorization fields, and then scheduling the transaction for execution.
-func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, input []byte) (*types.Transaction, error) {
+func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, input []byte) (
+	*types.Transaction, error,
+) {
 	if opts.GasPrice != nil && (opts.GasFeeCap != nil || opts.GasTipCap != nil) {
 		return nil, errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
 	}
@@ -433,7 +445,9 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 
 // FilterLogs filters contract logs for past blocks, returning the necessary
 // channels to construct a strongly typed bound iterator on top of them.
-func (c *BoundContract) FilterLogs(opts *FilterOpts, name string, query ...[]interface{}) (chan types.Log, event.Subscription, error) {
+func (c *BoundContract) FilterLogs(opts *FilterOpts, name string, query ...[]interface{}) (
+	chan types.Log, event.Subscription, error,
+) {
 	// Don't crash on a lazy user
 	if opts == nil {
 		opts = new(FilterOpts)
@@ -463,23 +477,27 @@ func (c *BoundContract) FilterLogs(opts *FilterOpts, name string, query ...[]int
 	if err != nil {
 		return nil, nil, err
 	}
-	sub := event.NewSubscription(func(quit <-chan struct{}) error {
-		for _, log := range buff {
-			select {
-			case logs <- log:
-			case <-quit:
-				return nil
+	sub := event.NewSubscription(
+		func(quit <-chan struct{}) error {
+			for _, log := range buff {
+				select {
+				case logs <- log:
+				case <-quit:
+					return nil
+				}
 			}
-		}
-		return nil
-	})
+			return nil
+		},
+	)
 
 	return logs, sub, nil
 }
 
 // WatchLogs filters subscribes to contract logs for future blocks, returning a
 // subscription object that can be used to tear down the watcher.
-func (c *BoundContract) WatchLogs(opts *WatchOpts, name string, query ...[]interface{}) (chan types.Log, event.Subscription, error) {
+func (c *BoundContract) WatchLogs(opts *WatchOpts, name string, query ...[]interface{}) (
+	chan types.Log, event.Subscription, error,
+) {
 	// Don't crash on a lazy user
 	if opts == nil {
 		opts = new(WatchOpts)

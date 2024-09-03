@@ -23,8 +23,8 @@ import (
 	"strings"
 
 	"github.com/cloudflare/cloudflare-go"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/dnsdisc"
+	"github.com/ripoff2/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/p2p/dnsdisc"
 	"github.com/urfave/cli/v2"
 )
 
@@ -89,7 +89,9 @@ func (c *cloudflareClient) checkZone(name string) error {
 		return fmt.Errorf("CloudFlare zone name %q does not match name %q to be deployed", zone.Name, name)
 	}
 	// Necessary permissions for Cloudlare management - Zone:Read, DNS:Read, Zone:Edit, DNS:Edit
-	needPerms := map[string]bool{"#zone:edit": false, "#zone:read": false, "#dns_records:read": false, "#dns_records:edit": false}
+	needPerms := map[string]bool{
+		"#zone:edit": false, "#zone:read": false, "#dns_records:read": false, "#dns_records:edit": false,
+	}
 	for _, perm := range zone.Permissions {
 		if _, ok := needPerms[perm]; ok {
 			needPerms[perm] = true
@@ -115,7 +117,9 @@ func (c *cloudflareClient) uploadRecords(name string, records map[string]string)
 	records = lrecords
 
 	log.Info(fmt.Sprintf("Retrieving existing TXT records on %s", name))
-	entries, _, err := c.ListDNSRecords(context.Background(), cloudflare.ZoneIdentifier(c.zoneID), cloudflare.ListDNSRecordsParams{Type: "TXT"})
+	entries, _, err := c.ListDNSRecords(
+		context.Background(), cloudflare.ZoneIdentifier(c.zoneID), cloudflare.ListDNSRecordsParams{Type: "TXT"},
+	)
 	if err != nil {
 		return err
 	}

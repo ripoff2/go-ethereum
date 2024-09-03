@@ -27,13 +27,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/signer/core"
-	"github.com/ethereum/go-ethereum/signer/core/apitypes"
+	"github.com/ripoff2/go-ethereum/accounts/keystore"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/signer/core"
+	"github.com/ripoff2/go-ethereum/signer/core/apitypes"
 )
 
 var typesStandard = apitypes.Types{
@@ -197,7 +197,9 @@ func TestSignData(t *testing.T) {
 
 	control.approveCh <- "Y"
 	control.inputCh <- "wrongpassword"
-	signature, err := api.SignData(context.Background(), apitypes.TextPlain.Mime, a, hexutil.Encode([]byte("EHLO world")))
+	signature, err := api.SignData(
+		context.Background(), apitypes.TextPlain.Mime, a, hexutil.Encode([]byte("EHLO world")),
+	)
 	if signature != nil {
 		t.Errorf("Expected nil-data, got %x", signature)
 	}
@@ -205,7 +207,9 @@ func TestSignData(t *testing.T) {
 		t.Errorf("Expected ErrLocked! '%v'", err)
 	}
 	control.approveCh <- "No way"
-	signature, err = api.SignData(context.Background(), apitypes.TextPlain.Mime, a, hexutil.Encode([]byte("EHLO world")))
+	signature, err = api.SignData(
+		context.Background(), apitypes.TextPlain.Mime, a, hexutil.Encode([]byte("EHLO world")),
+	)
 	if signature != nil {
 		t.Errorf("Expected nil-data, got %x", signature)
 	}
@@ -215,7 +219,9 @@ func TestSignData(t *testing.T) {
 	// text/plain
 	control.approveCh <- "Y"
 	control.inputCh <- "a_long_password"
-	signature, err = api.SignData(context.Background(), apitypes.TextPlain.Mime, a, hexutil.Encode([]byte("EHLO world")))
+	signature, err = api.SignData(
+		context.Background(), apitypes.TextPlain.Mime, a, hexutil.Encode([]byte("EHLO world")),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -239,7 +245,9 @@ func TestSignData(t *testing.T) {
 	control.inputCh <- "a_long_password"
 	if typedDataJson, err := json.Marshal(typedData); err != nil {
 		t.Fatal(err)
-	} else if signature, err = api.SignData(context.Background(), apitypes.DataTyped.Mime, a, hexutil.Encode(typedDataJson)); err != nil {
+	} else if signature, err = api.SignData(
+		context.Background(), apitypes.DataTyped.Mime, a, hexutil.Encode(typedDataJson),
+	); err != nil {
 		t.Fatal(err)
 	} else if signature == nil || len(signature) != 65 {
 		t.Errorf("Expected 65 byte signature (got %d bytes)", len(signature))

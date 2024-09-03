@@ -22,11 +22,11 @@ import (
 	"strconv"
 	"sync/atomic"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/tracing"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/core/tracing"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
 )
 
 func init() {
@@ -93,7 +93,9 @@ func (t *fourByteTracer) OnTxStart(env *tracing.VMContext, tx *types.Transaction
 }
 
 // OnEnter is called when EVM enters a new scope (via call, create or selfdestruct).
-func (t *fourByteTracer) OnEnter(depth int, opcode byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int) {
+func (t *fourByteTracer) OnEnter(
+	depth int, opcode byte, from common.Address, to common.Address, input []byte, gas uint64, value *big.Int,
+) {
 	// Skip if tracing was interrupted
 	if t.interrupt.Load() {
 		return

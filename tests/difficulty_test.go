@@ -20,7 +20,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/params"
 )
 
 var (
@@ -73,39 +73,53 @@ func TestDifficulty(t *testing.T) {
 	dt.config("Ropsten", ropstenChainConfig)
 	dt.config("Frontier", params.ChainConfig{})
 
-	dt.config("Homestead", params.ChainConfig{
-		HomesteadBlock: big.NewInt(0),
-	})
+	dt.config(
+		"Homestead", params.ChainConfig{
+			HomesteadBlock: big.NewInt(0),
+		},
+	)
 
-	dt.config("Byzantium", params.ChainConfig{
-		ByzantiumBlock: big.NewInt(0),
-	})
+	dt.config(
+		"Byzantium", params.ChainConfig{
+			ByzantiumBlock: big.NewInt(0),
+		},
+	)
 
 	dt.config("Frontier", ropstenChainConfig)
 	dt.config("MainNetwork", mainnetChainConfig)
 	dt.config("CustomMainNetwork", mainnetChainConfig)
-	dt.config("Constantinople", params.ChainConfig{
-		ConstantinopleBlock: big.NewInt(0),
-	})
-	dt.config("EIP2384", params.ChainConfig{
-		MuirGlacierBlock: big.NewInt(0),
-	})
-	dt.config("EIP4345", params.ChainConfig{
-		ArrowGlacierBlock: big.NewInt(0),
-	})
-	dt.config("EIP5133", params.ChainConfig{
-		GrayGlacierBlock: big.NewInt(0),
-	})
+	dt.config(
+		"Constantinople", params.ChainConfig{
+			ConstantinopleBlock: big.NewInt(0),
+		},
+	)
+	dt.config(
+		"EIP2384", params.ChainConfig{
+			MuirGlacierBlock: big.NewInt(0),
+		},
+	)
+	dt.config(
+		"EIP4345", params.ChainConfig{
+			ArrowGlacierBlock: big.NewInt(0),
+		},
+	)
+	dt.config(
+		"EIP5133", params.ChainConfig{
+			GrayGlacierBlock: big.NewInt(0),
+		},
+	)
 	dt.config("difficulty.json", mainnetChainConfig)
 
-	dt.walk(t, difficultyTestDir, func(t *testing.T, name string, test *DifficultyTest) {
-		cfg := dt.findConfig(t)
-		if test.ParentDifficulty.Cmp(params.MinimumDifficulty) < 0 {
-			t.Skip("difficulty below minimum")
-			return
-		}
-		if err := dt.checkFailure(t, test.Run(cfg)); err != nil {
-			t.Error(err)
-		}
-	})
+	dt.walk(
+		t, difficultyTestDir, func(t *testing.T, name string, test *DifficultyTest) {
+			cfg := dt.findConfig(t)
+			if test.ParentDifficulty.Cmp(params.MinimumDifficulty) < 0 {
+				t.Skip("difficulty below minimum")
+				return
+			}
+			if err := dt.checkFailure(t, test.Run(cfg)); err != nil {
+				t.Error(err)
+			}
+		},
+	)
 }

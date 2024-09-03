@@ -19,12 +19,12 @@ package sync
 import (
 	"sort"
 
-	"github.com/ethereum/go-ethereum/beacon/light"
-	"github.com/ethereum/go-ethereum/beacon/light/request"
-	"github.com/ethereum/go-ethereum/beacon/params"
-	"github.com/ethereum/go-ethereum/beacon/types"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/beacon/light"
+	"github.com/ripoff2/go-ethereum/beacon/light/request"
+	"github.com/ripoff2/go-ethereum/beacon/params"
+	"github.com/ripoff2/go-ethereum/beacon/types"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 const maxUpdateRequest = 8 // maximum number of updates requested in a single request
@@ -174,11 +174,17 @@ func (s *CheckpointInit) Process(requester request.Requester, events []request.E
 			// should be available if hasHeader is true and state is ssPrintStatus
 			panic("checkpoint epoch info not available when printing retrieval status")
 		case !s.epochBoundary:
-			log.Error("blsync: checkpoint block is not first of epoch", "slot", s.cpSlot, "parent", s.parentSlot, "server", server.Name())
+			log.Error(
+				"blsync: checkpoint block is not first of epoch", "slot", s.cpSlot, "parent", s.parentSlot, "server",
+				server.Name(),
+			)
 		case !state.finalized:
 			log.Error("blsync: checkpoint block is reported as non-finalized", "server", server.Name())
 		default:
-			log.Error("blsync: checkpoint not available, but reported as finalized; specified checkpoint hash might be too old", "server", server.Name())
+			log.Error(
+				"blsync: checkpoint not available, but reported as finalized; specified checkpoint hash might be too old",
+				"server", server.Name(),
+			)
 		}
 		s.serverState[server] = serverState{state: ssDone}
 	}

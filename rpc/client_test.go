@@ -34,7 +34,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ripoff2/go-ethereum/log"
 )
 
 func TestClientRequest(t *testing.T) {
@@ -172,78 +172,88 @@ func TestClientBatchRequest(t *testing.T) {
 // This checks that, for HTTP connections, the length of batch responses is validated to
 // match the request exactly.
 func TestClientBatchRequest_len(t *testing.T) {
-	b, err := json.Marshal([]jsonrpcMessage{
-		{Version: "2.0", ID: json.RawMessage("1"), Result: json.RawMessage(`"0x1"`)},
-		{Version: "2.0", ID: json.RawMessage("2"), Result: json.RawMessage(`"0x2"`)},
-	})
+	b, err := json.Marshal(
+		[]jsonrpcMessage{
+			{Version: "2.0", ID: json.RawMessage("1"), Result: json.RawMessage(`"0x1"`)},
+			{Version: "2.0", ID: json.RawMessage("2"), Result: json.RawMessage(`"0x2"`)},
+		},
+	)
 	if err != nil {
 		t.Fatal("failed to encode jsonrpc message:", err)
 	}
-	s := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		_, err := rw.Write(b)
-		if err != nil {
-			t.Error("failed to write response:", err)
-		}
-	}))
+	s := httptest.NewServer(
+		http.HandlerFunc(
+			func(rw http.ResponseWriter, r *http.Request) {
+				_, err := rw.Write(b)
+				if err != nil {
+					t.Error("failed to write response:", err)
+				}
+			},
+		),
+	)
 	t.Cleanup(s.Close)
 
-	t.Run("too-few", func(t *testing.T) {
-		client, err := Dial(s.URL)
-		if err != nil {
-			t.Fatal("failed to dial test server:", err)
-		}
-		defer client.Close()
-
-		batch := []BatchElem{
-			{Method: "foo", Result: new(string)},
-			{Method: "bar", Result: new(string)},
-			{Method: "baz", Result: new(string)},
-		}
-		ctx, cancelFn := context.WithTimeout(context.Background(), time.Second)
-		defer cancelFn()
-
-		if err := client.BatchCallContext(ctx, batch); err != nil {
-			t.Fatal("error:", err)
-		}
-		for i, elem := range batch[:2] {
-			if elem.Error != nil {
-				t.Errorf("expected no error for batch element %d, got %q", i, elem.Error)
+	t.Run(
+		"too-few", func(t *testing.T) {
+			client, err := Dial(s.URL)
+			if err != nil {
+				t.Fatal("failed to dial test server:", err)
 			}
-		}
-		for i, elem := range batch[2:] {
-			if elem.Error != ErrMissingBatchResponse {
-				t.Errorf("wrong error %q for batch element %d", elem.Error, i+2)
-			}
-		}
-	})
+			defer client.Close()
 
-	t.Run("too-many", func(t *testing.T) {
-		client, err := Dial(s.URL)
-		if err != nil {
-			t.Fatal("failed to dial test server:", err)
-		}
-		defer client.Close()
-
-		batch := []BatchElem{
-			{Method: "foo", Result: new(string)},
-		}
-		ctx, cancelFn := context.WithTimeout(context.Background(), time.Second)
-		defer cancelFn()
-
-		if err := client.BatchCallContext(ctx, batch); err != nil {
-			t.Fatal("error:", err)
-		}
-		for i, elem := range batch[:1] {
-			if elem.Error != nil {
-				t.Errorf("expected no error for batch element %d, got %q", i, elem.Error)
+			batch := []BatchElem{
+				{Method: "foo", Result: new(string)},
+				{Method: "bar", Result: new(string)},
+				{Method: "baz", Result: new(string)},
 			}
-		}
-		for i, elem := range batch[1:] {
-			if elem.Error != ErrMissingBatchResponse {
-				t.Errorf("wrong error %q for batch element %d", elem.Error, i+2)
+			ctx, cancelFn := context.WithTimeout(context.Background(), time.Second)
+			defer cancelFn()
+
+			if err := client.BatchCallContext(ctx, batch); err != nil {
+				t.Fatal("error:", err)
 			}
-		}
-	})
+			for i, elem := range batch[:2] {
+				if elem.Error != nil {
+					t.Errorf("expected no error for batch element %d, got %q", i, elem.Error)
+				}
+			}
+			for i, elem := range batch[2:] {
+				if elem.Error != ErrMissingBatchResponse {
+					t.Errorf("wrong error %q for batch element %d", elem.Error, i+2)
+				}
+			}
+		},
+	)
+
+	t.Run(
+		"too-many", func(t *testing.T) {
+			client, err := Dial(s.URL)
+			if err != nil {
+				t.Fatal("failed to dial test server:", err)
+			}
+			defer client.Close()
+
+			batch := []BatchElem{
+				{Method: "foo", Result: new(string)},
+			}
+			ctx, cancelFn := context.WithTimeout(context.Background(), time.Second)
+			defer cancelFn()
+
+			if err := client.BatchCallContext(ctx, batch); err != nil {
+				t.Fatal("error:", err)
+			}
+			for i, elem := range batch[:1] {
+				if elem.Error != nil {
+					t.Errorf("expected no error for batch element %d, got %q", i, elem.Error)
+				}
+			}
+			for i, elem := range batch[1:] {
+				if elem.Error != ErrMissingBatchResponse {
+					t.Errorf("wrong error %q for batch element %d", elem.Error, i+2)
+				}
+			}
+		},
+	)
 }
 
 // This checks that the client can handle the case where the server doesn't
@@ -495,7 +505,7 @@ func TestClientSubscribeClose(t *testing.T) {
 	}
 }
 
-// This test reproduces https://github.com/ethereum/go-ethereum/issues/17837 where the
+// This test reproduces https://github.com/ripoff2/go-ethereum/issues/17837 where the
 // client hangs during shutdown when Unsubscribe races with Client.Close.
 func TestClientCloseUnsubscribeRace(t *testing.T) {
 	server := newTestServer()
@@ -538,7 +548,7 @@ func (b *unsubscribeBlocker) readBatch() ([]*jsonrpcMessage, bool, error) {
 // TestUnsubscribeTimeout verifies that calling the client's Unsubscribe
 // function will eventually timeout and not block forever in case the serve does
 // not respond.
-// It reproducers the issue https://github.com/ethereum/go-ethereum/issues/30156
+// It reproducers the issue https://github.com/ripoff2/go-ethereum/issues/30156
 func TestUnsubscribeTimeout(t *testing.T) {
 	srv := NewServer()
 	srv.RegisterName("nftest", new(notificationTestService))
@@ -554,9 +564,11 @@ func TestUnsubscribeTimeout(t *testing.T) {
 
 	// Create the client on the other end of the pipe.
 	cfg := new(clientConfig)
-	client, _ := newClient(context.Background(), cfg, func(context.Context) (ServerCodec, error) {
-		return NewCodec(p2), nil
-	})
+	client, _ := newClient(
+		context.Background(), cfg, func(context.Context) (ServerCodec, error) {
+			return NewCodec(p2), nil
+		},
+	)
 	defer client.Close()
 
 	// Start subscription.
@@ -621,9 +633,11 @@ func TestClientSubscriptionUnsubscribeServer(t *testing.T) {
 
 	// Create the client on the other end of the pipe.
 	cfg := new(clientConfig)
-	client, _ := newClient(context.Background(), cfg, func(context.Context) (ServerCodec, error) {
-		return NewCodec(p2), nil
-	})
+	client, _ := newClient(
+		context.Background(), cfg, func(context.Context) (ServerCodec, error) {
+			return NewCodec(p2), nil
+		},
+	)
 	defer client.Close()
 
 	// Create the subscription.
@@ -644,7 +658,7 @@ func TestClientSubscriptionUnsubscribeServer(t *testing.T) {
 }
 
 // This checks that the subscribed channel can be closed after Unsubscribe.
-// It is the reproducer for https://github.com/ethereum/go-ethereum/issues/22322
+// It is the reproducer for https://github.com/ripoff2/go-ethereum/issues/22322
 func TestClientSubscriptionChannelClose(t *testing.T) {
 	t.Parallel()
 
@@ -728,12 +742,16 @@ func TestClientNotificationStorm(t *testing.T) {
 func TestClientSetHeader(t *testing.T) {
 	var gotHeader bool
 	srv := newTestServer()
-	httpsrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("test") == "ok" {
-			gotHeader = true
-		}
-		srv.ServeHTTP(w, r)
-	}))
+	httpsrv := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				if r.Header.Get("test") == "ok" {
+					gotHeader = true
+				}
+				srv.ServeHTTP(w, r)
+			},
+		),
+	)
 	defer httpsrv.Close()
 	defer srv.Stop()
 
@@ -937,10 +955,12 @@ func (l *flakeyListener) Accept() (net.Conn, error) {
 	c, err := l.Listener.Accept()
 	if err == nil {
 		timeout := time.Duration(rand.Int63n(int64(l.maxKillTimeout)))
-		time.AfterFunc(timeout, func() {
-			log.Debug(fmt.Sprintf("killing conn %v after %v", c.LocalAddr(), timeout))
-			c.Close()
-		})
+		time.AfterFunc(
+			timeout, func() {
+				log.Debug(fmt.Sprintf("killing conn %v after %v", c.LocalAddr(), timeout))
+				c.Close()
+			},
+		)
 	}
 	return c, err
 }

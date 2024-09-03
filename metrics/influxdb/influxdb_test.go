@@ -27,9 +27,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/metrics/internal"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/ripoff2/go-ethereum/metrics"
+	"github.com/ripoff2/go-ethereum/metrics/internal"
 )
 
 func TestMain(m *testing.M) {
@@ -44,11 +44,15 @@ func TestExampleV1(t *testing.T) {
 
 	r := internal.ExampleMetrics()
 	var have, want string
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		haveB, _ := io.ReadAll(r.Body)
-		have = string(haveB)
-		r.Body.Close()
-	}))
+	ts := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				haveB, _ := io.ReadAll(r.Body)
+				have = string(haveB)
+				r.Body.Close()
+			},
+		),
+	)
 	defer ts.Close()
 	u, _ := url.Parse(ts.URL)
 	rep := &reporter{
@@ -80,11 +84,15 @@ func TestExampleV2(t *testing.T) {
 
 	r := internal.ExampleMetrics()
 	var have, want string
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		haveB, _ := io.ReadAll(r.Body)
-		have = string(haveB)
-		r.Body.Close()
-	}))
+	ts := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				haveB, _ := io.ReadAll(r.Body)
+				have = string(haveB)
+				r.Body.Close()
+			},
+		),
+	)
 	defer ts.Close()
 
 	rep := &v2Reporter{

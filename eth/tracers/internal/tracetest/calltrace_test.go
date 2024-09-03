@@ -25,17 +25,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/tests"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/hexutil"
+	"github.com/ripoff2/go-ethereum/core"
+	"github.com/ripoff2/go-ethereum/core/rawdb"
+	"github.com/ripoff2/go-ethereum/core/types"
+	"github.com/ripoff2/go-ethereum/core/vm"
+	"github.com/ripoff2/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/eth/tracers"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/rlp"
+	"github.com/ripoff2/go-ethereum/tests"
 )
 
 // callLog is the result of LOG opCode
@@ -97,80 +97,88 @@ func testCallTracer(tracerName string, dirPath string, t *testing.T) {
 			continue
 		}
 		file := file // capture range variable
-		t.Run(camel(strings.TrimSuffix(file.Name(), ".json")), func(t *testing.T) {
-			t.Parallel()
+		t.Run(
+			camel(strings.TrimSuffix(file.Name(), ".json")), func(t *testing.T) {
+				t.Parallel()
 
-			var (
-				test = new(callTracerTest)
-				tx   = new(types.Transaction)
-			)
-			// Call tracer test found, read if from disk
-			if blob, err := os.ReadFile(filepath.Join("testdata", dirPath, file.Name())); err != nil {
-				t.Fatalf("failed to read testcase: %v", err)
-			} else if err := json.Unmarshal(blob, test); err != nil {
-				t.Fatalf("failed to parse testcase: %v", err)
-			}
-			if err := tx.UnmarshalBinary(common.FromHex(test.Input)); err != nil {
-				t.Fatalf("failed to parse testcase input: %v", err)
-			}
-			// Configure a blockchain with the given prestate
-			var (
-				signer  = types.MakeSigner(test.Genesis.Config, new(big.Int).SetUint64(uint64(test.Context.Number)), uint64(test.Context.Time))
-				context = test.Context.toBlockContext(test.Genesis)
-				state   = tests.MakePreState(rawdb.NewMemoryDatabase(), test.Genesis.Alloc, false, rawdb.HashScheme)
-			)
-			state.Close()
+				var (
+					test = new(callTracerTest)
+					tx   = new(types.Transaction)
+				)
+				// Call tracer test found, read if from disk
+				if blob, err := os.ReadFile(filepath.Join("testdata", dirPath, file.Name())); err != nil {
+					t.Fatalf("failed to read testcase: %v", err)
+				} else if err := json.Unmarshal(blob, test); err != nil {
+					t.Fatalf("failed to parse testcase: %v", err)
+				}
+				if err := tx.UnmarshalBinary(common.FromHex(test.Input)); err != nil {
+					t.Fatalf("failed to parse testcase input: %v", err)
+				}
+				// Configure a blockchain with the given prestate
+				var (
+					signer = types.MakeSigner(
+						test.Genesis.Config, new(big.Int).SetUint64(uint64(test.Context.Number)),
+						uint64(test.Context.Time),
+					)
+					context = test.Context.toBlockContext(test.Genesis)
+					state   = tests.MakePreState(rawdb.NewMemoryDatabase(), test.Genesis.Alloc, false, rawdb.HashScheme)
+				)
+				state.Close()
 
-			tracer, err := tracers.DefaultDirectory.New(tracerName, new(tracers.Context), test.TracerConfig)
-			if err != nil {
-				t.Fatalf("failed to create call tracer: %v", err)
-			}
+				tracer, err := tracers.DefaultDirectory.New(tracerName, new(tracers.Context), test.TracerConfig)
+				if err != nil {
+					t.Fatalf("failed to create call tracer: %v", err)
+				}
 
-			state.StateDB.SetLogger(tracer.Hooks)
-			msg, err := core.TransactionToMessage(tx, signer, context.BaseFee)
-			if err != nil {
-				t.Fatalf("failed to prepare transaction for tracing: %v", err)
-			}
-			evm := vm.NewEVM(context, core.NewEVMTxContext(msg), state.StateDB, test.Genesis.Config, vm.Config{Tracer: tracer.Hooks})
-			tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
-			vmRet, err := core.ApplyMessage(evm, msg, new(core.GasPool).AddGas(tx.Gas()))
-			if err != nil {
-				t.Fatalf("failed to execute transaction: %v", err)
-			}
-			tracer.OnTxEnd(&types.Receipt{GasUsed: vmRet.UsedGas}, nil)
-			// Retrieve the trace result and compare against the expected.
-			res, err := tracer.GetResult()
-			if err != nil {
-				t.Fatalf("failed to retrieve trace result: %v", err)
-			}
-			// The legacy javascript calltracer marshals json in js, which
-			// is not deterministic (as opposed to the golang json encoder).
-			if isLegacy {
-				// This is a tweak to make it deterministic. Can be removed when
-				// we remove the legacy tracer.
-				var x callTrace
-				json.Unmarshal(res, &x)
-				res, _ = json.Marshal(x)
-			}
-			want, err := json.Marshal(test.Result)
-			if err != nil {
-				t.Fatalf("failed to marshal test: %v", err)
-			}
-			if string(want) != string(res) {
-				t.Fatalf("trace mismatch\n have: %v\n want: %v\n", string(res), string(want))
-			}
-			// Sanity check: compare top call's gas used against vm result
-			type simpleResult struct {
-				GasUsed hexutil.Uint64
-			}
-			var topCall simpleResult
-			if err := json.Unmarshal(res, &topCall); err != nil {
-				t.Fatalf("failed to unmarshal top calls gasUsed: %v", err)
-			}
-			if uint64(topCall.GasUsed) != vmRet.UsedGas {
-				t.Fatalf("top call has invalid gasUsed. have: %d want: %d", topCall.GasUsed, vmRet.UsedGas)
-			}
-		})
+				state.StateDB.SetLogger(tracer.Hooks)
+				msg, err := core.TransactionToMessage(tx, signer, context.BaseFee)
+				if err != nil {
+					t.Fatalf("failed to prepare transaction for tracing: %v", err)
+				}
+				evm := vm.NewEVM(
+					context, core.NewEVMTxContext(msg), state.StateDB, test.Genesis.Config,
+					vm.Config{Tracer: tracer.Hooks},
+				)
+				tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
+				vmRet, err := core.ApplyMessage(evm, msg, new(core.GasPool).AddGas(tx.Gas()))
+				if err != nil {
+					t.Fatalf("failed to execute transaction: %v", err)
+				}
+				tracer.OnTxEnd(&types.Receipt{GasUsed: vmRet.UsedGas}, nil)
+				// Retrieve the trace result and compare against the expected.
+				res, err := tracer.GetResult()
+				if err != nil {
+					t.Fatalf("failed to retrieve trace result: %v", err)
+				}
+				// The legacy javascript calltracer marshals json in js, which
+				// is not deterministic (as opposed to the golang json encoder).
+				if isLegacy {
+					// This is a tweak to make it deterministic. Can be removed when
+					// we remove the legacy tracer.
+					var x callTrace
+					json.Unmarshal(res, &x)
+					res, _ = json.Marshal(x)
+				}
+				want, err := json.Marshal(test.Result)
+				if err != nil {
+					t.Fatalf("failed to marshal test: %v", err)
+				}
+				if string(want) != string(res) {
+					t.Fatalf("trace mismatch\n have: %v\n want: %v\n", string(res), string(want))
+				}
+				// Sanity check: compare top call's gas used against vm result
+				type simpleResult struct {
+					GasUsed hexutil.Uint64
+				}
+				var topCall simpleResult
+				if err := json.Unmarshal(res, &topCall); err != nil {
+					t.Fatalf("failed to unmarshal top calls gasUsed: %v", err)
+				}
+				if uint64(topCall.GasUsed) != vmRet.UsedGas {
+					t.Fatalf("top call has invalid gasUsed. have: %d want: %d", topCall.GasUsed, vmRet.UsedGas)
+				}
+			},
+		)
 	}
 }
 
@@ -184,17 +192,19 @@ func BenchmarkTracers(b *testing.B) {
 			continue
 		}
 		file := file // capture range variable
-		b.Run(camel(strings.TrimSuffix(file.Name(), ".json")), func(b *testing.B) {
-			blob, err := os.ReadFile(filepath.Join("testdata", "call_tracer", file.Name()))
-			if err != nil {
-				b.Fatalf("failed to read testcase: %v", err)
-			}
-			test := new(callTracerTest)
-			if err := json.Unmarshal(blob, test); err != nil {
-				b.Fatalf("failed to parse testcase: %v", err)
-			}
-			benchTracer("callTracer", test, b)
-		})
+		b.Run(
+			camel(strings.TrimSuffix(file.Name(), ".json")), func(b *testing.B) {
+				blob, err := os.ReadFile(filepath.Join("testdata", "call_tracer", file.Name()))
+				if err != nil {
+					b.Fatalf("failed to read testcase: %v", err)
+				}
+				test := new(callTracerTest)
+				if err := json.Unmarshal(blob, test); err != nil {
+					b.Fatalf("failed to parse testcase: %v", err)
+				}
+				benchTracer("callTracer", test, b)
+			},
+		)
 	}
 }
 
@@ -204,7 +214,9 @@ func benchTracer(tracerName string, test *callTracerTest, b *testing.B) {
 	if err := rlp.DecodeBytes(common.FromHex(test.Input), tx); err != nil {
 		b.Fatalf("failed to parse testcase input: %v", err)
 	}
-	signer := types.MakeSigner(test.Genesis.Config, new(big.Int).SetUint64(uint64(test.Context.Number)), uint64(test.Context.Time))
+	signer := types.MakeSigner(
+		test.Genesis.Config, new(big.Int).SetUint64(uint64(test.Context.Number)), uint64(test.Context.Time),
+	)
 	origin, _ := signer.Sender(tx)
 	txContext := vm.TxContext{
 		Origin:   origin,
@@ -290,13 +302,19 @@ func TestInternals(t *testing.T) {
 				byte(vm.CALL),
 			},
 			tracer: mkTracer("callTracer", nil),
-			want:   fmt.Sprintf(`{"from":"%s","gas":"0x13880","gasUsed":"0x54d8","to":"0x00000000000000000000000000000000deadbeef","input":"0x","calls":[{"from":"0x00000000000000000000000000000000deadbeef","gas":"0xe01a","gasUsed":"0x0","to":"0x00000000000000000000000000000000000000ff","input":"0x","value":"0x0","type":"CALL"}],"value":"0x0","type":"CALL"}`, originHex),
+			want: fmt.Sprintf(
+				`{"from":"%s","gas":"0x13880","gasUsed":"0x54d8","to":"0x00000000000000000000000000000000deadbeef","input":"0x","calls":[{"from":"0x00000000000000000000000000000000deadbeef","gas":"0xe01a","gasUsed":"0x0","to":"0x00000000000000000000000000000000000000ff","input":"0x","value":"0x0","type":"CALL"}],"value":"0x0","type":"CALL"}`,
+				originHex,
+			),
 		},
 		{
 			name:   "Stack depletion in LOG0",
 			code:   []byte{byte(vm.LOG3)},
 			tracer: mkTracer("callTracer", json.RawMessage(`{ "withLog": true }`)),
-			want:   fmt.Sprintf(`{"from":"%s","gas":"0x13880","gasUsed":"0x13880","to":"0x00000000000000000000000000000000deadbeef","input":"0x","error":"stack underflow (0 \u003c=\u003e 5)","value":"0x0","type":"CALL"}`, originHex),
+			want: fmt.Sprintf(
+				`{"from":"%s","gas":"0x13880","gasUsed":"0x13880","to":"0x00000000000000000000000000000000deadbeef","input":"0x","error":"stack underflow (0 \u003c=\u003e 5)","value":"0x0","type":"CALL"}`,
+				originHex,
+			),
 		},
 		{
 			name: "Mem expansion in LOG0",
@@ -309,7 +327,10 @@ func TestInternals(t *testing.T) {
 				byte(vm.LOG0),
 			},
 			tracer: mkTracer("callTracer", json.RawMessage(`{ "withLog": true }`)),
-			want:   fmt.Sprintf(`{"from":"%s","gas":"0x13880","gasUsed":"0x5b9e","to":"0x00000000000000000000000000000000deadbeef","input":"0x","logs":[{"address":"0x00000000000000000000000000000000deadbeef","topics":[],"data":"0x000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000","position":"0x0"}],"value":"0x0","type":"CALL"}`, originHex),
+			want: fmt.Sprintf(
+				`{"from":"%s","gas":"0x13880","gasUsed":"0x5b9e","to":"0x00000000000000000000000000000000deadbeef","input":"0x","logs":[{"address":"0x00000000000000000000000000000000deadbeef","topics":[],"data":"0x000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000","position":"0x0"}],"value":"0x0","type":"CALL"}`,
+				originHex,
+			),
 		},
 		{
 			// Leads to OOM on the prestate tracer
@@ -328,7 +349,10 @@ func TestInternals(t *testing.T) {
 				byte(vm.LOG0),
 			},
 			tracer: mkTracer("prestateTracer", nil),
-			want:   fmt.Sprintf(`{"0x0000000000000000000000000000000000000000":{"balance":"0x0"},"0x00000000000000000000000000000000deadbeef":{"balance":"0x0","code":"0x6001600052600164ffffffffff60016000f560ff6000a0"},"%s":{"balance":"0x1c6bf52634000"}}`, originHex),
+			want: fmt.Sprintf(
+				`{"0x0000000000000000000000000000000000000000":{"balance":"0x0"},"0x00000000000000000000000000000000deadbeef":{"balance":"0x0","code":"0x6001600052600164ffffffffff60016000f560ff6000a0"},"%s":{"balance":"0x1c6bf52634000"}}`,
+				originHex,
+			),
 		},
 		{
 			// CREATE2 which requires padding memory by prestate tracer
@@ -347,53 +371,62 @@ func TestInternals(t *testing.T) {
 				byte(vm.LOG0),
 			},
 			tracer: mkTracer("prestateTracer", nil),
-			want:   fmt.Sprintf(`{"0x0000000000000000000000000000000000000000":{"balance":"0x0"},"0x00000000000000000000000000000000deadbeef":{"balance":"0x0","code":"0x6001600052600160ff60016000f560ff6000a0"},"%s":{"balance":"0x1c6bf52634000"}}`, originHex),
+			want: fmt.Sprintf(
+				`{"0x0000000000000000000000000000000000000000":{"balance":"0x0"},"0x00000000000000000000000000000000deadbeef":{"balance":"0x0","code":"0x6001600052600160ff60016000f560ff6000a0"},"%s":{"balance":"0x1c6bf52634000"}}`,
+				originHex,
+			),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			state := tests.MakePreState(rawdb.NewMemoryDatabase(),
-				types.GenesisAlloc{
-					to: types.Account{
-						Code: tc.code,
+		t.Run(
+			tc.name, func(t *testing.T) {
+				state := tests.MakePreState(
+					rawdb.NewMemoryDatabase(),
+					types.GenesisAlloc{
+						to: types.Account{
+							Code: tc.code,
+						},
+						origin: types.Account{
+							Balance: big.NewInt(500000000000000),
+						},
+					}, false, rawdb.HashScheme,
+				)
+				defer state.Close()
+				state.StateDB.SetLogger(tc.tracer.Hooks)
+				tx, err := types.SignNewTx(
+					key, signer, &types.LegacyTx{
+						To:       &to,
+						Value:    big.NewInt(0),
+						Gas:      80000,
+						GasPrice: big.NewInt(1),
 					},
-					origin: types.Account{
-						Balance: big.NewInt(500000000000000),
-					},
-				}, false, rawdb.HashScheme)
-			defer state.Close()
-			state.StateDB.SetLogger(tc.tracer.Hooks)
-			tx, err := types.SignNewTx(key, signer, &types.LegacyTx{
-				To:       &to,
-				Value:    big.NewInt(0),
-				Gas:      80000,
-				GasPrice: big.NewInt(1),
-			})
-			if err != nil {
-				t.Fatalf("test %v: failed to sign transaction: %v", tc.name, err)
-			}
-			txContext := vm.TxContext{
-				Origin:   origin,
-				GasPrice: tx.GasPrice(),
-			}
-			evm := vm.NewEVM(context, txContext, state.StateDB, config, vm.Config{Tracer: tc.tracer.Hooks})
-			msg, err := core.TransactionToMessage(tx, signer, big.NewInt(0))
-			if err != nil {
-				t.Fatalf("test %v: failed to create message: %v", tc.name, err)
-			}
-			tc.tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
-			vmRet, err := core.ApplyMessage(evm, msg, new(core.GasPool).AddGas(tx.Gas()))
-			if err != nil {
-				t.Fatalf("test %v: failed to execute transaction: %v", tc.name, err)
-			}
-			tc.tracer.OnTxEnd(&types.Receipt{GasUsed: vmRet.UsedGas}, nil)
-			// Retrieve the trace result and compare against the expected
-			res, err := tc.tracer.GetResult()
-			if err != nil {
-				t.Fatalf("test %v: failed to retrieve trace result: %v", tc.name, err)
-			}
-			if string(res) != tc.want {
-				t.Errorf("test %v: trace mismatch\n have: %v\n want: %v\n", tc.name, string(res), tc.want)
-			}
-		})
+				)
+				if err != nil {
+					t.Fatalf("test %v: failed to sign transaction: %v", tc.name, err)
+				}
+				txContext := vm.TxContext{
+					Origin:   origin,
+					GasPrice: tx.GasPrice(),
+				}
+				evm := vm.NewEVM(context, txContext, state.StateDB, config, vm.Config{Tracer: tc.tracer.Hooks})
+				msg, err := core.TransactionToMessage(tx, signer, big.NewInt(0))
+				if err != nil {
+					t.Fatalf("test %v: failed to create message: %v", tc.name, err)
+				}
+				tc.tracer.OnTxStart(evm.GetVMContext(), tx, msg.From)
+				vmRet, err := core.ApplyMessage(evm, msg, new(core.GasPool).AddGas(tx.Gas()))
+				if err != nil {
+					t.Fatalf("test %v: failed to execute transaction: %v", tc.name, err)
+				}
+				tc.tracer.OnTxEnd(&types.Receipt{GasUsed: vmRet.UsedGas}, nil)
+				// Retrieve the trace result and compare against the expected
+				res, err := tc.tracer.GetResult()
+				if err != nil {
+					t.Fatalf("test %v: failed to retrieve trace result: %v", tc.name, err)
+				}
+				if string(res) != tc.want {
+					t.Errorf("test %v: trace mismatch\n have: %v\n want: %v\n", tc.name, string(res), tc.want)
+				}
+			},
+		)
 	}
 }

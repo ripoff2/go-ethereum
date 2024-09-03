@@ -19,11 +19,11 @@ package state
 import (
 	"maps"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/trie/utils"
 	"github.com/holiman/uint256"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/params"
+	"github.com/ripoff2/go-ethereum/trie/utils"
 )
 
 // mode specifies how a tree location has been accessed
@@ -147,8 +147,12 @@ func (ae *AccessEvents) SlotGas(addr common.Address, slot common.Hash, isWrite b
 
 // touchAddressAndChargeGas adds any missing access event to the access event list, and returns the cold
 // access cost to be charged, if need be.
-func (ae *AccessEvents) touchAddressAndChargeGas(addr common.Address, treeIndex uint256.Int, subIndex byte, isWrite bool) uint64 {
-	stemRead, selectorRead, stemWrite, selectorWrite, selectorFill := ae.touchAddress(addr, treeIndex, subIndex, isWrite)
+func (ae *AccessEvents) touchAddressAndChargeGas(
+	addr common.Address, treeIndex uint256.Int, subIndex byte, isWrite bool,
+) uint64 {
+	stemRead, selectorRead, stemWrite, selectorWrite, selectorFill := ae.touchAddress(
+		addr, treeIndex, subIndex, isWrite,
+	)
 
 	var gas uint64
 	if stemRead {
@@ -170,7 +174,9 @@ func (ae *AccessEvents) touchAddressAndChargeGas(addr common.Address, treeIndex 
 }
 
 // touchAddress adds any missing access event to the access event list.
-func (ae *AccessEvents) touchAddress(addr common.Address, treeIndex uint256.Int, subIndex byte, isWrite bool) (bool, bool, bool, bool, bool) {
+func (ae *AccessEvents) touchAddress(addr common.Address, treeIndex uint256.Int, subIndex byte, isWrite bool) (
+	bool, bool, bool, bool, bool,
+) {
 	branchKey := newBranchAccessKey(addr, treeIndex)
 	chunkKey := newChunkAccessKey(branchKey, subIndex)
 
@@ -228,7 +234,9 @@ func newChunkAccessKey(branchKey branchAccessKey, leafKey byte) chunkAccessKey {
 }
 
 // CodeChunksRangeGas is a helper function to touch every chunk in a code range and charge witness gas costs
-func (ae *AccessEvents) CodeChunksRangeGas(contractAddr common.Address, startPC, size uint64, codeLen uint64, isWrite bool) uint64 {
+func (ae *AccessEvents) CodeChunksRangeGas(
+	contractAddr common.Address, startPC, size uint64, codeLen uint64, isWrite bool,
+) uint64 {
 	// note that in the case where the copied code is outside the range of the
 	// contract code but touches the last leaf with contract code in it,
 	// we don't include the last leaf of code in the AccessWitness.  The

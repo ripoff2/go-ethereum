@@ -28,7 +28,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ripoff2/go-ethereum/common/math"
 	"github.com/urfave/cli/v2"
 )
 
@@ -90,9 +90,11 @@ func (f *DirectoryFlag) Apply(set *flag.FlagSet) error {
 			break
 		}
 	}
-	eachName(f, func(name string) {
-		set.Var(&f.Value, f.Name, f.Usage)
-	})
+	eachName(
+		f, func(name string) {
+			set.Var(&f.Value, f.Name, f.Usage)
+		},
+	)
 	return nil
 }
 
@@ -181,15 +183,19 @@ func (f *TextMarshalerFlag) Apply(set *flag.FlagSet) error {
 		envVar = strings.TrimSpace(envVar)
 		if value, found := syscall.Getenv(envVar); found {
 			if err := f.Value.UnmarshalText([]byte(value)); err != nil {
-				return fmt.Errorf("could not parse %q from environment variable %q for flag %s: %s", value, envVar, f.Name, err)
+				return fmt.Errorf(
+					"could not parse %q from environment variable %q for flag %s: %s", value, envVar, f.Name, err,
+				)
 			}
 			f.HasBeenSet = true
 			break
 		}
 	}
-	eachName(f, func(name string) {
-		set.Var(textMarshalerVal{f.Value}, f.Name, f.Usage)
-	})
+	eachName(
+		f, func(name string) {
+			set.Var(textMarshalerVal{f.Value}, f.Name, f.Usage)
+		},
+	)
 	return nil
 }
 
@@ -284,10 +290,12 @@ func (f *BigFlag) Apply(set *flag.FlagSet) error {
 			break
 		}
 	}
-	eachName(f, func(name string) {
-		f.Value = new(big.Int)
-		set.Var((*bigValue)(f.Value), f.Name, f.Usage)
-	})
+	eachName(
+		f, func(name string) {
+			f.Value = new(big.Int)
+			set.Var((*bigValue)(f.Value), f.Name, f.Usage)
+		},
+	)
 	return nil
 }
 

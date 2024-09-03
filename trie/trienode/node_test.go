@@ -20,17 +20,21 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ripoff2/go-ethereum/common"
+	"github.com/ripoff2/go-ethereum/crypto"
 )
 
 func BenchmarkMerge(b *testing.B) {
-	b.Run("1K", func(b *testing.B) {
-		benchmarkMerge(b, 1000)
-	})
-	b.Run("10K", func(b *testing.B) {
-		benchmarkMerge(b, 10_000)
-	})
+	b.Run(
+		"1K", func(b *testing.B) {
+			benchmarkMerge(b, 1000)
+		},
+	)
+	b.Run(
+		"10K", func(b *testing.B) {
+			benchmarkMerge(b, 10_000)
+		},
+	)
 }
 
 func benchmarkMerge(b *testing.B, count int) {
